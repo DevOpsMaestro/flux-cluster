@@ -4,3 +4,7 @@ kind: Kustomization
 resources:
   - ../../../base/grafana
 namespace: monitoring
+generatorOptions:
+  disableNameSuffixHash: true
+commonLabels:
+  app.kubernetes.io/managed-by: flux
