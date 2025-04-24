@@ -29,7 +29,7 @@ if ! command -v gh &> /dev/null; then
 fi
 
 printf "[4/5] Authenticating GitHub CLI...\n"
-gh auth login
+#gh auth login
 
 printf "[5/5] Bootstrapping Flux to GitHub repo: $GITHUB_USER/$REPO_NAME\n"
 flux bootstrap github \
