@@ -13,6 +13,10 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
+- role: control-plane
+- role: control-plane
+- role: worker
+- role: worker
 - role: worker
 EOF
 
@@ -28,9 +32,11 @@ if ! command -v gh &> /dev/null; then
   brew install gh
 fi
 
+## Comment out the 'gh auth login' after the first time if you don't need it.
 printf "[4/5] Authenticating GitHub CLI...\n"
 #gh auth login
 
+## You will need to have your GitHub Personal Access Token (PAT) in your paste buffer for this step.
 printf "[5/5] Bootstrapping Flux to GitHub repo: $GITHUB_USER/$REPO_NAME\n"
 flux bootstrap github \
   --owner="$GITHUB_USER" \
