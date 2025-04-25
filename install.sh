@@ -12,17 +12,6 @@ printf "\n[1/5] Creating KinD cluster: $CLUSTER_NAME\n"
 cat <<EOF | kind create cluster --name "$CLUSTER_NAME" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-networking:
-  ipFamily: ipv6
-  podSubnet: "10.244.0.0/16"
-  serviceSubnet: "10.96.0.0/12"
-  # WARNING: It is _strongly_ recommended that you keep this the default
-  # (127.0.0.1) for security reasons. However it is possible to change this.
-  apiServerAddress: "127.0.0.1"
-  # By default the API server listens on a random open port.
-  # You may choose a specific port but probably don't need to in most cases.
-  # Using a random port makes it easier to spin up multiple clusters.
-  apiServerPort: 6443
 nodes:
 - role: control-plane
   image: "kindest/node:${K8S_VER}"
