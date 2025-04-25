@@ -1,0 +1,9 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../base/cert-manager/helm-repository.yaml
+  - ../../../base/istio/helm-repository.yaml
+  - ../../../base/openebs/helm-repository.yaml
+  - ../../../base/prometheus/helm-repository.yaml
+  - ../../../base/grafana/helm-repository.yaml
