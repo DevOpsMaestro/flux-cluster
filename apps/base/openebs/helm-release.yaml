@@ -36,6 +36,7 @@ spec:
           memory: 2Gi
 
     localprovisioner:
+      enabled: true # ✅ Keep this enabled for hostPath-based volumes
       resources:
         requests:
           cpu: 500m
@@ -63,6 +64,7 @@ spec:
             memory: 2Gi
 
     ndm:
+      enabled: false # ✅ Disable NDM (not needed in KinD)
       resources:
         requests:
           cpu: 500m
@@ -72,6 +74,7 @@ spec:
           memory: 2Gi
 
     ndmOperator:
+      enabled: false
       resources:
         requests:
           cpu: 500m
@@ -79,6 +82,9 @@ spec:
         limits:
           cpu: 1000m
           memory: 2Gi
+
+    cstor:
+      enabled: false
 
     webhook:
       resources:
@@ -88,3 +94,9 @@ spec:
         limits:
           cpu: 500m
           memory: 1Gi
+
+    jiva:
+      enabled: false
+
+    zfsLocalPv:
+      enabled: false
