@@ -1,3 +1,4 @@
 ---
 resources:
   - ../../../base/namespaces/monitoring.yaml
+  - ../../../base/namespaces/starboard-system.yaml
