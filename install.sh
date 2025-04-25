@@ -15,16 +15,22 @@ apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
   image: "kindest/node:${K8S_VER}"
+  name: "cp-one"
 - role: control-plane
   image: "kindest/node:${K8S_VER}"
+  name: "cp-two"
 - role: control-plane
   image: "kindest/node:${K8S_VER}"
+  name: "cp-three"
 - role: worker
   image: "kindest/node:${K8S_VER}"
+  name: "dp-one"
 - role: worker
   image: "kindest/node:${K8S_VER}"
+  name: "dp-two"
 - role: worker
   image: "kindest/node:${K8S_VER}"
+  name: "dp-three"
 EOF
 
 if ! command -v flux &> /dev/null; then
