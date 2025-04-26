@@ -1,5 +1,6 @@
 ---
-apiVersion: networking.istio.io/v1alpha3
+apiVersion: networking.istio.io/v1
+# https://istio.io/latest/docs/reference/config/networking/gateway/
 kind: Gateway
 metadata:
   name: echoip-gateway
@@ -9,14 +10,15 @@ spec:
     istio: ingressgateway
   servers:
     - port:
-        number: 32111
+        number: 80
         name: http
         protocol: HTTP
       hosts:
         - "*"
 
 ---
-apiVersion: networking.istio.io/v1alpha3
+apiVersion: networking.istio.io/v1
+# https://istio.io/latest/docs/reference/config/networking/virtual-service/#VirtualService-hosts
 kind: VirtualService
 metadata:
   name: echoip
