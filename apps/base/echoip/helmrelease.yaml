@@ -9,10 +9,10 @@ spec:
   interval: 1m
   chart:
     spec:
-      chart: echoIP # folder name inside the repo
+      chart: ./charts/echoip
       sourceRef:
         kind: GitRepository
-        name: echoip
+        name: flux-system
         namespace: flux-system
   values:
     replicaCount: 1
