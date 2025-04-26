@@ -3,16 +3,22 @@ apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: echoip
-  namespace: reflector
+  namespace: echoip
+  annotations:
+    description: |
+      Deploys the EchoIP example application via Helm in the echoip namespace.
 spec:
   releaseName: echoip
   interval: 1m
   chart:
     spec:
       chart: ./charts/echoip
+      version: 1.0.0
       sourceRef:
         kind: GitRepository
         name: flux-system
         namespace: flux-system
+  interval: 5m0s
   values:
-    replicaCount: 1
+    replicaCount: 2
+    namespaceOverride: echoip

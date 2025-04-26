@@ -1,5 +1,5 @@
 ---
 resources:
   - ../../../base/namespaces/monitoring.yaml
-  - ../../../base/namespaces/reflector.yaml
+  - ../../../base/namespaces/echoip.yaml
   - ../../../base/namespaces/starboard-system.yaml
