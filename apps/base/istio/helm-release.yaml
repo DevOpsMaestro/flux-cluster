@@ -15,4 +15,11 @@ spec:
         name: istio
         namespace: flux-system
   values:
-
+    global:
+      istioNamespace: istio-system
+    gateways:
+      istio-ingressgateway:
+        enabled: true
+    ingressGateways:
+      - name: istio-ingressgateway
+        enabled: true
