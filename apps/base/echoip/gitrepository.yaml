@@ -5,7 +5,7 @@ metadata:
   name: echoip
   namespace: flux-system
 spec:
-  interval: 1m
+  interval: 5m0s
   url: https://github.com/rikkoenig/echo-chart
   ref:
     branch: main

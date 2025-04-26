@@ -6,11 +6,13 @@ metadata:
   namespace: echoip
 spec:
   releaseName: echoip
-  interval: 5m
+  interval: 1m
   chart:
     spec:
-      chart: echoIP
+      chart: echoIP # folder name inside the repo
       sourceRef:
-        kind: HelmRepository
+        kind: GitRepository
         name: echoip
         namespace: flux-system
+  values:
+    replicaCount: 1
