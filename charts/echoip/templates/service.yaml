@@ -24,3 +24,4 @@ spec:
     port: {{ .Values.service.port | default 8080 }}
     targetPort: {{ .Values.container.port }}
   {{ end }}
+

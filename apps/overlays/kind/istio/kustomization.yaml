@@ -4,3 +4,4 @@ kind: Kustomization
 namespace: istio-system
 resources:
   - ../../../base/istio
+
