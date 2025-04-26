@@ -1,3 +1,4 @@
+---
 container:
   image: "docker.io/mpolden/echoip"
   tag: "latest"
@@ -5,7 +6,7 @@ container:
   - "-H"
   - "X-Forwarded-For"
 
-namespace: "reflector"
+namespace: "echoip"
 service:
   port: 8080
 nodePort:
@@ -30,3 +31,4 @@ geoDB:
   secret:
     name: " "
     key: " "
+
