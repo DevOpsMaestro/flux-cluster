@@ -1,17 +1,16 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: echoip
   namespace: echoip
 spec:
+  releaseName: echoip
   interval: 5m
   chart:
     spec:
-      chart: echoIP # subfolder inside repo
+      chart: echoIP
       sourceRef:
-        kind: GitRepository
+        kind: HelmRepository
         name: echoip
         namespace: flux-system
-  values:
-    replicaCount: 1
