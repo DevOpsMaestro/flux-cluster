@@ -6,9 +6,6 @@ metadata:
   namespace: echoip
 spec:
   interval: 5m
-  dependsOn:
-    - name: echoip
-      namespace: flux-system
   chart:
     spec:
       chart: echoIP
