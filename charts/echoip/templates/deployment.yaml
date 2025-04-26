@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: {{ .Values.namespace }}
+  namespace: echoip
   name: {{ .Release.Name }}
   labels:
     app: echoip
@@ -41,7 +41,7 @@ spec:
       initContainers:
       - name: pullgeo
         image: alpine:3
-        command: 
+        command:
         - /usr/local/bin/entryscript.sh
         env:
         - name: GEOAUTH
