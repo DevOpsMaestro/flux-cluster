@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: echoip
+  namespace: {{ .Release.Namespace }}
   name: {{ .Release.Name }}
   labels:
     app: echoip
