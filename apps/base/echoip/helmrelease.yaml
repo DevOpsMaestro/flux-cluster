@@ -9,7 +9,7 @@ metadata:
       Deploys the EchoIP example application via Helm in the echoip namespace.
 spec:
   releaseName: echoip
-  interval: 1m
+  interval: 5m0s
   chart:
     spec:
       chart: ./charts/echoip
@@ -18,7 +18,6 @@ spec:
         kind: GitRepository
         name: flux-system
         namespace: flux-system
-  interval: 5m0s
   values:
     replicaCount: 2
     namespaceOverride: echoip
