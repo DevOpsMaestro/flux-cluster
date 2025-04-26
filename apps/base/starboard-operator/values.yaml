@@ -1,3 +1,4 @@
 ---
 starboardOperator:
+  # the following is to instruct helm release whether to deploy or do nothing
   enabled: false
