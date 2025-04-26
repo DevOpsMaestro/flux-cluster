@@ -10,4 +10,3 @@ kubeVersion: ">= 1.25.0"
 description: echoip is a service to give a user their public adress, and associated information.
 
 home: https://github.com/mpolden/echoip
-

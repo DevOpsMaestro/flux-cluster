@@ -1,14 +1,18 @@
 ---
 container:
   image: "docker.io/mpolden/echoip"
+  pullPolicy: IfNotPresent
   tag: "latest"
   commandargs:
     - "-H"
     - "X-Forwarded-For"
 
 namespace: reflector
+
 service:
+  type: ClusterIP
   port: 8080
+
 nodePort:
   enabled: false
   port: ""
