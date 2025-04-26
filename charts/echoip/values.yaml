@@ -6,7 +6,7 @@ container:
     - "-H"
     - "X-Forwarded-For"
 
-namespace: {{ .Release.Namespace }}
+namespace: reflector
 service:
   port: 8080
 nodePort:
@@ -31,4 +31,3 @@ geoDB:
   secret:
     name: " "
     key: " "
-
