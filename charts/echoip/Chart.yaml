@@ -1,3 +1,4 @@
+---
 apiVersion: v2
 name: echoip
 version: 1.0.0
@@ -9,3 +10,4 @@ kubeVersion: ">= 1.25.0"
 description: echoip is a service to give a user their public adress, and associated information.
 
 home: https://github.com/mpolden/echoip
+

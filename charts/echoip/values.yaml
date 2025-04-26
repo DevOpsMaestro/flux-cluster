@@ -2,11 +2,11 @@
 container:
   image: "docker.io/mpolden/echoip"
   tag: "latest"
-  commandargs: 
-  - "-H"
-  - "X-Forwarded-For"
+  commandargs:
+    - "-H"
+    - "X-Forwarded-For"
 
-namespace: "echoip"
+namespace: {{ .Release.Namespace }}
 service:
   port: 8080
 nodePort:
