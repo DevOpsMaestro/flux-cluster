@@ -1,0 +1,37 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: echoip-gateway
+  namespace: echoip
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 32111
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: echoip
+  namespace: echoip
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - echoip-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: echoip-service
+            port:
+              number: 8080
