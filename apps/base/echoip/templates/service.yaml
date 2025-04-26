@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-service
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: echoip
+spec:
+  selector:
+    app: echoip
+  {{- if .Values.nodePort.enabled }}
+  type: NodePort
+  ports:
+  - name: web
+    port: {{ .Values.service.port | default 8080 }}
+    targetPort: 8080
+    {{- if .Values.nodePort.port }}
+    nodePort: {{ .Values.nodePort.port }}
+    {{ end }}
+  {{ else }}
+  ports:
+  - name: web
+    port: {{ .Values.service.port | default 8080 }}
+    targetPort: {{ .Values.container.port }}
+  {{ end }}
