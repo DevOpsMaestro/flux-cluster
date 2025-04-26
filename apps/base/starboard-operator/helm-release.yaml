@@ -1,11 +1,11 @@
 ---
-{{- if .Values.starboardOperator.enabled }}
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: starboard-operator
   namespace: starboard-system
 spec:
+  suspend: true # <-- set to true to disable without deleting
   interval: 10m
   chart:
     spec:
@@ -19,4 +19,3 @@ spec:
     targetNamespaces: ""
     trivy:
       ignoreUnfixed: true
-{{- end }}
