@@ -5,26 +5,36 @@ metadata:
   name: istio
   namespace: istio-system
 spec:
-  interval: 1h
+  interval: 30m
   url: https://istio-release.storage.googleapis.com/charts
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: istio-base
   namespace: istio-system
 spec:
+  interval: 5m
   chart:
     spec:
       chart: base
       version: "1.15"
+      sourceRef:
+        kind: HelmRepository
+        name: istio
+        namespace: flux-system
   values:
-    # Required for proper CRD management
+    global:
+      istioNamespace: istio-system
+    gateways:
+      istio-ingressgateway:
+        enabled: true
+    ingressGateways:
+      - name: istio-ingressgateway
+        enabled: true
     base:
       enableCRDTemplates: true
-      # Explicitly enable CRD installation
       enabled: true
       create: true
       install: true
-    # Optional: Set revision if needed
     defaultRevision: default
