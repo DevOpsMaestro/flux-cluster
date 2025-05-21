@@ -12,6 +12,10 @@ spec:
     spec:
       chart: istiod
       version: "1.15"
+      sourceRef:
+        kind: HelmRepository
+        name: istio
+        namespace: istio-system
   values:
     telemetry:
       enabled: true
