@@ -9,5 +9,4 @@ resources:
   - ../../apps/overlays/kind/openebs
   - ../../apps/overlays/kind/prometheus
   - ../../apps/overlays/kind/grafana
-  - ../../apps/overlays/kind/starboard-operator
   - ../../apps/overlays/kind/echoip
