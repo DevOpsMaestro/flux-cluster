@@ -6,3 +6,4 @@ resources:
   - ./crds/crd-all.yaml
   - helm-repository.yaml
   - helm-release.yaml
+  - operator.yaml
