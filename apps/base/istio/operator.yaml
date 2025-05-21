@@ -14,14 +14,14 @@ metadata:
   name: istio-base
   namespace: istio-system
 spec:
-  interval: 1h
   chart:
     spec:
       chart: base
       version: "1.15"
-      sourceRef:
-        kind: HelmRepository
-        name: istio
   values:
+    # Required for proper CRD management
+    base:
+      enableCRDTemplates: true
+    # Explicitly enable CRD installation
     crds:
       enabled: true
