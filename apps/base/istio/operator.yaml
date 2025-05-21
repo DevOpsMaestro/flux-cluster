@@ -22,6 +22,9 @@ spec:
     # Required for proper CRD management
     base:
       enableCRDTemplates: true
-    # Explicitly enable CRD installation
-    crds:
+      # Explicitly enable CRD installation
       enabled: true
+      create: true
+      install: true
+    # Optional: Set revision if needed
+    defaultRevision: default
