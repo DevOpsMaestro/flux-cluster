@@ -45,3 +45,10 @@ Validate current services under 'default' namespace within the cluster
 kubectl get services -o yaml | istioctl validate -f -
 
 ```
+
+Flux tree of ks for nS `flux-system`
+
+```bash
+flux tree kustomization flux-system
+
+```
