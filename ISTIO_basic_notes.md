@@ -25,3 +25,23 @@ curl -I http://localhost:8080/healthz/ready
 
 ```
 
+Check CRD installation:
+
+```bash
+kubectl get crd -l app.kubernetes.io/managed-by=Helm
+
+```
+
+Validate current deployments under 'default' namespace within the cluster
+
+```bash
+kubectl get deployments -o yaml | istioctl validate -f -
+
+```
+
+Validate current services under 'default' namespace within the cluster
+
+```bash
+kubectl get services -o yaml | istioctl validate -f -
+
+```
