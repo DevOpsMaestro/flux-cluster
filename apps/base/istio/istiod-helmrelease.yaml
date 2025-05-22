@@ -1,23 +1,22 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: istiod
-  namespace: istio-system
+  namespace: flux-system
 spec:
-  interval: 1h
-  dependsOn:
-    - name: istio-base
+  interval: 1h0m0s
   chart:
     spec:
       chart: istiod
-      version: "1.15"
+      version: "1.26.0"
       sourceRef:
         kind: HelmRepository
         name: istio
-        namespace: istio-system
+  dependsOn:
+    - name: istio-base
   values:
     telemetry:
       enabled: true
     pilot:
-      traceSampling: 100
+      traceSampling: 10.0
