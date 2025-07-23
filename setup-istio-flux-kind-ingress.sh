@@ -25,16 +25,6 @@ nodes:
       hostPort: 8080
     - containerPort: 443
       hostPort: 8443
-  - role: control-plane
-    image: kindest/node:${K8S_VER}
-  - role: control-plane
-    image: kindest/node:${K8S_VER}
-  - role: worker
-    image: kindest/node:${K8S_VER}
-  - role: worker
-    image: kindest/node:${K8S_VER}
-  - role: worker
-    image: kindest/node:${K8S_VER}
 networking:
   ipFamily: ipv4
   podSubnet: 10.244.0.0/16
