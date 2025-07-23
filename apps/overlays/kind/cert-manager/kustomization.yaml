@@ -4,3 +4,5 @@ kind: Kustomization
 namespace: cert-manager
 resources:
   - ../../../base/cert-manager/
+patches:
+  - path: delete-namespace.yaml
