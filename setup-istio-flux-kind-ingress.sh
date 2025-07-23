@@ -6,7 +6,7 @@ GITHUB_USER="DevOpsMaestro"
 REPO_NAME="flux-cluster"
 BRANCH="main"
 CLUSTER_PATH="clusters/kind"
-K8S_VER="v1.33.0"
+K8S_VER="v1.32.0"
 
 printf "\n[1/5] Creating KinD cluster: $CLUSTER_NAME\n"
 cat <<EOF | kind create cluster --name "$CLUSTER_NAME" --config=-
@@ -25,10 +25,10 @@ nodes:
       hostPort: 8080
     - containerPort: 443
       hostPort: 8443
-  # - role: control-plane
-  #   image: kindest/node:${K8S_VER}
-  # - role: control-plane
-  #   image: kindest/node:${K8S_VER}
+  - role: control-plane
+    image: kindest/node:${K8S_VER}
+  - role: control-plane
+    image: kindest/node:${K8S_VER}
   - role: worker
     image: kindest/node:${K8S_VER}
   - role: worker
