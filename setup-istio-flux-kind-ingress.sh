@@ -12,6 +12,14 @@ printf "\n[1/5] Creating KinD cluster: $CLUSTER_NAME\n"
 cat <<EOF | kind create cluster --name "$CLUSTER_NAME" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  ipFamily: ipv4
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/12
+  apiServerAddress: 127.0.0.1
+  apiServerPort: 6443
+  disableDefaultCNI: false
+  kubeProxyMode: "iptables"
 nodes:
   - role: control-plane
     image: kindest/node:${K8S_VER}
@@ -25,14 +33,6 @@ nodes:
       hostPort: 8080
     - containerPort: 443
       hostPort: 8443
-networking:
-  ipFamily: ipv4
-  podSubnet: 10.244.0.0/16
-  serviceSubnet: 10.96.0.0/12
-  apiServerAddress: 127.0.0.1
-  apiServerPort: 6443
-  disableDefaultCNI: false
-  kubeProxyMode: "iptables"
 EOF
 
 if ! command -v flux &> /dev/null; then
