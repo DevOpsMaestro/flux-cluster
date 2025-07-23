@@ -1,10 +1,11 @@
 #!/bin/bash
 set -e
 
-CLUSTER_NAME="flux-kind"
-
 echo "🗑  Deleting KinD cluster: $CLUSTER_NAME"
-kind delete cluster --name "$CLUSTER_NAME"
+
+for CLUSTER in $(kind get clusters); do
+    kind delete cluster --name ${CLUSTER}
+done
 
 # Optional cleanup
 read -p "🧹 Do you want to remove the 'flux-cluster' folder and local Docker images? [y/N]: " confirm
