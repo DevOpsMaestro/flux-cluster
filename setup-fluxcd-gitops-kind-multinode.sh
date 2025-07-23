@@ -21,16 +21,16 @@ networking:
 nodes:
   - role: control-plane
     image: kindest/node:${K8S_VER}
-  - role: control-plane
-    image: kindest/node:${K8S_VER}
-  - role: control-plane
-    image: kindest/node:${K8S_VER}
+  # - role: control-plane
+  #   image: kindest/node:${K8S_VER}
+  # - role: control-plane
+  #   image: kindest/node:${K8S_VER}
   - role: worker
     image: kindest/node:${K8S_VER}
-  - role: worker
-    image: kindest/node:${K8S_VER}
-  - role: worker
-    image: kindest/node:${K8S_VER}
+  # - role: worker
+  #   image: kindest/node:${K8S_VER}
+  # - role: worker
+  #   image: kindest/node:${K8S_VER}
 EOF
 
 if ! command -v flux &> /dev/null; then
