@@ -1,5 +1,5 @@
 ---
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1
 # https://istio.io/latest/docs/reference/config/networking/gateway/
 kind: Gateway
 metadata:
@@ -17,7 +17,7 @@ spec:
         - "*"
 
 ---
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1
 # https://istio.io/latest/docs/reference/config/networking/virtual-service/#VirtualService-hosts
 kind: VirtualService
 metadata:
