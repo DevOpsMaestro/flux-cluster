@@ -5,13 +5,14 @@ metadata:
   name: cert-manager
   namespace: cert-manager
 spec:
+  interval: 5m
   chart:
     spec:
-      chart: cert-manager
+      chart: jetstack/cert-manager
+      version: v1.x
       sourceRef:
         kind: HelmRepository
-        name: cert-manager
-      version: v1.x
-  interval: 1h
+        name: jetstack
+      interval: 1m
   values:
     installCRDs: true
