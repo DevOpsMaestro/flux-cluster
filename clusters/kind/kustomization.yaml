@@ -8,4 +8,4 @@ resources:
   - ../../apps/overlays/kind/openebs
   - ../../apps/overlays/kind/prometheus
   - ../../apps/overlays/kind/grafana
-  - ../../apps/overlays/kind/echoip
+  # - ../../apps/overlays/kind/echoip
