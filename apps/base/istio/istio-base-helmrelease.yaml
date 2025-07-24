@@ -5,6 +5,9 @@ metadata:
   name: istio-base
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: istio-system
+      kind: Namespace
   interval: 1h0m0s
   chart:
     spec:
