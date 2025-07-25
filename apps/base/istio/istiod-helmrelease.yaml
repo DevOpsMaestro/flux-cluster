@@ -3,8 +3,11 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: istiod
-  namespace: flux-system
+  namespace: istio-system
 spec:
+  dependsOn:
+    - name: istio-base
+      namespace: istio-system
   interval: 1h0m0s
   chart:
     spec:
@@ -14,8 +17,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: istio
-  dependsOn:
-    - name: istio-base
+        namespace: istio-system
   values:
     pilot:
       autoscaleEnabled: false
