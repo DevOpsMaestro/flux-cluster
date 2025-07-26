@@ -9,10 +9,9 @@ spec:
   dependsOn:
     - name: istio-base
       namespace: flux-system
-  interval: 1h
+  interval: 1h0m0s
   chart:
     spec:
-      chart: istiod
       # Pin the version for stability, must match the 'base' chart version.
       version: "~1.22.1"
       sourceRef:
