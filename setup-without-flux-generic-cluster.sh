@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-CLUSTER_NAME="flux-kind"
+CLUSTER_NAME="generic-kind"
 GITHUB_USER="DevOpsMaestro"
 REPO_NAME="flux-cluster"
 BRANCH="main"
