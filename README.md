@@ -4,7 +4,7 @@
 
 For the basic KinD deployment, run:
 
-**Note:** uncomment the line with `gh auth login` the first time in both scripts to have Git Helper (gh) assist you in getting your Token setup correctly.
+**Note:** uncomment the line with `gh auth login` the first time in both scripts to have Git Helper (gh) assist you in getting your Token setup correctly. Then comment back out.
 
 ```bash
 setup-fluxcd-gitops-kind-multinode.sh
@@ -13,14 +13,16 @@ setup-fluxcd-gitops-kind-multinode.sh
 
 &nbsp;
 
-## Istio
+## Generic Kind cluster without FluxCD 
 
-For the ISTIO in KinD deployment, run:
+For the KinD deployment, run:
 
 ```bash
-setup-istio-flux-kind-ingress.sh
+setup-without-flux-generic-cluster.sh
 
 ```
+
+&nbsp;
 
 Notes on basic deployment
 
