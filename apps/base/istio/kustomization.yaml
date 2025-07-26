@@ -7,4 +7,3 @@ resources:
   # by the 'dependsOn' in the istiod HelmRelease, but ordering here is good practice.
   - istio-base-helmrelease.yaml
   - istiod-helmrelease.yaml
-  - istio-ingress-helmrelease.yaml
