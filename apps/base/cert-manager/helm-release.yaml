@@ -9,21 +9,11 @@ spec:
   chart:
     spec:
       chart: cert-manager
-      # Pin the version for stability, but allow patch updates.
-      # This will match versions >= 1.15.0 and < 1.16.0.
-      version: "~1.15.0"
+      version: "1.x"
       sourceRef:
         kind: HelmRepository
         name: cert-manager
-        # The namespace is not needed as it's the same as the HelmRelease.
+        namespace: cert-manager
       interval: 12h
-  # Let Flux handle CRD installation and upgrades for better lifecycle management.
-  install:
-    remediation:
-      retries: 3
-    crds: CreateReplace
-  upgrade:
-    remediation:
-      retries: 3
-      remediateLastFailure: true
-    crds: CreateReplace
+  values:
+    installCRDs: true
