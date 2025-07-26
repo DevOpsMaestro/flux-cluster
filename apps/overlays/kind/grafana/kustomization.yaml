@@ -6,5 +6,5 @@ resources:
 namespace: monitoring
 generatorOptions:
   disableNameSuffixHash: true
-labels:
+commonLabels:
   app.kubernetes.io/managed-by: flux
