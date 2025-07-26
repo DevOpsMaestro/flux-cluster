@@ -28,6 +28,7 @@ spec:
   values:
     pilot:
       autoscaleEnabled: false
-      traceSampling: 10.0
     telemetry:
       enabled: true
+    pilot:
+      traceSampling: 10.0
