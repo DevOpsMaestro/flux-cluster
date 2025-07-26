@@ -16,7 +16,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: cert-manager
-        namespace: flux-system
+        # The namespace is not needed as it's the same as the HelmRelease.
       interval: 12h
   # Let Flux handle CRD installation and upgrades for better lifecycle management.
   install:
