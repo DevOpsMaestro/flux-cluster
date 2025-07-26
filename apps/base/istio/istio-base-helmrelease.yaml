@@ -9,10 +9,12 @@ spec:
   chart:
     spec:
       chart: base
-      version: "1.26.0"
+      # Pin the version for stability, but allow patch updates.
+      version: "~1.22.1"
       sourceRef:
         kind: HelmRepository
         name: istio
+      interval: 12h
   install:
     remediation:
       retries: 3
