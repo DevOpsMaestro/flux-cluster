@@ -13,15 +13,6 @@ setup-fluxcd-gitops-kind-multinode.sh
 
 &nbsp;
 
-## Istio
-
-For the ISTIO in KinD deployment, run:
-
-```bash
-setup-istio-flux-kind-ingress.sh
-
-```
-
 Notes on basic deployment
 
 [ISTIO Basic Notes](https://github.com/DevOpsMaestro/flux-cluster/blob/main/ISTIO_basic_notes.md)
