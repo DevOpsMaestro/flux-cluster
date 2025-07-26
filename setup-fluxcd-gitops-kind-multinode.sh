@@ -21,16 +21,46 @@ networking:
 nodes:
   - role: control-plane
     image: kindest/node:${K8S_VER}
-  # - role: control-plane
-  #   image: kindest/node:${K8S_VER}
-  # - role: control-plane
-  #   image: kindest/node:${K8S_VER}
+    kubeadmConfigPatches:
+    - |
+      kind: InitConfiguration
+      nodeRegistration:
+        name: control-plane-1
+  - role: control-plane
+    image: kindest/node:${K8S_VER}
+    kubeadmConfigPatches:
+    - |
+      kind: InitConfiguration
+      nodeRegistration:
+        name: control-plane-2
+  - role: control-plane
+    image: kindest/node:${K8S_VER}
+    kubeadmConfigPatches:
+    - |
+      kind: InitConfiguration
+      nodeRegistration:
+        name: control-plane-3
   - role: worker
     image: kindest/node:${K8S_VER}
+    kubeadmConfigPatches:
+    - |
+      kind: JoinConfiguration
+      nodeRegistration:
+        name: data-plane-1
   - role: worker
     image: kindest/node:${K8S_VER}
+    kubeadmConfigPatches:
+    - |
+      kind: JoinConfiguration
+      nodeRegistration:
+        name: data-plane-2
   - role: worker
     image: kindest/node:${K8S_VER}
+    kubeadmConfigPatches:
+    - |
+      kind: JoinConfiguration
+      nodeRegistration:
+        name: data-plane-3
 EOF
 
 if ! command -v flux &> /dev/null; then
