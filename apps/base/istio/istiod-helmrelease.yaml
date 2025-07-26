@@ -5,11 +5,20 @@ metadata:
   name: istiod
   namespace: flux-system
 spec:
+<<<<<<< HEAD
   targetNamespace: istio-system
   dependsOn:
     - name: istio-base
       namespace: flux-system
   interval: 1h
+||||||| 33162ea (chore: added dependsOn field under spec)
+  dependsOn:
+    - name: istio-base
+      namespace: istio-system
+  interval: 1h0m0s
+=======
+  interval: 1h0m0s
+>>>>>>> parent of 33162ea (chore: added dependsOn field under spec)
   chart:
     spec:
       chart: istiod
@@ -18,6 +27,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: istio
+<<<<<<< HEAD
         namespace: flux-system
       interval: 12h
   install:
@@ -27,6 +37,12 @@ spec:
     remediation:
       retries: 3
       remediateLastFailure: true
+||||||| 33162ea (chore: added dependsOn field under spec)
+        namespace: istio-system
+=======
+  dependsOn:
+    - name: istio-base
+>>>>>>> parent of 33162ea (chore: added dependsOn field under spec)
   values:
     pilot:
       autoscaleEnabled: false
