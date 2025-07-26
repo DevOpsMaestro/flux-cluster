@@ -3,9 +3,8 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: istio-ingress
-  namespace: flux-system
+  namespace: istio-system
 spec:
-  targetNamespace: istio-system
   interval: 1h
   chart:
     spec:
@@ -18,7 +17,7 @@ spec:
       interval: 12h
   dependsOn:
     - name: istiod
-      namespace: flux-system
+      namespace: istio-system
   values:
     # For KinD, you may need to map the service ports to the host.
     # See the KinD documentation on "Extra Port Mappings":
