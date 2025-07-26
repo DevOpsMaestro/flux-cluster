@@ -3,11 +3,12 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: istiod
-  namespace: istio-system
+  namespace: flux-system
 spec:
+  targetNamespace: istio-system
   dependsOn:
     - name: istio-base
-      namespace: istio-system
+      namespace: flux-system
   interval: 1h0m0s
   chart:
     spec:
