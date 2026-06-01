@@ -25,8 +25,7 @@ spec:
   chart:
     spec:
       chart: grafana
-      # Original pinned 7.3.10 (early 2024). Chart is now at 8.x.
-      version: "8.x"
+      version: "10.x"
       sourceRef:
         kind: HelmRepository
         name: grafana
