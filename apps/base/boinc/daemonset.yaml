@@ -15,6 +15,7 @@ spec:
       labels:
         app: boinc
     spec:
+      hostPID: true
       containers:
         - name: boinc
           image: boinc/client:arm64v8
