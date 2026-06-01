@@ -1,0 +1,50 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: boinc
+  namespace: boinc
+  labels:
+    app: boinc
+spec:
+  selector:
+    matchLabels:
+      app: boinc
+  template:
+    metadata:
+      labels:
+        app: boinc
+    spec:
+      hostPID: true
+      containers:
+        - name: boinc
+          image: boinc/client:arm64v8
+          securityContext:
+            allowPrivilegeEscalation: false
+          env:
+            - name: BOINC_GUI_RPC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: boinc-secret
+                  key: gui-rpc-password
+            - name: BOINC_CMD_LINE_OPTIONS
+              value: "--allow_remote_gui_rpc"
+          ports:
+            - name: rpc
+              containerPort: 31416
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          volumeMounts:
+            - name: boinc-data
+              mountPath: /var/lib/boinc
+      volumes:
+        - name: boinc-data
+          hostPath:
+            path: /var/lib/boinc
+            type: DirectoryOrCreate

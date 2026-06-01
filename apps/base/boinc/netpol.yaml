@@ -1,0 +1,25 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: boinc-egress
+  namespace: boinc
+spec:
+  podSelector:
+    matchLabels:
+      app: boinc
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS resolution
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Allow outbound to BOINC project servers (Rosetta@Home and similar)
+    - ports:
+        - port: 80
+          protocol: TCP
+        - port: 443
+          protocol: TCP

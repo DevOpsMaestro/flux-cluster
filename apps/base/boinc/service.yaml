@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: boinc
+  namespace: boinc
+  labels:
+    app: boinc
+spec:
+  selector:
+    app: boinc
+  ports:
+    - name: rpc
+      port: 31416
+      targetPort: 31416
+      protocol: TCP
