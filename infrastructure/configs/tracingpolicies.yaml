@@ -1,0 +1,88 @@
+---
+# Detect interactive shell execution inside containers.
+#
+# Every time any process inside a pod calls execve() with a shell binary
+# as the target, Tetragon emits a process_kprobe event. This is the primary
+# signal for "kubectl exec" sessions — an operator or attacker opens a shell
+# in a running container, which shows up here as an execve of /bin/sh or
+# /bin/bash with the parent being the container's init process.
+#
+# Events are visible in:
+#   kubectl logs -n tetragon ds/tetragon -c export-stdout | grep process_kprobe
+# and in the Tetragon kubectl exec Grafana dashboard (Loki datasource).
+#
+# action: Post — emit a process_kprobe event to the event stream.
+# No enforcement (Sigkill) so legitimate debugging is not broken; the
+# signal is purely observational. Add a Sigkill action here to block
+# interactive shells in production workloads.
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: shell-exec-detection
+spec:
+  kprobes:
+    - call: "sys_execve"
+      syscall: true
+      args:
+        - index: 0
+          type: "string"
+      selectors:
+        - matchArgs:
+            - index: 0
+              operator: "Postfix"
+              values:
+                - "/sh"
+                - "/bash"
+                - "/dash"
+                - "/zsh"
+                - "/fish"
+          matchActions:
+            - action: Post
+---
+# Detect opens of sensitive files that should never be read by normal workloads.
+#
+# Hooks sys_openat (the modern open syscall) and fires when any process
+# inside a pod opens a path that matches a known-sensitive prefix. Legitimate
+# reads of these files by infrastructure components (Tetragon itself, node
+# agents) will appear in the stream — use the pod/namespace context in each
+# event to distinguish noise from real signals.
+#
+# Covered paths:
+#   /etc/shadow          — password hashes; no container should read this
+#   /etc/sudoers         — privilege escalation config
+#   /root/.ssh           — root SSH keys on the node
+#   /proc/1/environ      — PID-1 env may contain injected secrets
+#   /var/run/secrets     — Kubernetes service account tokens
+#   /.aws/credentials    — AWS IAM credentials
+#   /.aws/config         — AWS config (often contains role ARNs)
+#   /etc/kubernetes      — kubeconfig / apiserver certs (control-plane nodes)
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: sensitive-file-access
+spec:
+  kprobes:
+    - call: "sys_openat"
+      syscall: true
+      args:
+        - index: 0
+          type: "int"
+        - index: 1
+          type: "string"
+        - index: 2
+          type: "int"
+      selectors:
+        - matchArgs:
+            - index: 1
+              operator: "Prefix"
+              values:
+                - "/etc/shadow"
+                - "/etc/sudoers"
+                - "/root/.ssh"
+                - "/proc/1/environ"
+                - "/var/run/secrets"
+                - "/.aws/credentials"
+                - "/.aws/config"
+                - "/etc/kubernetes"
+          matchActions:
+            - action: Post

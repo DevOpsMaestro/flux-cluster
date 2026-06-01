@@ -1,0 +1,421 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+  namespace: flux-system
+spec:
+  interval: 1h
+  targetNamespace: observability
+  dependsOn:
+    - name: openebs
+      namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      # Original pinned 56.7.0 (early 2024). Chart is now in the 70s.
+      version: "72.x"
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+      interval: 24h
+  values:
+    # Grafana managed as a separate HelmRelease for independent lifecycle
+    grafana:
+      enabled: false
+
+    alertmanager:
+      enabled: true
+      alertmanagerSpec:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+
+    # The Prometheus Operator manages the StatefulSets for Prometheus and
+    # AlertManager. Its own pod needs explicit resources, and the config-reloader
+    # sidecar it injects into every managed StatefulSet needs resource values too
+    # (configReloaderCpu/Memory set both requests and limits for that container).
+    prometheusOperator:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+      configReloaderCpu: "100m"
+      configReloaderMemory: "50Mi"
+
+    kube-state-metrics:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+
+    prometheus-node-exporter:
+      # node-exporter uses hostPID, hostNetwork, and mounts /proc and /sys —
+      # an Istio sidecar cannot co-exist with those host-network settings.
+      podLabels:
+        sidecar.istio.io/inject: "false"
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 64Mi
+    prometheus:
+      prometheusSpec:
+        # NOTE: no volumeClaimTemplate — storage is ephemeral (emptyDir).
+        # Metrics are lost on pod restart. Acceptable for a KinD dev cluster;
+        # add a volumeClaimTemplate here for any persistent deployment.
+        retention: 7d
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        # Pick up ServiceMonitors from all namespaces so Cilium's
+        # operator-emitted ServiceMonitors (in kube-system) are scraped.
+        serviceMonitorSelectorNilUsesHelmValues: false
+        serviceMonitorSelector: {}
+        serviceMonitorNamespaceSelector: {}
+        podMonitorSelectorNilUsesHelmValues: false
+        podMonitorSelector: {}
+        podMonitorNamespaceSelector: {}
+        # Cilium agent and Hubble relay metrics are exposed on these ports.
+        # The ServiceMonitors created by the Cilium chart are sufficient;
+        # the additionalScrapeConfigs below serve as a fallback when
+        # serviceMonitor.enabled is false in the Cilium values.
+        additionalScrapeConfigs:
+          - job_name: cilium-agent
+            honor_labels: true
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - kube-system
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_k8s_app]
+                action: keep
+                regex: cilium
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:9962"
+              # Propagate pod metadata so dashboards can filter by pod/node/k8s_app
+              - source_labels: [__meta_kubernetes_pod_label_k8s_app]
+                target_label: k8s_app
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
+              - source_labels: [__meta_kubernetes_pod_node_name]
+                target_label: node
+              - source_labels: [__meta_kubernetes_namespace]
+                target_label: namespace
+          - job_name: cilium-operator
+            honor_labels: true
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - kube-system
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_name]
+                action: keep
+                regex: cilium-operator
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:9963"
+              - source_labels: [__meta_kubernetes_pod_label_io_cilium_app]
+                target_label: io_cilium_app
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
+              - source_labels: [__meta_kubernetes_pod_node_name]
+                target_label: node
+          # Scrapes hubble-relay pods on port 9965 for relay-level metrics
+          # (e.g. connection counts, gRPC errors). Does NOT capture flow
+          # counters (hubble_flows_processed_total, hubble_drop_total, etc.) —
+          # those come from Cilium agent pods; see hubble-agent-metrics below.
+          - job_name: hubble-relay
+            honor_labels: true
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - kube-system
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_k8s_app]
+                action: keep
+                regex: hubble-relay
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:9965"
+          - job_name: tetragon
+            honor_labels: true
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - tetragon
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                action: keep
+                regex: tetragon
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:2112"
+          - job_name: tetragon-operator
+            honor_labels: true
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - tetragon
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                action: keep
+                regex: tetragon-operator
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:2113"
+          # Scrapes Cilium agent pods on port 9965 for flow-level metrics
+          # (hubble_flows_processed_total, hubble_drop_total, etc.). These are
+          # distinct from the relay-level metrics in the hubble-relay job above.
+          - job_name: hubble-agent-metrics
+            honor_labels: true
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - kube-system
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_k8s_app]
+                action: keep
+                regex: cilium
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:9965"
+              - source_labels: [__meta_kubernetes_pod_label_k8s_app]
+                target_label: k8s_app
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
+              - source_labels: [__meta_kubernetes_pod_node_name]
+                target_label: node
+          - job_name: flux-controllers
+            honor_labels: true
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - flux-system
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_part_of]
+                action: keep
+                regex: flux
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:8080"
+          - job_name: cert-manager
+            honor_labels: true
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - cert-manager
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                action: keep
+                regex: cert-manager
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:9402"
+          - job_name: istiod
+            honor_labels: true
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - istio-system
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app]
+                action: keep
+                regex: istiod
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:15014"
+          # Scrapes the merged Envoy metrics endpoint on every pod that has an
+          # Istio sidecar injected. Data appears once workloads run in
+          # injection-enabled namespaces.
+          - job_name: istio-proxy
+            honor_labels: true
+            kubernetes_sd_configs:
+              - role: pod
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_annotation_sidecar_istio_io_status]
+                action: keep
+                regex: .+
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:15020"
+              - source_labels: [__meta_kubernetes_namespace]
+                target_label: namespace
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
+              - source_labels: [__meta_kubernetes_pod_label_app]
+                target_label: app
+              - source_labels: [__meta_kubernetes_pod_label_version]
+                target_label: version
+          - job_name: falco
+            honor_labels: true
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - falco
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                action: keep
+                regex: falco
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:8765"
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
+              - source_labels: [__meta_kubernetes_pod_node_name]
+                target_label: node
+          # Kyverno exposes metrics on port 8000 across four controllers
+          # (admission, background, cleanup, reports). ServiceMonitor CRD lives
+          # in the apps layer — same circular-dependency as Cilium/Falco/Tetragon.
+          - job_name: kyverno
+            honor_labels: true
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - kyverno
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_component]
+                action: keep
+                regex: admission-controller|background-controller|cleanup-controller|reports-controller
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:8000"
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_component]
+                target_label: component
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
+              - source_labels: [__meta_kubernetes_pod_node_name]
+                target_label: node
+          # Kubescape operator exposes metrics on port 8080. The chart adds
+          # prometheus.io/scrape: "true" and prometheus.io/port: "8080"
+          # annotations when capabilities.prometheusAnnotations: enable.
+          # ServiceMonitor CRD lives in the apps layer — same circular-dependency
+          # as Cilium/Falco/Tetragon — so additionalScrapeConfigs is used instead.
+          - job_name: kubescape
+            kubernetes_sd_configs:
+              - role: service
+                namespaces:
+                  names:
+                    - kubescape
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_service_name]
+                action: keep
+                regex: prometheus-exporter
+              - source_labels: [__meta_kubernetes_namespace]
+                target_label: namespace
+              - source_labels: [__meta_kubernetes_service_name]
+                target_label: job
+
+          # OTel Collector exposes pipeline metrics on port 8888:
+          # spans received/dropped, export success rates, memory usage.
+          - job_name: opentelemetry-collector
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - observability
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                action: keep
+                regex: opentelemetry-collector
+              - source_labels: [__address__]
+                target_label: __address__
+                regex: (.+):\d+
+                replacement: $1:8888
+              - source_labels: [__meta_kubernetes_namespace]
+                target_label: namespace
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
+
+          # SPIRE server and agent both expose Prometheus metrics on port 9988
+          # when telemetry.prometheus.enabled=true. PodMonitor has the same
+          # circular-dependency as other infrastructure tools, so pod-role
+          # discovery via additionalScrapeConfigs is used instead.
+          - job_name: spire-server
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - spire
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                action: keep
+                regex: server
+              - source_labels: [__address__]
+                target_label: __address__
+                regex: (.+):\d+
+                replacement: $1:9988
+              - source_labels: [__meta_kubernetes_namespace]
+                target_label: namespace
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
+
+          - job_name: spire-agent
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - spire
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                action: keep
+                regex: agent
+              - source_labels: [__address__]
+                target_label: __address__
+                regex: (.+):\d+
+                replacement: $1:9988
+              - source_labels: [__meta_kubernetes_namespace]
+                target_label: namespace
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod

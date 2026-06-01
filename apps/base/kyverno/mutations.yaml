@@ -1,0 +1,38 @@
+---
+# Mutation: Disable Istio sidecar injection on Jobs in the observability namespace.
+#
+# Istio sidecars on short-lived Job pods prevent Job completion — the sidecar
+# runs indefinitely and the Job controller waits for all containers to exit.
+# Helm hook Jobs (e.g. kube-prometheus-stack admission-webhook cert management)
+# are the primary trigger. Long-running workloads in observability
+# (Deployments, StatefulSets) still receive sidecars via the namespace label.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: mutate-jobs-disable-istio-injection
+  annotations:
+    policies.kyverno.io/title: Disable Istio injection on Jobs
+    policies.kyverno.io/category: Service Mesh
+    policies.kyverno.io/subject: Job
+    policies.kyverno.io/description: >-
+      Adds sidecar.istio.io/inject: "false" to all Job pod templates in the
+      observability namespace to prevent Istio sidecars from blocking Job
+      completion. Deployments and StatefulSets in the namespace continue to
+      receive sidecars via the namespace-level istio-injection: enabled label.
+spec:
+  rules:
+    - name: disable-istio-on-observability-jobs
+      match:
+        any:
+          - resources:
+              kinds:
+                - Job
+              namespaces:
+                - observability
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              metadata:
+                labels:
+                  sidecar.istio.io/inject: "false"

@@ -1,0 +1,54 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: promtail
+  namespace: flux-system
+spec:
+  interval: 1h
+  targetNamespace: observability
+  dependsOn:
+    - name: loki
+      namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: promtail
+      version: "6.x"
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: flux-system
+      interval: 24h
+  values:
+    # Promtail is a DaemonSet that reads host log paths — sidecar injection
+    # would intercept its connections but Promtail needs plain-text access
+    # to Loki. Loki's PeerAuthentication keeps port 3100 PERMISSIVE for this.
+    podLabels:
+      sidecar.istio.io/inject: "false"
+
+    config:
+      clients:
+        - url: http://observability-loki.observability.svc.cluster.local:3100/loki/api/v1/push
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+    # Tolerate control-plane taint so Tetragon logs from the control-plane node
+    # are collected (Tetragon runs on every node including control-plane).
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule

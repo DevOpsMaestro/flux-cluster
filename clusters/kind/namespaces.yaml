@@ -1,0 +1,9 @@
+---
+# Explicit label on the default namespace so istioctl analyze does not report
+# it as unlabelled. No workloads run here; injection stays disabled.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: default
+  labels:
+    istio-injection: disabled

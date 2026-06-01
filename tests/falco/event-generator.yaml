@@ -1,0 +1,59 @@
+---
+# Falco live-cluster smoke test using the official falcosecurity/event-generator.
+#
+# Fires the standard syscall action suite inside a disposable container so Falco
+# (running as a DaemonSet on the same node) can detect the events via eBPF.
+# The `make test-falco` target deploys this Job, waits for completion, queries
+# the Falco pod logs on the same node, and verifies expected rules fired.
+#
+# Note: the `event-generator test` subcommand requires Falco's HTTP output to be
+# configured at deploy time (the event-generator's pod IP is not known in advance),
+# so `run syscall` + post-hoc log inspection is the portable Kubernetes-native
+# approach.
+#
+# Kyverno will audit-flag this Job (privileged container, falco-test is not in the
+# PSS/escalation exclusion lists) but will NOT block it — all policies are in Audit
+# mode. This is intentional: the event-generator must run as root to read
+# /etc/shadow and other sensitive paths that trigger the Falco rules.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: falco-test
+  labels:
+    istio-injection: disabled
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: event-generator
+  namespace: falco-test
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: falco-event-generator
+  namespace: falco-test
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      serviceAccountName: event-generator
+      restartPolicy: Never
+      containers:
+        - name: event-generator
+          image: falcosecurity/event-generator:0.13.0
+          args:
+            - run
+            - syscall
+            - --loop=false
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

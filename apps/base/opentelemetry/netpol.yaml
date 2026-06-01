@@ -1,0 +1,43 @@
+---
+# Any pod with an Istio sidecar — in any namespace — sends OTLP spans to the
+# OTel Collector on gRPC (4317) or HTTP (4318). The source namespace is open-ended
+# (demo, observability, istio-system, …), so we allow all namespaces rather than
+# enumerate them.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: opentelemetry-collector-allow-otlp-ingress
+  namespace: observability
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-collector
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - port: 4317
+          protocol: TCP
+        - port: 4318
+          protocol: TCP
+---
+# OTel Collector exports traces to Tempo (4317) and exposes self-metrics on 8888.
+# Tempo is in the same namespace (covered by allow-intra-namespace).
+# Egress to other namespaces is only needed if the collector ever scrapes external
+# targets; for now the pipeline is traces → Tempo only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: opentelemetry-collector-allow-egress
+  namespace: observability
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-collector
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector: {}

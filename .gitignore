@@ -1,0 +1,49 @@
+# created by workflow actions
+bin/flux
+
+.DS_Store
+**/.DS_Store
+
+# stuff that is unique to me
+.backups
+**/.backups
+.pdf
+**/*.pdf
+Scratch/
+**/Scratch
+
+#
+.vaultpass
+**/.vaultpass
+
+.idea
+.idea/**
+
+# ==========================================
+# Claude AI Exclusions
+# ==========================================
+# Exclude Claude's local workspace memory, conversation history, and cache
+.claude/
+
+# ==========================================
+# Microsoft Copilot / General AI Context Exclusions
+# ==========================================
+# Prevent Copilot from reading secrets, keys, and environment variables
+.env
+.env.*
+*.pem
+*.key
+secrets.json
+
+# Prevent Copilot from reading heavy build artifacts or dependencies (reduces AI noise)
+node_modules/
+vendor/
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# Ignore custom/community Copilot extension ignore files if used
+.copilotignore
+

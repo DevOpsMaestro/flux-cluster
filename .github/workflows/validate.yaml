@@ -1,0 +1,79 @@
+---
+name: Validate
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flux CLI
+        uses: fluxcd/flux2/action@v2.8.8
+
+      - name: Validate infrastructure manifests
+        run: kustomize build ./infrastructure/controllers
+
+      - name: Validate apps base manifests
+        run: |
+          for dir in \
+              apps/base/prometheus \
+              apps/base/grafana \
+              apps/base/loki \
+              apps/base/promtail \
+              apps/base/tempo \
+              apps/base/opentelemetry \
+              apps/base/kyverno \
+              apps/base/demo \
+              apps/base/notifications \
+              apps/base/istio \
+              apps/base/envoy-gateway; do
+            echo "==> kustomize build $dir"
+            kustomize build "$dir"
+          done
+
+      - name: Validate kind overlay manifests
+        run: kustomize build ./apps/overlays/kind
+
+      - name: Validate cluster entrypoint
+        run: kustomize build ./clusters/kind
+
+      - name: Install Kyverno CLI
+        env:
+          KYVERNO_CLI_VERSION: v1.13.4
+        run: |
+          ARCH=$(uname -m | sed 's/aarch64/arm64/')
+          curl -LO "https://github.com/kyverno/kyverno/releases/download/${KYVERNO_CLI_VERSION}/kyverno-cli_${KYVERNO_CLI_VERSION}_linux_${ARCH}.tar.gz"
+          tar -xzf "kyverno-cli_${KYVERNO_CLI_VERSION}_linux_${ARCH}.tar.gz"
+          sudo mv kyverno /usr/local/bin/kyverno
+
+      - name: Test Kyverno policies
+        run: kyverno test apps/base/kyverno/tests/
+
+      - name: Install Kubescape CLI
+        env:
+          KUBESCAPE_VERSION: v4.0.8
+        run: |
+          VERSION_CLEAN="${KUBESCAPE_VERSION#v}"
+          ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
+          curl -fsSL "https://github.com/kubescape/kubescape/releases/download/${KUBESCAPE_VERSION}/kubescape_${VERSION_CLEAN}_linux_${ARCH}" -o kubescape
+          chmod +x kubescape
+          sudo mv kubescape /usr/local/bin/kubescape
+
+      - name: Kubescape offline scan (NSA + MITRE)
+        run: |
+          kubescape scan framework nsa,mitre \
+            --format junit \
+            --output kubescape-results.xml \
+            --compliance-threshold 80 \
+            ./infrastructure/ ./apps/
+
+      - name: Upload Kubescape scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kubescape-results
+          path: kubescape-results.xml
+          if-no-files-found: warn

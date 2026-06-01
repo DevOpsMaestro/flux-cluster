@@ -1,0 +1,274 @@
+# SOPS + Age Secrets Management
+
+Cluster: `flux-kind` · GitOps secrets encrypted with [SOPS](https://github.com/getsops/sops) + [Age](https://github.com/FiloSottile/age)
+
+---
+
+## Overview
+
+SOPS (Secrets OPerationS) encrypts Kubernetes Secret manifests before they are committed to Git. Age is the encryption backend — a fast, modern replacement for GPG with a simpler key format.
+
+**Trust boundary:**
+
+| What | Where it lives | Safe to make public? |
+|------|---------------|----------------------|
+| Age public key | `.sops.yaml` (committed to repo) | Yes — only used to encrypt |
+| Age private key | `~/.config/sops/age/keys.txt` on your machine + `sops-age` secret in the cluster | No — guards decryption |
+| Encrypted secret YAML | Git / GitHub | Yes — unreadable without the private key |
+| Cleartext secret YAML | Never on disk, never in Git | — |
+
+Flux's `kustomize-controller` reads the `sops-age` secret from the cluster at reconciliation time and decrypts the YAML **in memory** before applying it to the API server. Cleartext values never touch the filesystem or the Git history.
+
+---
+
+## Prerequisites
+
+```bash
+brew install age sops
+
+# Verify both are available
+make check-tools
+```
+
+---
+
+## One-Time Setup
+
+### 1. Generate the Age key pair
+
+```bash
+make sops-setup
+```
+
+This creates `~/.config/sops/age/keys.txt` containing both the public and private key. The command is idempotent — it skips generation if the file already exists and just prints the public key.
+
+Example output:
+```
+Public key: age1abc123...xyz
+```
+
+### 2. Back up the private key immediately
+
+Store the entire contents of `~/.config/sops/age/keys.txt` in a password manager (1Password, Bitwarden, etc.) before doing anything else.
+
+**If you lose the private key, every SOPS-encrypted secret in this repository becomes permanently unreadable.** There is no recovery path. The backup must happen now, before the key encrypts anything.
+
+### 3. Configure `.sops.yaml` with your public key
+
+Open `.sops.yaml` at the repo root and replace the placeholder:
+
+```yaml
+# .sops.yaml
+creation_rules:
+  - path_regex: apps/base/.*-secret\.yaml$
+    encrypted_regex: ^(data|stringData)$
+    age: age1REPLACEME   ← replace this with your public key from step 1
+```
+
+The `path_regex` rule matches any `*-secret.yaml` file under `apps/base/` — this is the naming convention for secrets in this project. `encrypted_regex` restricts encryption to the `data` and `stringData` fields, so `kind`, `metadata`, and `apiVersion` remain readable in Git.
+
+Commit the updated `.sops.yaml` — the public key is safe to be public:
+
+```bash
+git add .sops.yaml
+git commit -m "chore(sops): set age public key"
+```
+
+### 4. Load the private key into the running cluster
+
+```bash
+make sops-load-key
+```
+
+This creates the `sops-age` secret in the `flux-system` namespace. The command is idempotent — safe to re-run after every `make bootstrap`.
+
+Verify it was created:
+
+```bash
+kubectl get secret sops-age -n flux-system
+```
+
+---
+
+## Encrypt the Existing Grafana Admin Secret
+
+`apps/base/grafana/admin-secret.yaml` currently contains a plaintext password. Encrypt it now:
+
+```bash
+sops --encrypt --in-place apps/base/grafana/admin-secret.yaml
+```
+
+The file is transformed from:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-admin-secret
+  namespace: flux-system
+type: Opaque
+stringData:
+  admin-password: "changeme"
+```
+
+to something like:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-admin-secret
+  namespace: flux-system
+type: Opaque
+stringData:
+  admin-password: ENC[AES256_GCM,data:abc123...,type:str]
+sops:
+  age:
+    - recipient: age1abc123...
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        ...
+```
+
+The `sops:` block at the bottom is metadata SOPS uses to identify the encryption key. The `stringData.admin-password` field is now ciphertext.
+
+Commit and push:
+
+```bash
+git add apps/base/grafana/admin-secret.yaml
+git commit -m "feat(secrets): encrypt grafana admin secret with SOPS"
+git push
+```
+
+---
+
+## Verify Flux Decrypts It
+
+After pushing, trigger a reconciliation:
+
+```bash
+flux reconcile source git flux-system
+flux reconcile kustomization apps --with-source
+```
+
+Confirm the secret was decrypted and applied to the cluster:
+
+```bash
+kubectl get secret grafana-admin-secret -n flux-system
+kubectl get secret grafana-admin-secret -n flux-system \
+  -o jsonpath='{.data.admin-password}' | base64 -d
+# expected: changeme
+```
+
+Confirm Grafana still works:
+
+```bash
+curl -s http://grafana.local:8080/api/health | python3 -m json.tool
+# expected: "database": "ok"
+```
+
+---
+
+## Day-to-Day: Editing an Existing Encrypted Secret
+
+SOPS opens the decrypted file in your `$EDITOR`, re-encrypts transparently on save:
+
+```bash
+sops apps/base/grafana/admin-secret.yaml
+```
+
+Change the value, save and quit. SOPS writes the re-encrypted file back to disk. Commit and push — the new ciphertext is the only thing that changes in Git.
+
+---
+
+## Day-to-Day: Adding a New Secret
+
+Follow the `*-secret.yaml` naming convention so `.sops.yaml`'s `path_regex` matches automatically.
+
+1. Create the cleartext manifest:
+
+```bash
+cat > apps/base/my-app/my-app-secret.yaml <<'EOF'
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-app-secret
+  namespace: my-namespace
+type: Opaque
+stringData:
+  api-key: "some-value"
+EOF
+```
+
+2. Encrypt in-place:
+
+```bash
+sops --encrypt --in-place apps/base/my-app/my-app-secret.yaml
+```
+
+3. Add to the app's `kustomization.yaml` resources list, commit, and push.
+
+The `decryption:` block is already configured on the `apps` Kustomization — no additional Flux configuration is needed.
+
+---
+
+## Cluster Rebuild Procedure
+
+After `make destroy`, the cluster is gone and the `sops-age` secret is lost with it. The bootstrap script re-loads it automatically on the next `make bootstrap` if your age key exists at the standard path:
+
+```bash
+make destroy
+make bootstrap        # step 9/10 re-creates sops-age automatically
+flux get all -A       # watch reconciliation — secrets decrypt on first sync
+```
+
+If you are on a new machine and need to restore the key from your password manager first:
+
+```bash
+mkdir -p ~/.config/sops/age
+# paste the key contents from your password manager:
+cat > ~/.config/sops/age/keys.txt <<'EOF'
+# created: ...
+# public key: age1...
+AGE-SECRET-KEY-1...
+EOF
+make bootstrap
+```
+
+---
+
+## Architecture Reference
+
+The three pieces that wire together:
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| SOPS config | `.sops.yaml` | Tells `sops` which files to encrypt and which public key to use |
+| Flux decryption | `clusters/kind/apps.yaml` `spec.decryption` | Tells `kustomize-controller` to decrypt with SOPS using the `sops-age` secret |
+| Private key | `sops-age` secret in `flux-system` | The age private key the controller uses to decrypt at apply time |
+
+The `decryption:` block in `clusters/kind/apps.yaml`:
+
+```yaml
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+```
+
+Only the `apps` Kustomization has this block because that is the layer where encrypted secrets currently live. If encrypted secrets are added to the `infrastructure-configs` layer in the future, the same block must be added to `clusters/kind/infrastructure-configs.yaml`.
+
+---
+
+## Recovery: Lost Private Key
+
+If the age private key is lost (machine failure, accidental deletion, no backup):
+
+1. Every SOPS-encrypted secret in the repo is permanently unreadable.
+2. Generate a new key pair with `make sops-setup`.
+3. Update `.sops.yaml` with the new public key.
+4. Recreate every encrypted secret manually (you must know the original plaintext values).
+5. Re-encrypt all secrets with the new key.
+6. Run `make sops-load-key` to load the new key into the cluster.
+
+**Prevention:** Back up `~/.config/sops/age/keys.txt` to a password manager immediately after generation (see step 2 of One-Time Setup). This is the single most important step in the entire setup.

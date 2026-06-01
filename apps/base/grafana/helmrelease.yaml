@@ -1,0 +1,152 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: grafana
+  namespace: flux-system
+spec:
+  interval: 1h
+  targetNamespace: observability
+  dependsOn:
+    - name: kube-prometheus-stack
+      namespace: flux-system
+    - name: loki
+      namespace: flux-system
+    - name: tempo
+      namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: grafana
+      # Original pinned 7.3.10 (early 2024). Chart is now at 8.x.
+      version: "8.x"
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: flux-system
+      interval: 24h
+  valuesFrom:
+    - kind: Secret
+      name: grafana-admin-secret
+      valuesKey: admin-user
+      targetPath: adminUser
+    - kind: Secret
+      name: grafana-admin-secret
+      valuesKey: admin-password
+      targetPath: adminPassword
+  values:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+    # The grafana chart injects a sidecar container that watches ConfigMaps for
+    # dashboard and datasource changes. Its resources are separate from the main
+    # Grafana container and must be set explicitly.
+    sidecar:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+    service:
+      portName: http
+    grafana.ini:
+      dashboards:
+        default_home_dashboard_path: /var/lib/grafana/dashboards/kubernetes/node-exporter-full.json
+    datasources:
+      datasources.yaml:
+        apiVersion: 1
+        datasources:
+          - name: Prometheus
+            type: prometheus
+            uid: prometheus
+            url: http://observability-kube-prometh-prometheus.observability.svc.cluster.local:9090
+            isDefault: true
+          - name: Loki
+            type: loki
+            uid: loki
+            url: http://observability-loki.observability.svc.cluster.local:3100
+            isDefault: false
+          - name: Tempo
+            type: tempo
+            uid: tempo
+            url: http://observability-tempo.observability.svc.cluster.local:3200
+            isDefault: false
+            jsonData:
+              # Correlate traces → logs: jump from a span to Loki logs at the same timestamp.
+              tracesToLogsV2:
+                datasourceUid: loki
+                filterByTraceID: true
+              # Correlate traces → metrics: jump from a service in a trace to Prometheus.
+              tracesToMetrics:
+                datasourceUid: prometheus
+              # Enable trace search via Loki derived fields.
+              lokiSearch:
+                datasourceUid: loki
+              # Render service dependency graph from trace data.
+              nodeGraph:
+                enabled: true
+              # Show service map in the Tempo explore view using Prometheus metrics.
+              serviceMap:
+                datasourceUid: prometheus
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+          - name: default
+            orgId: 1
+            folder: ""
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/default
+          - name: custom
+            orgId: 1
+            folder: ""
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/custom
+          - name: cilium
+            orgId: 1
+            folder: ""
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/cilium
+          - name: istio
+            orgId: 1
+            folder: ""
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/istio
+          - name: kubernetes
+            orgId: 1
+            folder: ""
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/kubernetes
+    dashboardsConfigMaps:
+      custom: grafana-dashboards-custom
+      cilium: grafana-dashboards-cilium
+      istio: grafana-dashboards-istio
+      kubernetes: grafana-dashboards-kubernetes

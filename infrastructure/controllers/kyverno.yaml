@@ -1,0 +1,98 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kyverno
+  labels:
+    istio-injection: disabled
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kyverno
+  namespace: flux-system
+spec:
+  interval: 1h
+  targetNamespace: kyverno
+  dependsOn:
+    - name: cilium
+      namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: kyverno
+      version: "3.x"
+      sourceRef:
+        kind: HelmRepository
+        name: kyverno
+        namespace: flux-system
+      interval: 24h
+  values:
+    # Single replica per component — KinD resource optimisation.
+    # Scale to 3 for HA in production.
+    admissionController:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    backgroundController:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 250m
+          memory: 256Mi
+    cleanupController:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 250m
+          memory: 256Mi
+    reportsController:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 250m
+          memory: 256Mi
+
+    # Globally exclude system and infrastructure namespaces at the webhook level.
+    # Kyverno will not receive admission events for these at all, which is more
+    # efficient than per-policy exclusions and guarantees no accidental enforcement.
+    # Namespaces that need partial coverage (tetragon, openebs, observability,
+    # envoy-ingress) are excluded only in the specific policies they would violate.
+    config:
+      resourceFilters:
+        - '[*,kube-system,*]'
+        - '[*,kube-public,*]'
+        - '[*,kube-node-lease,*]'
+        - '[*,flux-system,*]'
+        - '[*,istio-system,*]'
+        - '[*,cert-manager,*]'
+        - '[*,kyverno,*]'
+        - '[*,local-path-storage,*]'
+
+    # Ignore means the API server allows the request if Kyverno is unavailable.
+    # Safe for initial rollout on a single-node KinD setup. Change to Fail only
+    # after Kyverno is HA (replicas: 3) and proven stable across a full restart.
+    webhooksFailurePolicy: Ignore

@@ -1,0 +1,250 @@
+---
+# Policy: Pod Security Standards — Baseline
+#
+# Standard: Kubernetes Pod Security Standards (CNCF / Kubernetes SIG Auth)
+# Reference: https://kubernetes.io/docs/concepts/security/pod-security-standards/
+# CIS Kubernetes Benchmark v1.9: §5.2.1–5.2.6, §5.2.8–5.2.9
+#
+# The Baseline profile is a single rule covering the most critical pod-level
+# controls without blocking legitimate infrastructure workloads:
+#   - Privileged containers (§5.2.1)
+#   - HostProcess containers (§5.2.2)
+#   - Host namespaces — hostNetwork, hostPID, hostIPC (§5.2.3–5.2.5)
+#   - HostPath volumes (§5.2.6)
+#   - Dangerous Linux capabilities (§5.2.8–5.2.9)
+#   - Unsafe AppArmor profiles, Seccomp profiles, and sysctls
+#
+# Mode: Audit — violations are reported and visible in Grafana/Loki but not blocked.
+# Tighten individual namespaces to Restricted via a separate namespace-scoped
+# ClusterPolicy once workloads in that namespace are hardened.
+#
+# Per-policy exclusions (global infra exclusions are in the HelmRelease resourceFilters):
+#   tetragon      — eBPF security agents require privileged mode and kernel capabilities
+#   openebs       — localpv provisioner mounts host paths for persistent storage
+#   observability — node-exporter uses hostPID, hostNetwork, and hostPath to read /proc and /sys
+#   envoy-ingress — nginx nodeport-proxy runs with hostNetwork to receive traffic on port 8888
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pod-security-baseline
+  annotations:
+    policies.kyverno.io/title: Pod Security Standards Baseline
+    policies.kyverno.io/category: Pod Security
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Enforces the Kubernetes Pod Security Standards Baseline profile cluster-wide.
+      Covers privileged containers, host namespaces, host paths, dangerous capabilities,
+      AppArmor, Seccomp, and unsafe sysctls. Start in Audit; tighten per namespace.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: baseline
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - tetragon
+                - openebs
+                - observability
+                - envoy-ingress
+                - falco
+                # Istio injects an istio-init initContainer with NET_ADMIN and
+                # NET_RAW capabilities to configure iptables rules. These exceed
+                # the Baseline profile. Switch to Istio CNI to remove the need
+                # for this exclusion.
+                - demo
+      validate:
+        podSecurity:
+          level: baseline
+          version: latest
+---
+# Policy: Disallow Latest Image Tag
+#
+# Standard: CNCF Software Supply Chain Best Practices (TAG Security)
+# CIS Kubernetes Benchmark v1.9: §5.5.1
+# OWASP Kubernetes Top 10: K04 — Policy Enforcement
+#
+# Mutable image tags (especially ':latest') allow silent image substitution between
+# deployments — a well-known supply-chain attack vector. Tagless images implicitly
+# resolve to ':latest'. Both cases defeat rollback, reproducibility, and audit trails.
+#
+# Two rules in a single policy:
+#   require-image-tag  — every image must include an explicit ':tag'
+#   disallow-latest    — the tag must not be 'latest'
+#
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-image-tag
+  annotations:
+    policies.kyverno.io/title: Disallow Latest Image Tag
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Requires all container images to specify an explicit, immutable version tag.
+      Prevents supply-chain attacks via silent image substitution and ensures
+      deployments are reproducible. Maps to CIS 5.5.1 and CNCF SSDF.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: require-image-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "All containers must specify an explicit image tag (e.g. image:1.2.3) or digest (image@sha256:...). Tagless images implicitly pull ':latest'."
+        foreach:
+          - list: "request.object.spec.[initContainers, containers][]"
+            pattern:
+              image: "*:*"
+    - name: disallow-latest-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "All container images must use an immutable version tag, not ':latest'."
+        foreach:
+          - list: "request.object.spec.[initContainers, containers][]"
+            pattern:
+              image: "!*:latest"
+---
+# Policy: Require Resource Requests and Limits
+#
+# Standard: CIS Kubernetes Benchmark v1.9: §5.2.9 — Minimize admission of containers
+# with no resource limits
+# OWASP Kubernetes Top 10: K01 — Insecure Workload Configurations
+#
+# Containers without CPU and memory limits can exhaust node resources, causing
+# denial-of-service conditions for all other workloads on the same node
+# (the "noisy neighbour" problem). Requests ensure the scheduler places pods on
+# nodes with sufficient capacity; limits cap the blast radius of a runaway process.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-limits
+  annotations:
+    policies.kyverno.io/title: Require Resource Requests and Limits
+    policies.kyverno.io/category: Resource Management
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Requires all containers to declare CPU and memory requests and limits.
+      Prevents resource exhaustion DoS conditions. Maps to CIS 5.2.9 and
+      OWASP Kubernetes Top 10 K01 (Insecure Workload Configurations).
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-container-resources
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                # openebs 4.2.0 pre-upgrade hook pulls bitnami/kubectl:1.25.15
+                # which no longer exists on Docker Hub. Any values change to the
+                # HelmRelease triggers that hook and hangs the upgrade. Resource
+                # limits cannot be injected without triggering the broken hook.
+                # Revisit when openebs chart is upgraded to a version with a
+                # working pre-upgrade image.
+                - openebs
+                # kube-prometheus-stack creates pre-install/pre-delete Jobs for
+                # admission webhook certificate management (kube-webhook-certgen).
+                # These Jobs have no values key to set resources and cannot be
+                # patched without forking the chart. All real observability
+                # workloads (Prometheus, Loki, Grafana, AlertManager) have
+                # explicit resource limits defined in their HelmReleases.
+                - observability
+      validate:
+        message: "All containers must declare cpu and memory requests and limits."
+        foreach:
+          - list: "request.object.spec.[initContainers, containers][]"
+            pattern:
+              resources:
+                requests:
+                  memory: "?*"
+                  cpu: "?*"
+                limits:
+                  memory: "?*"
+                  cpu: "?*"
+---
+# Policy: Disallow Privilege Escalation
+#
+# Standard: CIS Kubernetes Benchmark v1.9: §5.2.7 — Minimize admission of containers
+# with allowPrivilegeEscalation
+# OWASP Kubernetes Top 10: K01 — Insecure Workload Configurations
+#
+# allowPrivilegeEscalation: true (or absent, which defaults to true) allows a container
+# process to gain more privileges than its parent via setuid binaries or kernel
+# capabilities — the primary mechanism for container breakout. Setting it to false
+# prevents privilege escalation even if a process is compromised.
+#
+# Exclusion: tetragon eBPF agents require elevated kernel privileges (CAP_BPF,
+# CAP_SYS_ADMIN) to load and attach BPF programs to kernel subsystems.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-privilege-escalation
+  annotations:
+    policies.kyverno.io/title: Disallow Privilege Escalation
+    policies.kyverno.io/category: Pod Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Requires allowPrivilegeEscalation: false on all containers. Prevents container
+      processes from gaining more privileges than their parent — the primary container
+      breakout mechanism. Maps to CIS Kubernetes Benchmark 5.2.7.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-privilege-escalation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - tetragon
+                - falco
+                # openebs localpv-provisioner shows a policy evaluation ERROR
+                # (not a clean FAIL) — likely a container without securityContext.
+                # Excluded to prevent enforcement from blocking storage pod restarts.
+                - openebs
+                # KinD built-in provisioner namespace; also in resourceFilters.
+                - local-path-storage
+                # kube-prometheus-stack pre-install/post-delete Jobs for admission
+                # webhook cert management do not set allowPrivilegeEscalation: false.
+                # Real observability workloads (Prometheus, Grafana, Loki) all have
+                # explicit securityContexts set in their charts.
+                - observability
+      validate:
+        message: "All containers must set securityContext.allowPrivilegeEscalation: false."
+        foreach:
+          - list: "request.object.spec.[initContainers, containers][]"
+            deny:
+              conditions:
+                any:
+                  - key: "{{ element.securityContext.allowPrivilegeEscalation }}"
+                    operator: NotEquals
+                    value: false

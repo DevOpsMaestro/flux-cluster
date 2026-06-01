@@ -1,0 +1,127 @@
+---
+# Allow nodeport-proxy to receive from anywhere on the node network (hostNetwork)
+# and egress to Envoy Gateway. This NetworkPolicy exists to satisfy Kubescape's
+# "Ingress and Egress blocked" control; the pod uses hostNetwork so it is
+# effectively on the node's network interface, not the pod overlay network.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nodeport-proxy-netpol
+  namespace: envoy-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: nodeport-proxy
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - {} # node-network proxy — any host may connect on port 8888
+  egress:
+    - {} # must reach Envoy Gateway ClusterIP across the pod network
+---
+# KinD-specific ingress proxy — required because Cilium kube-proxy replacement
+# uses BPF socket programs that block userspace bind() on the NodePort range
+# (30000-32767). KinD's extraPortMappings therefore use containerPort: 8888
+# (outside that range) so this DaemonSet can actually bind and listen.
+#
+# Traffic flow:
+#   localhost:8080  →  (KinD extraPortMapping containerPort: 8888)
+#   control-plane:8888  →  (this nginx, hostNetwork: true)
+#   envoy-proxy.envoy-gateway-system.svc.cluster.local:80  →  (Envoy Gateway proxy)
+#   HTTPRoute match (grafana.local / prometheus.local)  →  backend service
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nodeport-proxy-conf
+  namespace: envoy-ingress
+data:
+  nginx.conf: |
+    worker_processes 1;
+    events {}
+    http {
+        access_log off;
+        server {
+            listen 8888;
+            server_name _;
+            location / {
+                proxy_pass         http://envoy-proxy.envoy-gateway-system.svc.cluster.local;
+                proxy_http_version 1.1;
+                proxy_set_header   Host              $host;
+                proxy_set_header   X-Real-IP         $remote_addr;
+                proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+                proxy_read_timeout 60s;
+            }
+        }
+    }
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nodeport-proxy
+  namespace: envoy-ingress
+  labels:
+    app.kubernetes.io/name: nodeport-proxy
+    app.kubernetes.io/component: proxy
+spec:
+  selector:
+    matchLabels:
+      app: nodeport-proxy
+  template:
+    metadata:
+      labels:
+        app: nodeport-proxy
+        sidecar.istio.io/inject: "false"
+        app.kubernetes.io/name: nodeport-proxy
+        app.kubernetes.io/component: proxy
+    spec:
+      automountServiceAccountToken: false
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      # Pin to control-plane node where KinD extraPortMappings are defined.
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 8888
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 101   # nginx uid in the alpine image
+            runAsGroup: 101
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: cache
+              mountPath: /var/cache/nginx
+            - name: run
+              mountPath: /var/run
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      volumes:
+        - name: conf
+          configMap:
+            name: nodeport-proxy-conf
+        - name: cache
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

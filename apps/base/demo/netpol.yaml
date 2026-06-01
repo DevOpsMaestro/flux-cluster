@@ -1,0 +1,111 @@
+---
+# Default-deny all ingress and egress for every pod in the namespace.
+# Workload-specific policies below add back exactly the traffic each pod needs.
+# Any pod added to demo without an explicit policy (debug shells, test Jobs)
+# will have no network access until a policy is written for it.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: demo
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Allow httpbin to receive traffic only from known sources.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: httpbin-allow-ingress
+  namespace: demo
+spec:
+  podSelector:
+    matchLabels:
+      app: httpbin
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: load-generator
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: envoy-gateway-system
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Istio sidecar needs to reach istiod for certificate signing (15012)
+    # and xDS config pushes (15010, 15014). Without this the proxy cannot
+    # establish mTLS and crash-loops on pod start.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
+      ports:
+        - port: 15010
+        - port: 15012
+        - port: 15014
+    # Istio sidecar exports OTLP traces to the OTel Collector in observability.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - port: 4317
+        - port: 4318
+---
+# Allow load-generator to reach httpbin and resolve DNS.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: load-generator-allow-egress
+  namespace: demo
+spec:
+  podSelector:
+    matchLabels:
+      app: load-generator
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: httpbin
+      ports:
+        - port: 80
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Istio sidecar needs to reach istiod for certificate signing and xDS.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
+      ports:
+        - port: 15010
+        - port: 15012
+        - port: 15014
+    # Istio sidecar exports OTLP traces to the OTel Collector in observability.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - port: 4317
+        - port: 4318

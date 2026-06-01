@@ -1,0 +1,89 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-system
+  labels:
+    istio-injection: disabled
+---
+# istio-base must be deployed before istiod.
+# The original had two conflicting Istio deployments: one at 1.26.0 in apps/base/istio
+# and another at 1.20.0 in infrastructure/istio — a six-minor-version split targeting
+# the same namespace. Both are replaced by this single authoritative definition.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: istio-base
+  namespace: flux-system
+spec:
+  interval: 1h
+  dependsOn:
+    - name: cilium
+      namespace: flux-system
+  targetNamespace: istio-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: base
+      version: "1.26.x"
+      sourceRef:
+        kind: HelmRepository
+        name: istio
+        namespace: flux-system
+      interval: 24h
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: istiod
+  namespace: flux-system
+spec:
+  interval: 1h
+  targetNamespace: istio-system
+  dependsOn:
+    - name: istio-base
+      namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: istiod
+      version: "1.26.x"
+      sourceRef:
+        kind: HelmRepository
+        name: istio
+        namespace: flux-system
+      interval: 24h
+  values:
+    telemetry:
+      enabled: true
+    pilot:
+      # 100% sampling — every request generates a trace. Appropriate for a
+      # learning cluster; lower to 1–10% in production to avoid trace volume costs.
+      traceSampling: 100.0
+    # KinD has no Metrics Server so the HPA can never collect CPU data.
+    # Disable it to suppress FailedGetResourceMetric warnings.
+    autoscaleEnabled: false
+    global:
+      meshID: mesh1
+    meshConfig:
+      # Register the OTel Collector as a named extension provider so that
+      # Telemetry CRs can reference it by name (see apps/base/istio/telemetry.yaml).
+      extensionProviders:
+        - name: otel
+          opentelemetry:
+            service: observability-opentelemetry-collector.observability.svc.cluster.local
+            port: 4317

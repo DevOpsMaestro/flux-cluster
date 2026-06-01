@@ -1,0 +1,245 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="830" viewBox="0 0 900 830">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6B7280"/>
+    </marker>
+    <marker id="arr-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#15803D"/>
+    </marker>
+    <marker id="arr-indigo" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#4F46E5"/>
+    </marker>
+    <marker id="arr-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#1D4ED8"/>
+    </marker>
+  </defs>
+
+  <!-- Canvas -->
+  <rect width="900" height="830" fill="#FAFAFA"/>
+
+  <!-- Title -->
+  <text x="450" y="34" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">flux-cluster — GitOps Reconciliation Flow</text>
+
+  <!-- ══════════════════════════════════════════════════════
+       TRIGGER SECTION
+  ══════════════════════════════════════════════════════ -->
+
+  <!-- Developer (oval) -->
+  <ellipse cx="450" cy="68" rx="95" ry="26" fill="white" stroke="#475569" stroke-width="2"/>
+  <text x="450" y="73" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="600" fill="#334155">Developer</text>
+
+  <!-- git push label + arrow -->
+  <line x1="450" y1="94" x2="450" y2="114" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="462" y="107" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#6B7280">git push</text>
+
+  <!-- GitHub box -->
+  <rect x="310" y="118" width="280" height="52" rx="8" fill="#1E293B" stroke="#0F172A" stroke-width="1.5"/>
+  <text x="450" y="137" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="white">GitHub</text>
+  <text x="450" y="154" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#94A3B8">DevOpsMaestro/flux-cluster · branch: main</text>
+
+  <!-- arrow to source-controller -->
+  <line x1="450" y1="170" x2="450" y2="192" stroke="#4F46E5" stroke-width="1.5" marker-end="url(#arr-indigo)"/>
+  <text x="462" y="184" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#4F46E5">poll 1h / webhook</text>
+
+  <!-- source-controller box -->
+  <rect x="290" y="196" width="320" height="52" rx="8" fill="white" stroke="#4F46E5" stroke-width="2"/>
+  <text x="450" y="216" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#4F46E5">Flux source-controller</text>
+  <text x="450" y="233" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">fetches repo · GitRepository → Ready · stores artifact</text>
+
+  <!-- arrow to kustomize-controller -->
+  <line x1="450" y1="248" x2="450" y2="270" stroke="#4F46E5" stroke-width="1.5" marker-end="url(#arr-indigo)"/>
+  <text x="462" y="262" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#4F46E5">artifact ready</text>
+
+  <!-- kustomize-controller box -->
+  <rect x="270" y="274" width="360" height="52" rx="8" fill="white" stroke="#4F46E5" stroke-width="2"/>
+  <text x="450" y="294" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#4F46E5">Flux kustomize-controller</text>
+  <text x="450" y="311" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">renders infrastructure/controllers · applies HelmRelease CRs</text>
+
+  <!-- arrow to infra block -->
+  <line x1="450" y1="326" x2="450" y2="348" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="462" y="340" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#6B7280">HelmRelease objects</text>
+
+  <!-- ══════════════════════════════════════════════════════
+       INFRASTRUCTURE-CONTROLLERS KUSTOMIZATION BLOCK
+  ══════════════════════════════════════════════════════ -->
+  <rect x="20" y="352" width="860" height="268" rx="10" fill="#F0FDF4" stroke="#15803D" stroke-width="2"/>
+  <text x="36" y="371" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#15803D" letter-spacing="1">infrastructure-controllers Kustomization  ·  wait: true  ·  interval: 1h</text>
+
+  <!-- Cilium (root anchor) -->
+  <rect x="40" y="380" width="150" height="218" rx="8" fill="white" stroke="#C2410C" stroke-width="2"/>
+  <text x="115" y="400" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#C2410C">Cilium HR</text>
+  <line x1="48" y1="407" x2="182" y2="407" stroke="#C2410C" stroke-width="0.75" opacity="0.4"/>
+  <text x="115" y="422" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">1.17.x</text>
+  <text x="115" y="436" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">kube-system</text>
+  <text x="115" y="452" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">no dependsOn</text>
+  <text x="115" y="466" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" font-style="italic" fill="#94A3B8">(root anchor)</text>
+  <text x="115" y="484" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">pre-installed</text>
+  <text x="115" y="498" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">by setup script</text>
+  <text x="115" y="514" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Flux adopts</text>
+  <text x="115" y="530" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">existing release</text>
+
+  <!-- Branch lines from Cilium right edge (x=190) to dependents -->
+  <!-- Horizontal connector from Cilium box to trunk -->
+  <line x1="190" y1="489" x2="230" y2="489" stroke="#C2410C" stroke-width="1.5" opacity="0.6"/>
+  <!-- Vertical trunk — spans all branch y positions -->
+  <line x1="230" y1="399" x2="230" y2="569" stroke="#C2410C" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- Left-column branch arrowheads (point to left-side boxes at x=262) -->
+  <!-- cert-manager-crds (y=399) -->
+  <line x1="230" y1="399" x2="258" y2="399" stroke="#C2410C" stroke-width="1.5" opacity="0.6" marker-end="url(#arr-green)"/>
+  <!-- OpenEBS (y=437) -->
+  <line x1="230" y1="437" x2="258" y2="437" stroke="#C2410C" stroke-width="1.5" opacity="0.6" marker-end="url(#arr-green)"/>
+  <!-- istio-base (y=475) -->
+  <line x1="230" y1="475" x2="258" y2="475" stroke="#C2410C" stroke-width="1.5" opacity="0.6" marker-end="url(#arr-green)"/>
+  <!-- Envoy Gateway (y=513) -->
+  <line x1="230" y1="513" x2="258" y2="513" stroke="#C2410C" stroke-width="1.5" opacity="0.6" marker-end="url(#arr-green)"/>
+
+  <!-- Dependent HelmRelease boxes (x=262 start) -->
+  <!-- cert-manager-crds -->
+  <rect x="262" y="381" width="145" height="36" rx="6" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="334" y="396" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#15803D">cert-manager-crds HR</text>
+  <text x="334" y="410" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">CRDs only · replicaCount: 0</text>
+  <!-- arrow to cert-manager -->
+  <line x1="407" y1="399" x2="428" y2="399" stroke="#15803D" stroke-width="1.25" marker-end="url(#arr-green)"/>
+  <!-- cert-manager -->
+  <rect x="432" y="381" width="130" height="36" rx="6" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="497" y="396" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#15803D">cert-manager HR</text>
+  <text x="497" y="410" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">controller · crds: Skip</text>
+
+  <!-- OpenEBS -->
+  <rect x="262" y="419" width="145" height="36" rx="6" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="334" y="434" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#15803D">OpenEBS HR</text>
+  <text x="334" y="448" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">LocalPV · openebs-hostpath</text>
+
+  <!-- istio-base -->
+  <rect x="262" y="457" width="130" height="36" rx="6" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="327" y="472" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#15803D">istio-base HR</text>
+  <text x="327" y="486" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">CRDs + scaffolding</text>
+  <!-- arrow to istiod -->
+  <line x1="392" y1="475" x2="412" y2="475" stroke="#15803D" stroke-width="1.25" marker-end="url(#arr-green)"/>
+  <!-- istiod -->
+  <rect x="416" y="457" width="110" height="36" rx="6" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="471" y="472" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#15803D">istiod HR</text>
+  <text x="471" y="486" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">control plane</text>
+
+  <!-- Envoy Gateway -->
+  <rect x="262" y="495" width="145" height="36" rx="6" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="334" y="510" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#15803D">Envoy Gateway HR</text>
+  <text x="334" y="524" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">GatewayClass: eg</text>
+
+  <!-- Tetragon + Kyverno + Falco + Kubescape on the right column -->
+  <!-- Kyverno -->
+  <rect x="580" y="419" width="110" height="36" rx="6" fill="white" stroke="#B91C1C" stroke-width="1.5"/>
+  <text x="635" y="434" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#B91C1C">Kyverno HR</text>
+  <text x="635" y="448" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">admission control</text>
+  <!-- branch from Cilium trunk -->
+  <line x1="230" y1="437" x2="570" y2="437" stroke="#C2410C" stroke-width="1" opacity="0.4" stroke-dasharray="4,2"/>
+  <line x1="570" y1="437" x2="576" y2="437" stroke="#C2410C" stroke-width="1.5" opacity="0.6" marker-end="url(#arr-green)"/>
+
+  <!-- Falco -->
+  <rect x="580" y="457" width="130" height="36" rx="6" fill="white" stroke="#B91C1C" stroke-width="1.5"/>
+  <text x="645" y="472" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#B91C1C">Falco HR</text>
+  <text x="645" y="486" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">+ Falcosidekick subchart</text>
+  <!-- branch from Cilium trunk -->
+  <line x1="230" y1="475" x2="570" y2="475" stroke="#C2410C" stroke-width="1" opacity="0.4" stroke-dasharray="4,2"/>
+  <line x1="570" y1="475" x2="576" y2="475" stroke="#C2410C" stroke-width="1.5" opacity="0.6" marker-end="url(#arr-green)"/>
+
+  <!-- Tetragon -->
+  <rect x="580" y="495" width="110" height="36" rx="6" fill="white" stroke="#B91C1C" stroke-width="1.5"/>
+  <text x="635" y="510" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#B91C1C">Tetragon HR</text>
+  <text x="635" y="524" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">eBPF tracing</text>
+  <!-- branch to Tetragon from trunk -->
+  <line x1="230" y1="513" x2="570" y2="513" stroke="#C2410C" stroke-width="1" opacity="0.4" stroke-dasharray="4,2"/>
+  <line x1="570" y1="513" x2="576" y2="513" stroke="#C2410C" stroke-width="1.5" opacity="0.6" marker-end="url(#arr-green)"/>
+
+  <!-- Kubescape -->
+  <rect x="580" y="533" width="130" height="36" rx="6" fill="white" stroke="#B91C1C" stroke-width="1.5"/>
+  <text x="645" y="548" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#B91C1C">Kubescape HR</text>
+  <text x="645" y="562" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">NSA + MITRE · continuous</text>
+  <!-- branch to Kubescape from trunk -->
+  <line x1="230" y1="551" x2="570" y2="551" stroke="#C2410C" stroke-width="1" opacity="0.4" stroke-dasharray="4,2"/>
+  <line x1="570" y1="551" x2="576" y2="551" stroke="#C2410C" stroke-width="1.5" opacity="0.6" marker-end="url(#arr-green)"/>
+
+  <!-- wait gate bar -->
+  <rect x="30" y="573" width="838" height="30" rx="6" fill="#DCFCE7" stroke="#15803D" stroke-width="1.5"/>
+  <text x="450" y="592" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#15803D">✓  Flux waits for ALL infrastructure HelmReleases to reach Ready state  (wait: true)</text>
+
+  <!-- Down arrow to apps block -->
+  <line x1="450" y1="622" x2="450" y2="645" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="462" y="636" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#6B7280">dependsOn: infrastructure-controllers</text>
+
+  <!-- ══════════════════════════════════════════════════════
+       APPS KUSTOMIZATION BLOCK
+  ══════════════════════════════════════════════════════ -->
+  <rect x="20" y="648" width="860" height="140" rx="10" fill="#EFF6FF" stroke="#1E40AF" stroke-width="2"/>
+  <text x="36" y="667" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#1E40AF" letter-spacing="1">apps Kustomization  ·  dependsOn: infrastructure-controllers  ·  interval: 1h  ·  timeout: 20m</text>
+
+  <!-- kube-prometheus-stack -->
+  <rect x="38" y="675" width="155" height="90" rx="6" fill="white" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="115" y="695" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#1D4ED8">kube-prometheus-stack HR</text>
+  <text x="115" y="710" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">72.x · dependsOn: openebs</text>
+  <text x="115" y="723" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Prometheus + AlertManager</text>
+  <text x="115" y="749" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" font-style="italic" fill="#94A3B8">root dep for observability</text>
+
+  <!-- arrow kube-prom → Loki -->
+  <line x1="193" y1="700" x2="203" y2="700" stroke="#1D4ED8" stroke-width="1.25" marker-end="url(#arr-blue)"/>
+
+  <!-- Loki -->
+  <rect x="207" y="675" width="108" height="44" rx="6" fill="white" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="261" y="691" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#1D4ED8">Loki HR</text>
+  <text x="261" y="705" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">6.x · dependsOn: prometheus</text>
+  <text x="261" y="717" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">log aggregation</text>
+
+  <!-- arrow Loki → Grafana -->
+  <line x1="315" y1="690" x2="325" y2="690" stroke="#1D4ED8" stroke-width="1.25" marker-end="url(#arr-blue)"/>
+
+  <!-- Grafana row 1 -->
+  <rect x="329" y="675" width="118" height="44" rx="6" fill="white" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="388" y="691" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#1D4ED8">Grafana HR</text>
+  <text x="388" y="705" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">8.x · dependsOn:</text>
+  <text x="388" y="717" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">prometheus + loki</text>
+
+  <!-- arrow Loki → Promtail (diagonal down) -->
+  <line x1="261" y1="719" x2="329" y2="742" stroke="#1D4ED8" stroke-width="1.25" marker-end="url(#arr-blue)"/>
+
+  <!-- Promtail row 2 (below Grafana, no overlap) -->
+  <rect x="329" y="727" width="118" height="44" rx="6" fill="white" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="388" y="743" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#1D4ED8">Promtail HR</text>
+  <text x="388" y="757" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">6.x · DaemonSet</text>
+  <text x="388" y="769" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">dependsOn: loki</text>
+
+  <!-- Tempo HR row 1 (new) -->
+  <rect x="457" y="675" width="110" height="44" rx="6" fill="white" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="512" y="691" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#1D4ED8">Tempo HR</text>
+  <text x="512" y="705" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">1.x · trace backend</text>
+  <text x="512" y="717" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">dependsOn: prometheus</text>
+
+  <!-- OTel Collector HR row 2 (new) -->
+  <rect x="457" y="727" width="110" height="44" rx="6" fill="white" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="512" y="743" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#1D4ED8">OTel Collector HR</text>
+  <text x="512" y="757" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">0.x · OTLP → Tempo</text>
+  <text x="512" y="769" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">dependsOn: prometheus</text>
+
+  <!-- demo workloads -->
+  <rect x="577" y="675" width="148" height="90" rx="6" fill="white" stroke="#7C3AED" stroke-width="1.5"/>
+  <text x="651" y="693" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#6D28D9">demo workloads</text>
+  <text x="651" y="708" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">httpbin + load-generator</text>
+  <text x="651" y="722" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Istio sidecar injected</text>
+  <text x="651" y="736" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">namespace: demo</text>
+  <text x="651" y="750" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">STRICT mTLS (port 80 PERM)</text>
+
+  <!-- Mesh + Ingress config CRs -->
+  <rect x="735" y="675" width="128" height="90" rx="6" fill="white" stroke="#EA580C" stroke-width="1.5"/>
+  <text x="799" y="693" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#C2410C">Mesh + Ingress CRs</text>
+  <text x="799" y="708" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">PeerAuthentication</text>
+  <text x="799" y="722" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Telemetry (OTLP traces)</text>
+  <text x="799" y="736" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Gateway + EnvoyProxy</text>
+  <text x="799" y="750" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">HTTPRoutes (grafana · prom)</text>
+
+  <!-- Down arrow to steady state -->
+  <line x1="450" y1="790" x2="450" y2="808" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Steady state (oval) -->
+  <ellipse cx="450" cy="822" rx="240" ry="24" fill="#F0FDF4" stroke="#15803D" stroke-width="2"/>
+  <text x="450" y="826" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#15803D">✓  Steady state — flux get all -A → all Ready</text>
+</svg>

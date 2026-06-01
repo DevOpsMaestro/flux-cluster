@@ -1,0 +1,91 @@
+---
+# Mesh-wide mTLS default — PERMISSIVE allows both mTLS and plain text.
+# Services inside the mesh (with Envoy sidecars) automatically use mTLS
+# with each other. Services outside the mesh (no sidecar) still reach
+# mesh services over plain text without errors.
+#
+# Harden to STRICT once all critical workloads have sidecars:
+#   kubectl patch peerauthentication default -n istio-system \
+#     --type=merge -p '{"spec":{"mtls":{"mode":"STRICT"}}}'
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  mtls:
+    mode: PERMISSIVE
+---
+# Enforce mTLS for all workloads in the demo namespace.
+# The namespace-default cannot carry portLevelMtls; workload-specific
+# PeerAuthentications below add the per-port PERMISSIVE exceptions.
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: demo
+spec:
+  mtls:
+    mode: STRICT
+---
+# httpbin: allow plain text on port 80.
+# Envoy Gateway (no Istio sidecar) routes grafana.local here and sends
+# plain text. All other ports on httpbin remain STRICT.
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: httpbin-port-80
+  namespace: demo
+spec:
+  selector:
+    matchLabels:
+      app: httpbin
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    "80":
+      mode: PERMISSIVE
+---
+# Enforce mTLS for all workloads in the observability namespace.
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: observability
+spec:
+  mtls:
+    mode: STRICT
+---
+# Grafana: allow plain text on port 3000.
+# Envoy Gateway (no Istio sidecar) routes grafana.local here.
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: grafana-port-3000
+  namespace: observability
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    "3000":
+      mode: PERMISSIVE
+---
+# Loki: allow plain text on port 3100.
+# Promtail DaemonSet (sidecar.istio.io/inject: false) pushes logs here.
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: loki-port-3100
+  namespace: observability
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: loki
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    "3100":
+      mode: PERMISSIVE

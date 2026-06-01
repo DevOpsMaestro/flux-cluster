@@ -1,0 +1,34 @@
+---
+# Post a GitHub commit status for every Kustomization reconciliation.
+# Each Kustomization maps to the git commit that drove the reconcile,
+# so the status appears directly on commits and PRs in the GitHub UI.
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: kustomization-status
+  namespace: flux-system
+spec:
+  providerRef:
+    name: github
+  eventSeverity: info
+  eventSources:
+    - kind: Kustomization
+      name: '*'
+      namespace: flux-system
+---
+# Post a GitHub commit status for every HelmRelease reconciliation.
+# HelmRelease events also carry the git commit revision via the
+# parent Kustomization, so statuses appear on the triggering commit.
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: helmrelease-status
+  namespace: flux-system
+spec:
+  providerRef:
+    name: github
+  eventSeverity: info
+  eventSources:
+    - kind: HelmRelease
+      name: '*'
+      namespace: flux-system

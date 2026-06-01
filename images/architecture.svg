@@ -1,0 +1,250 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="920" viewBox="0 0 1200 920">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6B7280"/>
+    </marker>
+    <marker id="arr-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#DC2626"/>
+    </marker>
+  </defs>
+
+  <!-- Canvas -->
+  <rect width="1200" height="900" fill="#FAFAFA"/>
+
+  <!-- Title -->
+  <text x="600" y="36" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="20" font-weight="700" fill="#0F172A">flux-cluster — Architecture Overview</text>
+
+  <!-- ══════════════════════════════════════════════════════════
+       Band 1 · GitOps Control Plane
+  ══════════════════════════════════════════════════════════ -->
+  <rect x="20" y="52" width="1160" height="148" rx="10" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="34" y="71" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#4F46E5" letter-spacing="1.2">GITOPS CONTROL PLANE</text>
+
+  <!-- GitHub box -->
+  <rect x="50" y="82" width="210" height="104" rx="8" fill="white" stroke="#1E293B" stroke-width="2"/>
+  <text x="155" y="103" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#1E293B">GitHub</text>
+  <line x1="58" y1="110" x2="252" y2="110" stroke="#1E293B" stroke-width="0.75" opacity="0.35"/>
+  <text x="155" y="127" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">DevOpsMaestro/flux-cluster</text>
+  <text x="155" y="143" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">branch: main</text>
+  <text x="155" y="159" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">GitRepository poll · 1h interval</text>
+  <text x="155" y="175" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">CI: validate.yaml on every PR</text>
+
+  <!-- Arrow GitHub → Flux -->
+  <line x1="264" y1="134" x2="370" y2="134" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="317" y="125" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#6B7280">source detected</text>
+
+  <!-- Flux box -->
+  <rect x="374" y="82" width="340" height="104" rx="8" fill="white" stroke="#4F46E5" stroke-width="2"/>
+  <text x="544" y="103" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#4F46E5">Flux Control Plane</text>
+  <line x1="382" y1="110" x2="706" y2="110" stroke="#4F46E5" stroke-width="0.75" opacity="0.35"/>
+  <text x="544" y="127" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">source-controller · helm-controller · kustomize-controller</text>
+  <text x="544" y="143" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">Kustomization: infrastructure-controllers (wait: true)</text>
+  <text x="544" y="159" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">Kustomization: apps (dependsOn: infrastructure-controllers)</text>
+  <text x="544" y="175" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">namespace: flux-system</text>
+
+  <!-- Down arrow Band1 → Band2 -->
+  <line x1="600" y1="202" x2="600" y2="222" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="616" y="215" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#6B7280">HelmReleases</text>
+
+  <!-- ══════════════════════════════════════════════════════════
+       Band 2 · Infrastructure Controllers
+       Box columns: x = 54, 332, 610, 888   (w=258, gap=20)
+  ══════════════════════════════════════════════════════════ -->
+  <rect x="20" y="226" width="1160" height="234" rx="10" fill="#F0FDF4" stroke="#15803D" stroke-width="2"/>
+  <text x="34" y="245" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#15803D" letter-spacing="1.2">INFRASTRUCTURE CONTROLLERS  ·  flux-system namespace  ·  Helm-managed</text>
+
+  <!-- Row 1 ─────────────────────────────────────────────── -->
+  <!-- Cilium -->
+  <rect x="54" y="253" width="258" height="90" rx="8" fill="white" stroke="#C2410C" stroke-width="2"/>
+  <text x="183" y="273" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#C2410C">Cilium 1.17.x</text>
+  <line x1="62" y1="280" x2="304" y2="280" stroke="#C2410C" stroke-width="0.75" opacity="0.35"/>
+  <text x="183" y="296" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">namespace: kube-system</text>
+  <text x="183" y="310" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">kubeProxyReplacement · VXLAN tunnel</text>
+  <text x="183" y="324" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">Hubble relay · eBPF dataplane</text>
+  <text x="183" y="337" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">no dependsOn — installs first</text>
+
+  <!-- cert-manager -->
+  <rect x="332" y="253" width="258" height="90" rx="8" fill="white" stroke="#15803D" stroke-width="2"/>
+  <text x="461" y="273" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#15803D">cert-manager v1.17.x</text>
+  <line x1="340" y1="280" x2="582" y2="280" stroke="#15803D" stroke-width="0.75" opacity="0.35"/>
+  <text x="461" y="296" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">namespace: cert-manager</text>
+  <text x="461" y="310" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">two-phase CRD install</text>
+  <text x="461" y="324" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">cert-manager-crds → cert-manager</text>
+  <text x="461" y="337" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">dependsOn: cilium</text>
+
+  <!-- OpenEBS -->
+  <rect x="610" y="253" width="258" height="90" rx="8" fill="white" stroke="#15803D" stroke-width="2"/>
+  <text x="739" y="273" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#15803D">OpenEBS 4.2.x</text>
+  <line x1="618" y1="280" x2="860" y2="280" stroke="#15803D" stroke-width="0.75" opacity="0.35"/>
+  <text x="739" y="296" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">namespace: openebs</text>
+  <text x="739" y="310" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">LocalPV provisioner</text>
+  <text x="739" y="324" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">StorageClass: openebs-hostpath</text>
+  <text x="739" y="337" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">dependsOn: cilium</text>
+
+  <!-- Istio -->
+  <rect x="888" y="253" width="258" height="90" rx="8" fill="white" stroke="#15803D" stroke-width="2"/>
+  <text x="1017" y="273" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#15803D">Istio 1.26.x</text>
+  <line x1="896" y1="280" x2="1138" y2="280" stroke="#15803D" stroke-width="0.75" opacity="0.35"/>
+  <text x="1017" y="296" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">namespace: istio-system</text>
+  <text x="1017" y="310" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">istio-base + istiod · PERMISSIVE mesh</text>
+  <text x="1017" y="324" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">Telemetry CR: 100% OTLP trace sampling</text>
+  <text x="1017" y="337" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">dependsOn: cilium</text>
+
+  <!-- Row 2 (5 boxes, w=206, gap=16) ────────────────────── -->
+  <!-- Envoy Gateway -->
+  <rect x="54" y="357" width="206" height="90" rx="8" fill="white" stroke="#15803D" stroke-width="2"/>
+  <text x="157" y="377" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#15803D">Envoy Gateway 1.4.x</text>
+  <line x1="62" y1="384" x2="252" y2="384" stroke="#15803D" stroke-width="0.75" opacity="0.35"/>
+  <text x="157" y="400" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">envoy-gateway-system</text>
+  <text x="157" y="414" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">GatewayClass: eg · NP 30080</text>
+  <text x="157" y="428" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">HTTPRoute ingress</text>
+  <text x="157" y="441" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">dependsOn: cilium</text>
+
+  <!-- Tetragon -->
+  <rect x="276" y="357" width="206" height="90" rx="8" fill="white" stroke="#B91C1C" stroke-width="2"/>
+  <text x="379" y="377" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#B91C1C">Tetragon 1.7.x</text>
+  <line x1="284" y1="384" x2="474" y2="384" stroke="#B91C1C" stroke-width="0.75" opacity="0.35"/>
+  <text x="379" y="400" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">namespace: tetragon</text>
+  <text x="379" y="414" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">eBPF proc/net/file tracing</text>
+  <text x="379" y="428" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">events → Promtail → Loki</text>
+  <text x="379" y="441" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">dependsOn: cilium</text>
+
+  <!-- Kyverno -->
+  <rect x="498" y="357" width="206" height="90" rx="8" fill="white" stroke="#B91C1C" stroke-width="2"/>
+  <text x="601" y="377" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#B91C1C">Kyverno 3.x</text>
+  <line x1="506" y1="384" x2="696" y2="384" stroke="#B91C1C" stroke-width="0.75" opacity="0.35"/>
+  <text x="601" y="400" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">namespace: kyverno</text>
+  <text x="601" y="414" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">Audit + Enforce · mutate</text>
+  <text x="601" y="428" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">PSS · limits · priv-esc · tags</text>
+  <text x="601" y="441" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">dependsOn: cilium</text>
+
+  <!-- Falco -->
+  <rect x="720" y="357" width="206" height="90" rx="8" fill="white" stroke="#B91C1C" stroke-width="2"/>
+  <text x="823" y="377" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#B91C1C">Falco 8.x</text>
+  <line x1="728" y1="384" x2="918" y2="384" stroke="#B91C1C" stroke-width="0.75" opacity="0.35"/>
+  <text x="823" y="400" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">namespace: falco</text>
+  <text x="823" y="414" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">modern_ebpf · runtime detect</text>
+  <text x="823" y="428" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">alerts → Loki (Falcosidekick)</text>
+  <text x="823" y="441" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">dependsOn: cilium</text>
+
+  <!-- Kubescape -->
+  <rect x="942" y="357" width="206" height="90" rx="8" fill="white" stroke="#B91C1C" stroke-width="2"/>
+  <text x="1045" y="377" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#B91C1C">Kubescape 1.40.x</text>
+  <line x1="950" y1="384" x2="1140" y2="384" stroke="#B91C1C" stroke-width="0.75" opacity="0.35"/>
+  <text x="1045" y="400" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">namespace: kubescape</text>
+  <text x="1045" y="414" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">NSA + MITRE continuous scan</text>
+  <text x="1045" y="428" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">configScan · metrics :8080</text>
+  <text x="1045" y="441" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">dependsOn: cilium</text>
+
+  <!-- Down arrow Band2 → Band3 -->
+  <line x1="600" y1="462" x2="600" y2="482" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="616" y="475" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#6B7280">apps (dependsOn: infra)</text>
+
+  <!-- ══════════════════════════════════════════════════════════
+       Band 3 · Applications and Observability
+  ══════════════════════════════════════════════════════════ -->
+  <rect x="20" y="486" width="1160" height="282" rx="10" fill="#EFF6FF" stroke="#1E40AF" stroke-width="2"/>
+  <text x="34" y="505" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#1E40AF" letter-spacing="1.2">APPLICATIONS  &amp;  OBSERVABILITY</text>
+
+  <!-- Observability sub-box -->
+  <rect x="38" y="513" width="740" height="240" rx="8" fill="white" stroke="#1E40AF" stroke-width="1.5"/>
+  <text x="408" y="534" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#1E40AF">observability namespace</text>
+  <line x1="46" y1="540" x2="770" y2="540" stroke="#1E40AF" stroke-width="0.75" opacity="0.35"/>
+
+  <!-- Prometheus chip -->
+  <rect x="55" y="550" width="136" height="54" rx="6" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.25"/>
+  <text x="123" y="568" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#1D4ED8">Prometheus</text>
+  <text x="123" y="583" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">kube-prometheus-stack</text>
+  <text x="123" y="597" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">72.x · dependsOn: openebs</text>
+
+  <!-- AlertManager chip -->
+  <rect x="203" y="550" width="132" height="54" rx="6" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.25"/>
+  <text x="269" y="568" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#1D4ED8">AlertManager</text>
+  <text x="269" y="583" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">bundled in</text>
+  <text x="269" y="597" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">kube-prometheus-stack</text>
+
+  <!-- Loki chip -->
+  <rect x="347" y="550" width="120" height="54" rx="6" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.25"/>
+  <text x="407" y="568" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#1D4ED8">Loki</text>
+  <text x="407" y="583" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">grafana/loki 6.x</text>
+  <text x="407" y="597" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">SingleBinary · 5 Gi PVC</text>
+
+  <!-- Promtail chip -->
+  <rect x="479" y="550" width="120" height="54" rx="6" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.25"/>
+  <text x="539" y="568" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#1D4ED8">Promtail</text>
+  <text x="539" y="583" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">grafana/promtail 6.x</text>
+  <text x="539" y="597" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">DaemonSet · dependsOn: loki</text>
+
+  <!-- Grafana chip -->
+  <rect x="611" y="550" width="150" height="54" rx="6" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.25"/>
+  <text x="686" y="568" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#1D4ED8">Grafana 8.x</text>
+  <text x="686" y="583" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">grafana/grafana · 16 dashboards</text>
+  <text x="686" y="597" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">HTTPRoute: grafana.local:8080</text>
+
+  <!-- Tempo chip (row 2) -->
+  <rect x="60" y="618" width="155" height="54" rx="6" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.25"/>
+  <text x="137" y="636" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#1D4ED8">Grafana Tempo 1.x</text>
+  <text x="137" y="651" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">grafana/tempo · SingleBinary</text>
+  <text x="137" y="665" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">trace backend · HTTP :3200</text>
+
+  <!-- OTel Collector chip (row 2) -->
+  <rect x="228" y="618" width="210" height="54" rx="6" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.25"/>
+  <text x="333" y="636" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#1D4ED8">OTel Collector 0.x</text>
+  <text x="333" y="651" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">open-telemetry/opentelemetry-collector</text>
+  <text x="333" y="665" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">OTLP :4317/:4318 · no sidecar · → Tempo</text>
+
+  <!-- Dashboards note -->
+  <text x="408" y="690" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" font-style="italic" fill="#1E40AF">16 dashboards: Cilium · Hubble · Istio · Flux · Falco · Tetragon · Kubescape · cert-manager · Node Exporter · OTel Collector</text>
+  <text x="408" y="705" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" font-style="italic" fill="#1E40AF">Prometheus also exposed via HTTPRoute: prometheus.local:8080</text>
+
+  <!-- Scrape configs note -->
+  <text x="408" y="722" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">additionalScrapeConfigs → Cilium · Falco · Tetragon · Kyverno · Kubescape · Flux (no ServiceMonitor CRD circular dep)</text>
+  <text x="408" y="737" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Loki: Promtail pod logs + Falcosidekick alerts  ·  OTel Collector: OTLP spans from all Istio Envoy sidecars → Tempo</text>
+
+  <!-- Demo sub-box -->
+  <rect x="796" y="513" width="366" height="240" rx="8" fill="white" stroke="#7C3AED" stroke-width="1.5"/>
+  <text x="979" y="534" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#7C3AED">demo namespace</text>
+  <line x1="804" y1="540" x2="1154" y2="540" stroke="#7C3AED" stroke-width="0.75" opacity="0.35"/>
+
+  <!-- httpbin chip -->
+  <rect x="814" y="550" width="155" height="54" rx="6" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1.25"/>
+  <text x="891" y="568" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#6D28D9">httpbin</text>
+  <text x="891" y="583" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">kennethreitz/httpbin</text>
+  <text x="891" y="597" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">HTTP echo service</text>
+
+  <!-- load-generator chip -->
+  <rect x="983" y="550" width="162" height="54" rx="6" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1.25"/>
+  <text x="1064" y="568" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#6D28D9">load-generator</text>
+  <text x="1064" y="583" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">curl loop · GET + 404 · 5 s</text>
+  <text x="1064" y="597" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">drives Istio mesh metrics</text>
+
+  <text x="979" y="625" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#7C3AED">Istio sidecar injected</text>
+  <text x="979" y="641" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">PeerAuthentication: STRICT mTLS (port 80 PERMISSIVE)</text>
+  <text x="979" y="657" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Envoy sidecars on port 15001 / 15006</text>
+  <text x="979" y="673" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">generates istio_requests_total metrics</text>
+  <text x="979" y="689" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Envoy sidecars → OTLP traces → OTel Collector</text>
+
+  <!-- ══════════════════════════════════════════════════════════
+       Band 4 · Runtime Security (cross-cutting)
+  ══════════════════════════════════════════════════════════ -->
+  <rect x="20" y="780" width="1160" height="128" rx="10" fill="#FEF2F2" stroke="#B91C1C" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <text x="34" y="799" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#B91C1C" letter-spacing="1.2">RUNTIME SECURITY LAYER  ·  cross-cutting across all workloads</text>
+
+  <text x="60" y="818" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" fill="#334155">
+    <tspan font-weight="700" fill="#B91C1C">Kyverno</tspan>
+    <tspan> — validates pods at admission time (before scheduling) · Audit mode · PSS baseline · resource limits · image tag enforcement</tspan>
+  </text>
+  <text x="60" y="836" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" fill="#334155">
+    <tspan font-weight="700" fill="#B91C1C">Tetragon</tspan>
+    <tspan> — eBPF kernel-level enforcement · traces process exec / network / file I/O on every node · events exported to Loki</tspan>
+  </text>
+  <text x="60" y="854" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" fill="#334155">
+    <tspan font-weight="700" fill="#B91C1C">Falco</tspan>
+    <tspan> — behavioral runtime detection · shell spawning · sensitive file reads · credential exposure · alerts → Loki via Falcosidekick</tspan>
+  </text>
+  <text x="60" y="872" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" fill="#334155">
+    <tspan font-weight="700" fill="#B91C1C">Kubescape</tspan>
+    <tspan> — NSA + MITRE continuous compliance scan · configurationScan + continuousScan · posture metrics on :8080 → Prometheus</tspan>
+  </text>
+  <text x="600" y="898" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" font-style="italic" fill="#94A3B8">Four-layer defense: prevent (Kyverno) · enforce (Tetragon) · detect &amp; alert (Falco) · audit posture (Kubescape)</text>
+</svg>

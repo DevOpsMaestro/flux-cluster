@@ -1,0 +1,131 @@
+---
+# Falco is a CNCF-graduated runtime security tool that monitors all syscalls
+# via eBPF and alerts on anomalous container behaviour: shell spawning, sensitive
+# file reads, unexpected network connections, and Kubernetes API abuse.
+#
+# Role in the security stack:
+#   Kyverno  — admission control (blocks misconfig before pods start)
+#   Tetragon — eBPF enforcement (kills processes, blocks syscalls at runtime)
+#   Falco    — runtime detection (continuous behavioural audit, alerts to Loki)
+#
+# Driver: modern_ebpf is the only viable option for KinD. KinD nodes are Docker
+# containers — kernel module loading is impossible. The legacy eBPF driver is
+# deprecated as of Falco 0.38. modern_ebpf is bundled in the Falco binary (no
+# init container required), uses CO-RE (Compile Once, Run Everywhere), and needs
+# only kernel ≥5.8 with BTF support — satisfied by all modern KinD hosts.
+#
+# Injection disabled: Falco is a low-level eBPF agent, not a mesh workload.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: falco
+  labels:
+    istio-injection: disabled
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: falco
+  namespace: flux-system
+spec:
+  interval: 1h
+  targetNamespace: falco
+  dependsOn:
+    - name: cilium
+      namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: falco
+      version: "8.x"
+      sourceRef:
+        kind: HelmRepository
+        name: falcosecurity
+        namespace: flux-system
+      interval: 24h
+  values:
+    # ── Driver ───────────────────────────────────────────────────────────────────
+    driver:
+      kind: modern_ebpf
+
+    # Ensures log output is flushed immediately rather than held in a line buffer.
+    tty: true
+
+    # ── Prometheus metrics ────────────────────────────────────────────────────────
+    # ServiceMonitor CRD (monitoring.coreos.com/v1) lives in the apps layer which
+    # depends on this infrastructure layer — circular dependency. Falco metrics are
+    # scraped via additionalScrapeConfigs in apps/base/prometheus/helmrelease.yaml.
+    metrics:
+      enabled: true
+      interval: 1m
+      output_rule: true
+      rules_counters_enabled: true
+      resource_utilization_enabled: true
+      kernel_event_counters_enabled: true
+
+    webserver:
+      enabled: true
+      prometheus_metrics_enabled: true
+      port: 8765
+
+    # ── Resources — Single node KinD ─────────────────────────────────────────────
+    # Scale requests/limits for production HA clusters.
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+    # ── Falcosidekick — alert routing to Loki ────────────────────────────────────
+    # Falco's native outputs are stdout/file/gRPC. Falcosidekick is the official
+    # proxy that routes alerts to 50+ destinations. Enabled here to forward
+    # structured JSON alerts into Loki for Grafana querying.
+    # falcoctl manages Falco rule artifacts: the install init container downloads
+    # rules at startup; the follow sidecar watches for updates while running.
+    # Both need resource limits to satisfy the require-resource-limits policy.
+    falcoctl:
+      artifact:
+        install:
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+        follow:
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+
+    falcosidekick:
+      enabled: true
+      # Single replica — KinD resource optimisation. Scale to 2+ for HA in production.
+      replicaCount: 1
+      config:
+        loki:
+          hostport: "http://loki.observability.svc.cluster.local:3100"
+          tenant: ""
+          format: json
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi

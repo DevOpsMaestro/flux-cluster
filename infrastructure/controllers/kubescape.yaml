@@ -1,0 +1,55 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubescape
+  labels:
+    istio-injection: disabled
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kubescape
+  namespace: flux-system
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: kubescape-operator
+      version: "1.40.x"
+      sourceRef:
+        kind: HelmRepository
+        name: kubescape
+        namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  dependsOn:
+    - name: cilium
+      namespace: flux-system
+  targetNamespace: kubescape
+  values:
+    clusterName: flux-kind
+    capabilities:
+      configurationScan: enable
+      continuousScan: enable
+      prometheusExporter: enable
+      vulnerabilityScan: disable
+      nodeScan: disable
+      nodeSbomGeneration: disable
+      relevancy: disable
+      runtimeObservability: disable
+      networkPolicyService: disable
+      networkEventsStreaming: disable
+      nodeProfileService: disable
+      admissionController: disable
+      httpDetection: disable
+      seccompProfileService: disable
+    configurations:
+      prometheusAnnotations: disable

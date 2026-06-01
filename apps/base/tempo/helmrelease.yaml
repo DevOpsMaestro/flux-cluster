@@ -1,0 +1,83 @@
+---
+# Grafana Tempo — distributed trace backend (single-binary mode).
+#
+# Role in the observability stack:
+#   OTel Collector → (OTLP gRPC 4317) → Tempo (stores traces on PVC)
+#   Grafana        → (HTTP 3100)       → Tempo (queries traces)
+#
+# Single-binary mode is appropriate for a single-node learning cluster.
+# Switch to tempo-distributed for production HA deployments.
+#
+# No Istio sidecar: Tempo receives plain-text OTLP from the OTel Collector
+# (also no sidecar) and serves plain-text HTTP to Grafana. Grafana's Envoy
+# proxy auto-detects the destination has no sidecar and sends plain text,
+# so no PeerAuthentication exception is needed.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tempo
+  namespace: flux-system
+spec:
+  interval: 1h
+  targetNamespace: observability
+  dependsOn:
+    - name: kube-prometheus-stack
+      namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: tempo
+      version: "1.x"
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: flux-system
+      interval: 24h
+  values:
+    podLabels:
+      sidecar.istio.io/inject: "false"
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 256Mi
+
+    persistence:
+      enabled: true
+      storageClassName: openebs-hostpath
+      size: 10Gi
+
+    tempo:
+      # Disable anonymous usage reporting.
+      reportingEnabled: false
+
+      # Receiver configuration — accept OTLP gRPC and HTTP from the OTel Collector.
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
+
+      storage:
+        trace:
+          backend: local
+          local:
+            path: /var/tempo/traces
+          wal:
+            path: /var/tempo/wal
+
+      # Retention: keep traces for 24 hours. Adjust upward once you understand
+      # the storage growth rate for your trace volume.
+      retention: 24h

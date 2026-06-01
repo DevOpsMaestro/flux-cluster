@@ -1,0 +1,307 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: kyverno-policy-tests
+policies:
+  - ../policies.yaml
+resources:
+  - resources/pass-pod.yaml
+  - resources/fail-privileged-pod.yaml
+  - resources/fail-latest-tag-pod.yaml
+  - resources/fail-no-tag-pod.yaml
+  - resources/fail-no-limits-pod.yaml
+  - resources/fail-priv-escalation-pod.yaml
+  - resources/skip-demo-pod.yaml
+  - resources/skip-tetragon-pod.yaml
+  - resources/skip-falco-pod.yaml
+results:
+  # ── pass-pod: fully compliant — all rules pass ───────────────────────────────
+  - policy: pod-security-baseline
+    rule: baseline
+    resources:
+      - pass-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-image-tag
+    rule: require-image-tag
+    resources:
+      - pass-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-image-tag
+    rule: disallow-latest-tag
+    resources:
+      - pass-pod
+    kind: Pod
+    result: pass
+  - policy: require-resource-limits
+    rule: check-container-resources
+    resources:
+      - pass-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-privilege-escalation
+    rule: check-privilege-escalation
+    resources:
+      - pass-pod
+    kind: Pod
+    result: pass
+
+  # ── fail-privileged-pod: privileged: true — fails PSS baseline only ──────────
+  - policy: pod-security-baseline
+    rule: baseline
+    resources:
+      - fail-privileged-pod
+    kind: Pod
+    result: fail
+  - policy: disallow-latest-image-tag
+    rule: require-image-tag
+    resources:
+      - fail-privileged-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-image-tag
+    rule: disallow-latest-tag
+    resources:
+      - fail-privileged-pod
+    kind: Pod
+    result: pass
+  - policy: require-resource-limits
+    rule: check-container-resources
+    resources:
+      - fail-privileged-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-privilege-escalation
+    rule: check-privilege-escalation
+    resources:
+      - fail-privileged-pod
+    kind: Pod
+    result: pass
+
+  # ── fail-latest-tag-pod: image: nginx:latest — fails disallow-latest-tag only ─
+  - policy: pod-security-baseline
+    rule: baseline
+    resources:
+      - fail-latest-tag-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-image-tag
+    rule: require-image-tag
+    resources:
+      - fail-latest-tag-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-image-tag
+    rule: disallow-latest-tag
+    resources:
+      - fail-latest-tag-pod
+    kind: Pod
+    result: fail
+  - policy: require-resource-limits
+    rule: check-container-resources
+    resources:
+      - fail-latest-tag-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-privilege-escalation
+    rule: check-privilege-escalation
+    resources:
+      - fail-latest-tag-pod
+    kind: Pod
+    result: pass
+
+  # ── fail-no-tag-pod: image: nginx — fails require-image-tag only ─────────────
+  # Note: 'nginx' has no colon so it passes disallow-latest-tag (!*:latest)
+  - policy: pod-security-baseline
+    rule: baseline
+    resources:
+      - fail-no-tag-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-image-tag
+    rule: require-image-tag
+    resources:
+      - fail-no-tag-pod
+    kind: Pod
+    result: fail
+  - policy: disallow-latest-image-tag
+    rule: disallow-latest-tag
+    resources:
+      - fail-no-tag-pod
+    kind: Pod
+    result: pass
+  - policy: require-resource-limits
+    rule: check-container-resources
+    resources:
+      - fail-no-tag-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-privilege-escalation
+    rule: check-privilege-escalation
+    resources:
+      - fail-no-tag-pod
+    kind: Pod
+    result: pass
+
+  # ── fail-no-limits-pod: no resources block — fails require-resource-limits only
+  - policy: pod-security-baseline
+    rule: baseline
+    resources:
+      - fail-no-limits-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-image-tag
+    rule: require-image-tag
+    resources:
+      - fail-no-limits-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-image-tag
+    rule: disallow-latest-tag
+    resources:
+      - fail-no-limits-pod
+    kind: Pod
+    result: pass
+  - policy: require-resource-limits
+    rule: check-container-resources
+    resources:
+      - fail-no-limits-pod
+    kind: Pod
+    result: fail
+  - policy: disallow-privilege-escalation
+    rule: check-privilege-escalation
+    resources:
+      - fail-no-limits-pod
+    kind: Pod
+    result: pass
+
+  # ── fail-priv-escalation-pod: allowPrivilegeEscalation: true ─────────────────
+  - policy: pod-security-baseline
+    rule: baseline
+    resources:
+      - fail-priv-escalation-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-image-tag
+    rule: require-image-tag
+    resources:
+      - fail-priv-escalation-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-image-tag
+    rule: disallow-latest-tag
+    resources:
+      - fail-priv-escalation-pod
+    kind: Pod
+    result: pass
+  - policy: require-resource-limits
+    rule: check-container-resources
+    resources:
+      - fail-priv-escalation-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-privilege-escalation
+    rule: check-privilege-escalation
+    resources:
+      - fail-priv-escalation-pod
+    kind: Pod
+    result: fail
+
+  # ── skip-demo-pod: demo namespace — PSS baseline excluded; image-tag rules now
+  # apply (demo exclusion was dropped when httpbin was pinned by digest in item 7).
+  # Digest reference satisfies require-image-tag (*:* matches sha256:) and is not :latest.
+  - policy: pod-security-baseline
+    rule: baseline
+    resources:
+      - skip-demo-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-image-tag
+    rule: require-image-tag
+    resources:
+      - skip-demo-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-image-tag
+    rule: disallow-latest-tag
+    resources:
+      - skip-demo-pod
+    kind: Pod
+    result: pass
+  - policy: require-resource-limits
+    rule: check-container-resources
+    resources:
+      - skip-demo-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-privilege-escalation
+    rule: check-privilege-escalation
+    resources:
+      - skip-demo-pod
+    kind: Pod
+    result: pass
+
+  # ── skip-tetragon-pod: tetragon namespace — PSS baseline + priv-escalation skip
+  - policy: pod-security-baseline
+    rule: baseline
+    resources:
+      - skip-tetragon-pod
+    kind: Pod
+    result: skip
+  - policy: disallow-latest-image-tag
+    rule: require-image-tag
+    resources:
+      - skip-tetragon-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-image-tag
+    rule: disallow-latest-tag
+    resources:
+      - skip-tetragon-pod
+    kind: Pod
+    result: pass
+  - policy: require-resource-limits
+    rule: check-container-resources
+    resources:
+      - skip-tetragon-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-privilege-escalation
+    rule: check-privilege-escalation
+    resources:
+      - skip-tetragon-pod
+    kind: Pod
+    result: skip
+
+  # ── skip-falco-pod: falco namespace — PSS baseline + priv-escalation skip ─────
+  - policy: pod-security-baseline
+    rule: baseline
+    resources:
+      - skip-falco-pod
+    kind: Pod
+    result: skip
+  - policy: disallow-latest-image-tag
+    rule: require-image-tag
+    resources:
+      - skip-falco-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-image-tag
+    rule: disallow-latest-tag
+    resources:
+      - skip-falco-pod
+    kind: Pod
+    result: pass
+  - policy: require-resource-limits
+    rule: check-container-resources
+    resources:
+      - skip-falco-pod
+    kind: Pod
+    result: pass
+  - policy: disallow-privilege-escalation
+    rule: check-privilege-escalation
+    resources:
+      - skip-falco-pod
+    kind: Pod
+    result: skip

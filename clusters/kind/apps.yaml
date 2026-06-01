@@ -1,0 +1,23 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 2m
+  timeout: 20m
+  prune: true
+  wait: true
+  dependsOn:
+    - name: infrastructure-controllers
+    - name: infrastructure-configs
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./apps/overlays/kind
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age

@@ -1,0 +1,59 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openebs
+  labels:
+    istio-injection: disabled
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: openebs
+  namespace: flux-system
+spec:
+  interval: 1h
+  dependsOn:
+    - name: cilium
+      namespace: flux-system
+  targetNamespace: openebs
+  install:
+    timeout: 10m
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: openebs
+      version: "4.2.0"
+      sourceRef:
+        kind: HelmRepository
+        name: openebs
+        namespace: flux-system
+      interval: 24h
+  values:
+    # OpenEBS 4.x uses subcharts. For KinD, only localpv-provisioner is needed.
+    engines:
+      replicated:
+        mayastor:
+          enabled: false
+      local:
+        lvm:
+          enabled: false
+        zfs:
+          enabled: false
+    mayastor:
+      enabled: false
+    loki-stack:
+      enabled: false
+    obs-callhome:
+      enabled: false
+    localpv-provisioner:
+      enabled: true
+      hostpathClass:
+        enabled: true
+        isDefaultClass: true

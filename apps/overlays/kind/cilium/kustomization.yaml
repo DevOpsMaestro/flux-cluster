@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Cilium itself is deployed as an infrastructure-controller (infrastructure/controllers/cilium.yaml).
+# This overlay exists as a placeholder for any Cilium CRD-backed resources that
+# belong in the apps layer (e.g. CiliumNetworkPolicy, CiliumClusterwideNetworkPolicy,
+# L7 HTTP policies, Egress Gateway configs, etc.).
+#
+# To add policies, create them under apps/base/cilium/ and reference that base here:
+#   resources:
+#     - ../../../base/cilium
+resources: []

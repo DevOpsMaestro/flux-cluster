@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - admin-secret.yaml
+  - helmrelease.yaml
+configMapGenerator:
+  - name: grafana-dashboards-custom
+    namespace: observability
+    options:
+      disableNameSuffixHash: true
+    files:
+      - dashboards/tetragon-kubectl-exec.json
+      - dashboards/flux-cluster-stats.json
+      - dashboards/flux-control-plane.json
+      - dashboards/falco-security.json
+      - dashboards/kyverno.json
+      - dashboards/kubescape.json
+      - dashboards/opentelemetry-collector.json
+  - name: grafana-dashboards-cilium
+    namespace: observability
+    options:
+      disableNameSuffixHash: true
+    files:
+      - dashboards/cilium-dashboard.json
+      - dashboards/cilium-operator-dashboard.json
+      - dashboards/hubble-dashboard.json
+  - name: grafana-dashboards-istio
+    namespace: observability
+    options:
+      disableNameSuffixHash: true
+    files:
+      - dashboards/istio-mesh.json
+      - dashboards/istio-service.json
+      - dashboards/istio-workload.json
+      - dashboards/istio-control-plane.json
+  - name: grafana-dashboards-kubernetes
+    namespace: observability
+    options:
+      disableNameSuffixHash: true
+    files:
+      - dashboards/node-exporter-full.json
+      - dashboards/cert-manager.json

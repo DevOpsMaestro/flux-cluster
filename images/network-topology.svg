@@ -1,0 +1,234 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="780" viewBox="0 0 1100 780">
+  <defs>
+    <marker id="arr-orange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#EA580C"/>
+    </marker>
+    <marker id="arr-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#1D4ED8"/>
+    </marker>
+    <marker id="arr-purple" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#7C3AED"/>
+    </marker>
+    <marker id="arr-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#15803D"/>
+    </marker>
+    <marker id="arr-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6B7280"/>
+    </marker>
+    <marker id="arr-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#0D9488"/>
+    </marker>
+  </defs>
+
+  <!-- Canvas -->
+  <rect width="1100" height="780" fill="#F8FAFC"/>
+
+  <!-- Title -->
+  <text x="550" y="30" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">flux-cluster — Network Topology</text>
+
+  <!-- ══════════════════════════════════════════════════
+       macOS HOST
+  ══════════════════════════════════════════════════ -->
+  <rect x="10" y="44" width="1080" height="686" rx="12" fill="#F1F5F9" stroke="#64748B" stroke-width="2" stroke-dasharray="10,4"/>
+  <text x="26" y="63" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#475569" letter-spacing="1">macOS HOST  ·  Apple Silicon (M-series)</text>
+
+  <!-- Browser box -->
+  <rect x="28" y="72" width="200" height="42" rx="7" fill="white" stroke="#64748B" stroke-width="1.5"/>
+  <text x="128" y="89" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="600" fill="#334155">Browser / curl</text>
+  <text x="128" y="105" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">localhost:8080</text>
+
+  <!-- Orange ingress arrow down from browser into KinD boundary -->
+  <line x1="128" y1="114" x2="128" y2="175" stroke="#EA580C" stroke-width="2" marker-end="url(#arr-orange)"/>
+  <text x="140" y="148" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#EA580C">extraPortMapping</text>
+  <text x="140" y="160" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#EA580C">8080 → :8888</text>
+
+  <!-- Docker Desktop box -->
+  <rect x="28" y="680" width="200" height="38" rx="7" fill="white" stroke="#64748B" stroke-width="1.5"/>
+  <text x="128" y="697" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#334155">Docker Desktop</text>
+  <text x="128" y="711" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">≥12 GB memory recommended</text>
+
+  <!-- ══════════════════════════════════════════════════
+       KinD CLUSTER BOUNDARY
+  ══════════════════════════════════════════════════ -->
+  <rect x="22" y="178" width="1064" height="488" rx="10" fill="white" stroke="#1E40AF" stroke-width="2"/>
+  <text x="38" y="196" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#1E40AF" letter-spacing="1">KinD CLUSTER: flux-kind  ·  Pod CIDR: 10.244.0.0/16 (VXLAN)  ·  Service CIDR: 10.96.0.0/12</text>
+
+  <!-- ══════════════════════════════════════════════════
+       CONTROL-PLANE NODE
+  ══════════════════════════════════════════════════ -->
+  <rect x="34" y="203" width="320" height="270" rx="8" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.5"/>
+  <text x="194" y="221" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#C2410C">control-plane node</text>
+  <text x="194" y="235" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">kindest/node:v1.35.0</text>
+
+  <!-- nginx nodeport-proxy box -->
+  <rect x="50" y="243" width="288" height="58" rx="6" fill="white" stroke="#EA580C" stroke-width="1.5"/>
+  <text x="194" y="261" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#EA580C">nginx nodeport-proxy</text>
+  <line x1="58" y1="267" x2="330" y2="267" stroke="#EA580C" stroke-width="0.75" opacity="0.4"/>
+  <text x="194" y="281" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">hostNetwork: true · port 8888 · DaemonSet</text>
+  <text x="194" y="294" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">proxies → envoy-proxy ClusterIP</text>
+
+  <!-- Cilium DaemonSet box on control-plane -->
+  <rect x="50" y="313" width="130" height="50" rx="6" fill="white" stroke="#C2410C" stroke-width="1.25"/>
+  <text x="115" y="330" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#C2410C">Cilium (eBPF)</text>
+  <text x="115" y="345" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">kube-proxy replacement</text>
+  <text x="115" y="358" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">VXLAN encap/decap</text>
+
+  <!-- Tetragon/Falco on control-plane -->
+  <rect x="192" y="313" width="146" height="50" rx="6" fill="white" stroke="#B91C1C" stroke-width="1.25"/>
+  <text x="265" y="330" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#B91C1C">Tetragon + Falco</text>
+  <text x="265" y="345" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">eBPF DaemonSets</text>
+  <text x="265" y="358" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">all nodes</text>
+
+  <!-- Promtail on control-plane -->
+  <rect x="50" y="373" width="288" height="36" rx="6" fill="white" stroke="#1D4ED8" stroke-width="1.25"/>
+  <text x="194" y="388" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#1D4ED8">Promtail DaemonSet</text>
+  <text x="194" y="401" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">scrapes pod logs → Loki</text>
+
+  <!-- Port 30443 note -->
+  <text x="194" y="430" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">containerPort: 30443 → hostPort: 8443 (TLS, reserved)</text>
+  <text x="194" y="444" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">containerPort: 8888 → hostPort: 8080 (active ingress path)</text>
+  <text x="194" y="458" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">API server: 127.0.0.1:6443</text>
+
+  <!-- ══════════════════════════════════════════════════
+       WORKER NODE 1
+  ══════════════════════════════════════════════════ -->
+  <rect x="374" y="203" width="232" height="286" rx="8" fill="#F0FDF4" stroke="#15803D" stroke-width="1.5"/>
+  <text x="490" y="221" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#15803D">worker-1 node</text>
+  <text x="490" y="235" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">kindest/node:v1.35.0</text>
+
+  <rect x="390" y="243" width="200" height="50" rx="6" fill="white" stroke="#C2410C" stroke-width="1.25"/>
+  <text x="490" y="260" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#C2410C">Cilium (eBPF)</text>
+  <text x="490" y="275" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">kube-proxy replacement</text>
+  <text x="490" y="288" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">VXLAN encap/decap</text>
+
+  <rect x="390" y="303" width="200" height="38" rx="6" fill="white" stroke="#B91C1C" stroke-width="1.25"/>
+  <text x="490" y="319" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#B91C1C">Tetragon + Falco</text>
+  <text x="490" y="333" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">eBPF DaemonSets</text>
+
+  <rect x="390" y="351" width="200" height="36" rx="6" fill="white" stroke="#1D4ED8" stroke-width="1.25"/>
+  <text x="490" y="366" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#1D4ED8">Promtail DaemonSet</text>
+  <text x="490" y="379" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">scrapes pod logs → Loki</text>
+
+  <!-- demo pods on worker-1 -->
+  <rect x="390" y="397" width="200" height="78" rx="6" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1.25"/>
+  <text x="490" y="414" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#6D28D9">demo ns pods</text>
+  <line x1="398" y1="420" x2="582" y2="420" stroke="#7C3AED" stroke-width="0.75" opacity="0.35"/>
+  <text x="490" y="434" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">httpbin ← Envoy sidecar</text>
+  <text x="490" y="448" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">load-gen ← Envoy sidecar</text>
+  <text x="490" y="462" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#0D9488">OTLP traces → observability</text>
+
+  <!-- ══════════════════════════════════════════════════
+       WORKER NODE 2
+  ══════════════════════════════════════════════════ -->
+  <rect x="624" y="203" width="232" height="286" rx="8" fill="#F0FDF4" stroke="#15803D" stroke-width="1.5"/>
+  <text x="740" y="221" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#15803D">worker-2 node</text>
+  <text x="740" y="235" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">kindest/node:v1.35.0</text>
+
+  <rect x="640" y="243" width="200" height="50" rx="6" fill="white" stroke="#C2410C" stroke-width="1.25"/>
+  <text x="740" y="260" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#C2410C">Cilium (eBPF)</text>
+  <text x="740" y="275" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">kube-proxy replacement</text>
+  <text x="740" y="288" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">VXLAN encap/decap</text>
+
+  <rect x="640" y="303" width="200" height="38" rx="6" fill="white" stroke="#B91C1C" stroke-width="1.25"/>
+  <text x="740" y="319" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#B91C1C">Tetragon + Falco</text>
+  <text x="740" y="333" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">eBPF DaemonSets</text>
+
+  <rect x="640" y="351" width="200" height="36" rx="6" fill="white" stroke="#1D4ED8" stroke-width="1.25"/>
+  <text x="740" y="366" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#1D4ED8">Promtail DaemonSet</text>
+  <text x="740" y="379" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">scrapes pod logs → Loki</text>
+
+  <!-- Observability pods on worker-2 -->
+  <rect x="640" y="397" width="200" height="78" rx="6" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.25"/>
+  <text x="740" y="414" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#1D4ED8">observability ns</text>
+  <line x1="648" y1="420" x2="832" y2="420" stroke="#1D4ED8" stroke-width="0.75" opacity="0.35"/>
+  <text x="740" y="434" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Prometheus · Grafana ← Envoy sidecar</text>
+  <text x="740" y="448" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Loki · AlertManager ← Envoy sidecar</text>
+  <text x="740" y="462" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#0D9488">Tempo · OTel Collector (no sidecar)</text>
+
+  <!-- ══════════════════════════════════════════════════
+       SHARED CLUSTER NAMESPACES (bottom of cluster box)
+  ══════════════════════════════════════════════════ -->
+  <!-- kube-system / envoy-gateway namespace boxes -->
+  <rect x="34" y="490" width="290" height="70" rx="8" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.25"/>
+  <text x="179" y="507" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#C2410C">kube-system</text>
+  <line x1="42" y1="513" x2="316" y2="513" stroke="#C2410C" stroke-width="0.75" opacity="0.35"/>
+  <text x="179" y="528" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Cilium operator · Hubble relay · CoreDNS</text>
+  <text x="179" y="542" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Hubble relay observes all VXLAN flows</text>
+  <text x="179" y="554" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">Hubble UI: disabled (saves ~200 Mi RAM)</text>
+
+  <!-- envoy-ingress namespace -->
+  <rect x="338" y="490" width="290" height="70" rx="8" fill="#FFF7ED" stroke="#EA580C" stroke-width="1.25"/>
+  <text x="483" y="507" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#C2410C">envoy-ingress namespace</text>
+  <line x1="346" y1="513" x2="620" y2="513" stroke="#EA580C" stroke-width="0.75" opacity="0.35"/>
+  <text x="483" y="528" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Envoy Gateway proxy Deployment</text>
+  <text x="483" y="542" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">NodePort Service :30080 (→ localhost:8080)</text>
+  <text x="483" y="554" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">HTTPRoute: grafana.local · prometheus.local</text>
+
+  <!-- flux-system + cert-manager etc -->
+  <rect x="642" y="490" width="424" height="70" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.25"/>
+  <text x="854" y="507" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" font-weight="700" fill="#4F46E5">flux-system · cert-manager · openebs · istio-system · kyverno · falco · tetragon · kubescape</text>
+  <line x1="650" y1="513" x2="1058" y2="513" stroke="#4F46E5" stroke-width="0.75" opacity="0.35"/>
+  <text x="854" y="528" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Flux controllers · cert-manager webhook · OpenEBS LocalPV · istiod control plane</text>
+  <text x="854" y="542" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Kyverno admission controllers · Falco + Falcosidekick · Kubescape operator (NSA + MITRE)</text>
+  <text x="854" y="554" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">All namespaces: istio-injection: disabled</text>
+
+  <!-- ══════════════════════════════════════════════════
+       TRAFFIC PATH ANNOTATIONS
+  ══════════════════════════════════════════════════ -->
+
+  <!-- Ingress path: nginx → envoy-ingress namespace (orange) -->
+  <line x1="194" y1="301" x2="194" y2="490" stroke="#EA580C" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arr-orange)"/>
+
+  <!-- envoy → observability services (orange continues) -->
+  <polyline points="483,490 483,475 740,475 740,459" fill="none" stroke="#EA580C" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arr-orange)"/>
+
+  <!-- VXLAN tunnel between nodes (blue dashed) -->
+  <line x1="354" y1="340" x2="374" y2="340" stroke="#1D4ED8" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arr-blue)"/>
+  <line x1="606" y1="340" x2="624" y2="340" stroke="#1D4ED8" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arr-blue)"/>
+
+  <!-- mTLS arrow in demo namespace (purple) -->
+  <line x1="490" y1="434" x2="490" y2="428" stroke="#7C3AED" stroke-width="0" />
+  <path d="M 430 434 Q 490 420 550 434" fill="none" stroke="#7C3AED" stroke-width="1.75" stroke-dasharray="4,2" marker-end="url(#arr-purple)"/>
+  <text x="490" y="416" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#7C3AED">mTLS</text>
+
+  <!-- Metrics path: node-exporter → Prometheus (green dashed) -->
+  <polyline points="490,397 490,380 740,380 740,397" fill="none" stroke="#15803D" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-green)"/>
+  <text x="615" y="375" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#15803D">metrics scrape</text>
+
+  <!-- ══════════════════════════════════════════════════
+       LEGEND
+  ══════════════════════════════════════════════════ -->
+  <rect x="856" y="590" width="220" height="153" rx="8" fill="white" stroke="#CBD5E1" stroke-width="1.5"/>
+  <text x="966" y="608" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#334155">Legend</text>
+  <line x1="870" y1="614" x2="1068" y2="614" stroke="#CBD5E1" stroke-width="1"/>
+
+  <line x1="874" y1="632" x2="920" y2="632" stroke="#EA580C" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arr-orange)"/>
+  <text x="930" y="636" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#334155">HTTP ingress path</text>
+
+  <line x1="874" y1="655" x2="920" y2="655" stroke="#1D4ED8" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arr-blue)"/>
+  <text x="930" y="659" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#334155">Cilium VXLAN (pod network)</text>
+
+  <line x1="874" y1="678" x2="920" y2="678" stroke="#7C3AED" stroke-width="1.75" stroke-dasharray="4,2" marker-end="url(#arr-purple)"/>
+  <text x="930" y="682" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#334155">Istio mTLS</text>
+
+  <line x1="874" y1="701" x2="920" y2="701" stroke="#15803D" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-green)"/>
+  <text x="930" y="705" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#334155">Metrics / log scrape</text>
+
+  <line x1="874" y1="724" x2="920" y2="724" stroke="#0D9488" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-teal)"/>
+  <text x="930" y="728" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#334155">OTLP traces (Envoy → OTel)</text>
+
+  <!-- Ingress path label -->
+  <text x="34" y="590" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#EA580C">Ingress path:</text>
+  <text x="34" y="605" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">localhost:8080 → KinD containerPort:8888 → nginx (hostNetwork) → envoy-proxy ClusterIP → HTTPRoute → Service</text>
+  <text x="34" y="620" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8" font-style="italic">nginx workaround required: Cilium BPF blocks bind() on NodePort range 30000–32767 on macOS/Docker Desktop</text>
+
+  <!-- OTLP trace path -->
+  <text x="34" y="638" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#0D9488">OTLP trace path:</text>
+  <text x="34" y="653" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Istio Envoy sidecars (demo + observability) → OTLP gRPC :4317 → OTel Collector → Tempo (stores) → Grafana (queries :3200)</text>
+
+  <!-- Network config summary -->
+  <text x="34" y="668" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#C2410C">Cilium CNI config:</text>
+  <text x="34" y="682" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">routingMode: tunnel · tunnelProtocol: vxlan  ·  bpf.masquerade: false (Docker bridge does its own NAT)</text>
+  <text x="34" y="696" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">ipam.mode: kubernetes (honours KinD podSubnet 10.244.0.0/16)  ·  socketLB.hostNamespaceOnly: true (Envoy sidecar port safe)</text>
+  <text x="34" y="710" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">kubeProxyReplacement: true  ·  k8sServiceHost: flux-kind-control-plane  ·  k8sServicePort: 6443</text>
+</svg>

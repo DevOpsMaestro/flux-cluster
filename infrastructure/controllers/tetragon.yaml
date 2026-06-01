@@ -1,0 +1,76 @@
+---
+# Tetragon is a Cilium project providing eBPF-based security observability.
+# It runs as a DaemonSet on every node, tracing process execution, network
+# connections, and file access with full Kubernetes pod/namespace context.
+# Injection disabled: Tetragon is a low-level eBPF agent, not a mesh workload.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tetragon
+  labels:
+    istio-injection: disabled
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tetragon
+  namespace: flux-system
+spec:
+  interval: 1h
+  targetNamespace: tetragon
+  dependsOn:
+    - name: cilium
+      namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: tetragon
+      version: "1.7.x"
+      sourceRef:
+        kind: HelmRepository
+        name: cilium
+        namespace: flux-system
+      interval: 24h
+  values:
+    tetragon:
+      prometheus:
+        enabled: true
+        # ServiceMonitor CRD (monitoring.coreos.com/v1) lives in the apps layer
+        # which depends on this infrastructure layer — circular dependency.
+        # Tetragon metrics are scraped via additionalScrapeConfigs in
+        # apps/base/prometheus/helmrelease.yaml instead.
+        serviceMonitor:
+          enabled: false
+      # Export events as JSON to stdout — visible via:
+      #   kubectl logs -n tetragon ds/tetragon -c export-stdout
+      export:
+        stdout:
+          enabled: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    tetragonOperator:
+      prometheus:
+        enabled: true
+        serviceMonitor:
+          enabled: false
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi

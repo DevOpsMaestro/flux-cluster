@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - gotk-components.yaml
+  - gotk-sync.yaml
+patches:
+  - target:
+      kind: Namespace
+      name: flux-system
+    patch: |-
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: flux-system
+        labels:
+          istio-injection: disabled
+  - target:
+      kind: GitRepository
+      name: flux-system
+    patch: |-
+      apiVersion: source.toolkit.fluxcd.io/v1
+      kind: GitRepository
+      metadata:
+        name: flux-system
+        namespace: flux-system
+      spec:
+        ref:
+          branch: add-sops

@@ -1,0 +1,4 @@
+creation_rules:
+  - path_regex: apps/base/.*-secret\.yaml$
+    encrypted_regex: ^(data|stringData)$
+    age: age1n9cv99ewmn862y0yxwhg34mcg6dr4sjyjjkpdw38ngl7ax8fwezq637nwh  # Public key from Age

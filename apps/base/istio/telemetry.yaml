@@ -1,0 +1,18 @@
+---
+# Instructs Istio's Envoy proxies to export traces to the OTel Collector.
+# The provider name "otel" maps to the extensionProviders entry in the
+# istiod meshConfig (infrastructure/controllers/istio.yaml).
+#
+# Scope: istio-system → applies mesh-wide to all sidecars.
+# Sampling is set to 100% here for the learning cluster — the matching
+# traceSampling in istiod controls the pilot-level default; both should agree.
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: mesh-default
+  namespace: istio-system
+spec:
+  tracing:
+    - providers:
+        - name: otel
+      randomSamplingPercentage: 100

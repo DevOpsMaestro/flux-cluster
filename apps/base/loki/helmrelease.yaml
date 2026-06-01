@@ -1,0 +1,98 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: loki
+  namespace: flux-system
+spec:
+  interval: 1h
+  targetNamespace: observability
+  dependsOn:
+    - name: kube-prometheus-stack
+      namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: loki
+      version: "6.x"
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: flux-system
+      interval: 24h
+  values:
+    deploymentMode: SingleBinary
+
+    loki:
+      auth_enabled: false
+      commonConfig:
+        replication_factor: 1
+      storage:
+        type: filesystem
+      schemaConfig:
+        configs:
+          - from: "2024-04-01"
+            object_store: filesystem
+            store: tsdb
+            schema: v13
+            index:
+              prefix: index_
+              period: 24h
+      limits_config:
+        retention_period: 168h   # 7 days
+
+    singleBinary:
+      replicas: 1
+      persistence:
+        storageClass: openebs-hostpath
+        size: 5Gi
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+    # Disable microservices-mode components (SingleBinary handles everything)
+    backend:
+      replicas: 0
+    read:
+      replicas: 0
+    write:
+      replicas: 0
+
+    # Disable MinIO — using filesystem storage
+    minio:
+      enabled: false
+
+    # Disable gateway — Grafana and Promtail connect directly on port 3100
+    gateway:
+      enabled: false
+
+    # Disable memcached StatefulSets — not needed for SingleBinary + filesystem.
+    # The chart deploys these by default but the worker nodes in a KinD cluster
+    # don't have enough spare memory to schedule them, and Loki's built-in
+    # in-memory cache is sufficient for a homelab workload.
+    chunksCache:
+      enabled: false
+    resultsCache:
+      enabled: false
+
+    # Disable the canary DaemonSet — it exists to test write/read round-trips
+    # in distributed deployments; not useful in SingleBinary mode.
+    lokiCanary:
+      enabled: false
+
+    # Disable the Helm test hook — the chart's validate.yaml enforces that
+    # test.enabled requires lokiCanary.enabled, so both must be toggled off.
+    test:
+      enabled: false
+

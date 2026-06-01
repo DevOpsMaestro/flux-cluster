@@ -1,0 +1,158 @@
+---
+# Deny all ingress and egress by default; subsequent policies carve out
+# only the traffic flows that observability workloads actually need.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: observability
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# All pods resolve DNS via CoreDNS in kube-system.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: observability
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+# Pods with Istio sidecars need to reach istiod for certificate issuance
+# (15012), xDS config pushes (15010), and telemetry (15014).
+# Promtail and node-exporter have no sidecar but are not harmed by this rule.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-istiod-egress
+  namespace: observability
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
+      ports:
+        - port: 15010
+        - port: 15012
+        - port: 15014
+---
+# All observability pods trust each other. This covers:
+#   Grafana → Prometheus (9090) and Loki (3100)
+#   Prometheus → AlertManager (9093), kube-state-metrics (8080), node-exporter (9100)
+#   Promtail → Loki (3100)
+#   prometheus-operator ↔ Prometheus (8080/9090)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-intra-namespace
+  namespace: observability
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {}
+  egress:
+    - to:
+        - podSelector: {}
+---
+# Prometheus, the operator, kube-state-metrics, and Promtail all make
+# Kubernetes API calls (service discovery, CRD reads, pod/namespace listing).
+# The API server is not in a namespace, so we match port 6443 with no
+# destination restriction.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-apiserver-egress
+  namespace: observability
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - port: 6443
+---
+# Prometheus scrapes metrics from pods across every namespace in the cluster.
+# The set of target namespaces and ports is open-ended (Cilium, Istio, Falco,
+# Tetragon, Kyverno, Kubescape, flux-system, demo…), so we grant Prometheus
+# unrestricted egress rather than enumerate every metrics endpoint.
+# All other observability pods remain subject to the more restrictive policies above.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: prometheus-allow-scrape-egress
+  namespace: observability
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+  policyTypes:
+    - Egress
+  egress:
+    - {}
+---
+# Envoy Gateway routes grafana.local HTTP traffic to Grafana on port 3000.
+# Envoy Gateway pods run in envoy-gateway-system with no Istio sidecar;
+# the port-3000 PERMISSIVE PeerAuthentication exception covers the plain-text
+# connection. NetworkPolicy still requires an explicit ingress rule here.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: grafana-allow-envoy-ingress
+  namespace: observability
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: envoy-gateway-system
+      ports:
+        - port: 3000
+---
+# Envoy Gateway routes prometheus.local HTTP traffic to Prometheus on port 9090.
+# Same reasoning as the Grafana rule above.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: prometheus-allow-envoy-ingress
+  namespace: observability
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: envoy-gateway-system
+      ports:
+        - port: 9090

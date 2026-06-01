@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../base/istio
+  # Required on macOS Docker Desktop + Cilium: localhost traffic arrives on the
+  # container loopback; Cilium NodePort BPF only handles eth0. This nginx proxy
+  # listens on port 8888 (outside the NodePort range Cilium blocks) and forwards
+  # to the Envoy Gateway proxy via a stable ClusterIP Service.
+  - nodeport-proxy.yaml

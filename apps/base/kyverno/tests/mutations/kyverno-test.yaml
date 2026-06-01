@@ -1,0 +1,36 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: kyverno-mutation-tests
+policies:
+  - ../../mutations.yaml
+resources:
+  - resources/job-observability.yaml
+  - resources/job-other-ns.yaml
+  - resources/deployment-observability.yaml
+results:
+  # Job in observability: rule matches → sidecar.istio.io/inject: "false" injected.
+  # Patch output reference: resources/patched-job-observability.yaml
+  # (patchedResource comparison not supported in cli.kyverno.io/v1alpha1 v1.13)
+  - policy: mutate-jobs-disable-istio-injection
+    rule: disable-istio-on-observability-jobs
+    resources:
+      - job-observability
+    kind: Job
+    result: pass
+
+  # Job in a different namespace: namespace does not match → rule skipped
+  - policy: mutate-jobs-disable-istio-injection
+    rule: disable-istio-on-observability-jobs
+    resources:
+      - job-other-ns
+    kind: Job
+    result: skip
+
+  # Deployment in observability: kind is not Job → rule skipped
+  - policy: mutate-jobs-disable-istio-injection
+    rule: disable-istio-on-observability-jobs
+    resources:
+      - deployment-observability
+    kind: Deployment
+    result: skip

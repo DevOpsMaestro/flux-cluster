@@ -1,0 +1,150 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kube-system
+  labels:
+    istio-injection: disabled
+  # kube-system already exists; this entry is a no-op but keeps the dependency
+  # graph explicit for readers.
+---
+# cilium-secrets is created by the Cilium chart for storing PKI/TLS material
+# (e.g. Hubble server certs). Pre-declaring it here lets us set the Istio
+# injection label before the chart creates it.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cilium-secrets
+  labels:
+    istio-injection: disabled
+---
+# Cilium replaces kindnet as the cluster CNI.
+# KinD must be created with `disableDefaultCNI: true` and `kubeProxyMode: none`
+# (see setup scripts) so that no CNI races with Cilium at boot.
+#
+# Bootstrap ordering — why the setup script pre-installs Cilium with helm:
+#   Without a CNI, every pod is Pending — including Flux itself.
+#   Flux can therefore never reconcile this file to install the CNI.
+#   The setup script breaks this deadlock by running `helm install cilium ...`
+#   BEFORE `flux bootstrap`.  When Flux first reconciles this HelmRelease it
+#   finds an existing release with the same name/namespace and ADOPTS it,
+#   reconciling any value drift as a normal upgrade rather than a reinstall.
+#
+#   All other controllers (cert-manager, openebs, istio) declare
+#   `dependsOn: cilium` so their pods never schedule before the CNI is Ready.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cilium
+  namespace: flux-system
+spec:
+  interval: 1h
+  releaseName: cilium
+  targetNamespace: kube-system
+  install:
+    # The Helm release already exists (pre-installed by the setup script).
+    # Setting createNamespace: false prevents Flux from erroring on kube-system
+    # already existing, and signals intent clearly to future readers.
+    createNamespace: false
+    timeout: 10m
+    remediation:
+      # 5 retries (vs 3 for all other controllers) because Cilium is pre-installed
+      # by the setup script and Flux must adopt that release. The adoption + any
+      # value drift can require extra reconcile cycles before the CNI is stable.
+      retries: 5
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: cilium
+      version: "1.17.x"
+      sourceRef:
+        kind: HelmRepository
+        name: cilium
+        namespace: flux-system
+      interval: 24h
+  values:
+    # ── KinD-specific requirements ────────────────────────────────────────────
+    # KinD nodes run inside Docker containers. The kernel's BPF helpers used by
+    # Cilium's kube-proxy replacement are available on modern kernels (5.10+),
+    # which the KinD node images ship with.
+    kubeProxyReplacement: true
+    # flux-kind-control-plane resolves inside the Docker bridge network to the
+    # control-plane node IP. 127.0.0.1 is only valid on the control-plane itself
+    # and causes "connection refused" on worker nodes where 127.0.0.1 is localhost.
+    k8sServiceHost: "flux-kind-control-plane"
+    k8sServicePort: "6443"
+
+    # ── Routing / datapath ────────────────────────────────────────────────────
+    # routingMode: tunnel + tunnelProtocol: vxlan is the safest choice inside Docker-on-Docker networking.
+    # Switch to "disabled" (native routing) only when the host network supports
+    # direct pod-CIDR routing between nodes.
+    routingMode: tunnel
+    tunnelProtocol: vxlan  # Optional: defaults to vxlan if routingMode is tunnel
+
+    # ── eBPF masquerade ───────────────────────────────────────────────────────
+    # Disabled for KinD. KinD nodes run inside Docker and the Docker bridge
+    # network performs its own NAT. Cilium's eBPF masquerade intercepts egress
+    # before Docker's iptables rules fire, causing UDP packets from pod IPs
+    # (e.g. CoreDNS forwarding to the upstream resolver at the Docker gateway)
+    # to leave the node un-SNATed and get dropped. Falling back to iptables
+    # masquerade (the default when this is false) lets Docker handle NAT
+    # correctly and restores external DNS resolution.
+    bpf:
+      masquerade: false
+
+    # ── IPAM ─────────────────────────────────────────────────────────────────
+    ipam:
+      mode: kubernetes   # honours the podSubnet set in the KinD config
+
+    # ── Hubble observability ──────────────────────────────────────────────────
+    # Hubble provides flow-level visibility. The UI and Relay are enabled so
+    # the existing Prometheus/Grafana stack can scrape Cilium metrics.
+    hubble:
+      enabled: true
+      relay:
+        enabled: true
+        replicas: 1
+      ui:
+        # Disabled by default to save ~200 Mi RAM on KinD.
+        # Re-enable: kubectl patch helmrelease cilium -n flux-system --type=merge \
+        #              -p '{"spec":{"values":{"hubble":{"ui":{"enabled":true}}}}}'
+        enabled: false
+      metrics:
+        enabled:
+          - dns
+          - drop
+          - tcp
+          - flow
+          - port-distribution
+          - icmp
+          - "httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction"
+        serviceMonitor:
+          # ServiceMonitor CRD (monitoring.coreos.com/v1) is provided by
+          # kube-prometheus-stack in the apps layer, which depends on this
+          # infrastructure layer — a circular dependency. Metrics are scraped
+          # via additionalScrapeConfigs in the kube-prometheus-stack HelmRelease
+          # instead (apps/base/prometheus/helmrelease.yaml).
+          enabled: false
+
+    # ── Prometheus / Grafana integration ─────────────────────────────────────
+    prometheus:
+      enabled: true
+      serviceMonitor:
+        enabled: false
+
+    operator:
+      replicas: 1
+      prometheus:
+        enabled: true
+        serviceMonitor:
+          enabled: false
+
+    # ── Istio integration ─────────────────────────────────────────────────────
+    # When Istio is also installed, Envoy sidecars and Cilium's eBPF datapath
+    # must cooperate. The setting below allows Envoy's traffic-interception
+    # ports (15001/15006) to pass through without being re-NATed by Cilium.
+    socketLB:
+      hostNamespaceOnly: true

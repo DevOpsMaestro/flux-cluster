@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: skip-tetragon-pod
+  namespace: tetragon
+spec:
+  containers:
+    - name: agent
+      image: quay.io/cilium/tetragon:v1.7.0
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+      securityContext:
+        privileged: true
+        allowPrivilegeEscalation: true

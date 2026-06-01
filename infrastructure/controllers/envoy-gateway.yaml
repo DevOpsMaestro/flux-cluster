@@ -1,0 +1,65 @@
+---
+# Envoy Gateway controller runs in envoy-gateway-system.
+# Injection disabled: the controller pods are not part of the Istio mesh.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: envoy-gateway-system
+  labels:
+    istio-injection: disabled
+---
+# Envoy Gateway data-plane (auto-provisioned Envoy proxy pods) runs in envoy-ingress.
+# Injection disabled: Envoy Gateway manages its own Envoy proxies; Istio sidecar
+# injection would conflict with the gateway container lifecycle.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: envoy-ingress
+  labels:
+    istio-injection: disabled
+---
+# Envoy Gateway installs its own CRDs (EnvoyProxy, GatewayClass, BackendTrafficPolicy,
+# etc.) via the Helm chart. The Gateway API CRDs (Gateway, HTTPRoute, GatewayClass) are
+# installed by the setup script (step 4) before Flux bootstrap, so they exist when this
+# HelmRelease first reconciles.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: envoy-gateway
+  namespace: flux-system
+spec:
+  interval: 1h
+  targetNamespace: envoy-gateway-system
+  dependsOn:
+    - name: cilium
+      namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: gateway-helm
+      version: "1.4.x"
+      sourceRef:
+        kind: HelmRepository
+        name: envoy-gateway
+        namespace: flux-system
+      interval: 24h
+  values:
+    # Disable the certgen Job's HPA — KinD has no Metrics Server.
+    autoscaling:
+      enabled: false
+    deployment:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
