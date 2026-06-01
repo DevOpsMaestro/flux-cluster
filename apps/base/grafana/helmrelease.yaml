@@ -63,6 +63,10 @@ spec:
     service:
       portName: http
     grafana.ini:
+      analytics:
+        check_for_updates: false
+      plugins:
+        allow_loading_unsigned_plugins: ""
       dashboards:
         default_home_dashboard_path: /var/lib/grafana/dashboards/kubernetes/node-exporter-full.json
     datasources:
