@@ -14,4 +14,3 @@ spec:
       port: 31416
       targetPort: 31416
       protocol: TCP
-  clusterIP: None
