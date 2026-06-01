@@ -1,0 +1,65 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: boinc
+  namespace: boinc
+  labels:
+    app: boinc
+spec:
+  replicas: 3
+  serviceName: boinc
+  selector:
+    matchLabels:
+      app: boinc
+  template:
+    metadata:
+      labels:
+        app: boinc
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - boinc
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: boinc
+          image: boinc/client:arm64v8
+          securityContext:
+            allowPrivilegeEscalation: false
+          env:
+            - name: BOINC_GUI_RPC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: boinc-secret
+                  key: gui-rpc-password
+            - name: BOINC_CMD_LINE_OPTIONS
+              value: "--allow_remote_gui_rpc"
+          ports:
+            - name: rpc
+              containerPort: 31416
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+          volumeMounts:
+            - name: boinc-data
+              mountPath: /var/lib/boinc
+  volumeClaimTemplates:
+    - metadata:
+        name: boinc-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 30Gi

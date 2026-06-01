@@ -12,6 +12,7 @@ resources:
   - ../../base/notifications
   - ../../base/tempo
   - ../../base/opentelemetry
+  - ../../base/boinc
   # Uncomment to enable:
   # - cert-manager/
   # - openebs/
