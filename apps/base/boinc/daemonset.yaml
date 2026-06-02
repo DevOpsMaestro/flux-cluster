@@ -16,11 +16,41 @@ spec:
         app: boinc
     spec:
       hostPID: true
+      initContainers:
+        - name: boinc-account-init
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - |
+              cp -n /boinc-account-init/account_boinc.bakerlab.org_rosetta.xml \
+                     /var/lib/boinc/account_boinc.bakerlab.org_rosetta.xml
+              cp -n /boinc-account-init/account_einstein.phys.uwm.edu.xml \
+                     /var/lib/boinc/account_einstein.phys.uwm.edu.xml
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          volumeMounts:
+            - name: boinc-data
+              mountPath: /var/lib/boinc
+            - name: boinc-projects
+              mountPath: /boinc-account-init
+              readOnly: true
       containers:
         - name: boinc
           image: boinc/client:arm64v8
           securityContext:
             allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           env:
             - name: BOINC_GUI_RPC_PASSWORD
               valueFrom:
@@ -43,12 +73,6 @@ spec:
           volumeMounts:
             - name: boinc-data
               mountPath: /var/lib/boinc
-            - name: boinc-projects
-              mountPath: /var/lib/boinc/account_boinc.bakerlab.org_rosetta.xml
-              subPath: account_boinc.bakerlab.org_rosetta.xml
-            - name: boinc-projects
-              mountPath: /var/lib/boinc/account_einstein.phys.uwm.edu.xml
-              subPath: account_einstein.phys.uwm.edu.xml
       volumes:
         - name: boinc-data
           hostPath:
