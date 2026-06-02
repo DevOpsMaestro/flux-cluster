@@ -48,6 +48,14 @@ spec:
     cainjector:
       enabled: false
     replicaCount: 0
+    webhook:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
   postRenderers:
     - kustomize:
         patches:
