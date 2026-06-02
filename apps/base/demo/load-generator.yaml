@@ -44,6 +44,11 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "command -v curl"]
+            initialDelaySeconds: 5
+            periodSeconds: 30
           resources:
             requests:
               cpu: 5m

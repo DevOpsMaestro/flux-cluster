@@ -48,6 +48,14 @@ spec:
     cainjector:
       enabled: false
     replicaCount: 0
+    webhook:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
   postRenderers:
     - kustomize:
         patches:
@@ -97,10 +105,39 @@ spec:
         namespace: flux-system
       interval: 24h
   values:
-    startupapicheck:
-      enabled: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    webhook:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
     cainjector:
       enabled: true
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+    startupapicheck:
+      enabled: true
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi
   postRenderers:
     - kustomize:
         patches:

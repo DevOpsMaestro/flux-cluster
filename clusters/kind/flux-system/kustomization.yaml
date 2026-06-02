@@ -25,4 +25,4 @@ patches:
         namespace: flux-system
       spec:
         ref:
-          branch: add-boinc
+          branch: vers-upgrade-grafana

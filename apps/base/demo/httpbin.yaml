@@ -36,6 +36,18 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /get
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /get
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 20
           resources:
             requests:
               cpu: 10m

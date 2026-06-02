@@ -16,16 +16,46 @@ spec:
         app: boinc
     spec:
       hostPID: true
+      initContainers:
+        - name: boinc-account-init
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - |
+              cp -n /boinc-account-init/account_boinc.bakerlab.org_rosetta.xml \
+                     /var/lib/boinc/account_boinc.bakerlab.org_rosetta.xml
+              cp -n /boinc-account-init/account_einstein.phys.uwm.edu.xml \
+                     /var/lib/boinc/account_einstein.phys.uwm.edu.xml
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          volumeMounts:
+            - name: boinc-data
+              mountPath: /var/lib/boinc
+            - name: boinc-projects
+              mountPath: /boinc-account-init
+              readOnly: true
       containers:
         - name: boinc
           image: boinc/client:arm64v8
           securityContext:
             allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           env:
             - name: BOINC_GUI_RPC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: boinc-secret
+                  name: boinc-projects-secret
                   key: gui-rpc-password
             - name: BOINC_CMD_LINE_OPTIONS
               value: "--allow_remote_gui_rpc"
@@ -38,7 +68,7 @@ spec:
               cpu: 500m
               memory: 512Mi
             limits:
-              cpu: 2000m
+              cpu: 1000m
               memory: 2Gi
           volumeMounts:
             - name: boinc-data
@@ -48,3 +78,6 @@ spec:
           hostPath:
             path: /var/lib/boinc
             type: DirectoryOrCreate
+        - name: boinc-projects
+          secret:
+            secretName: boinc-projects-secret

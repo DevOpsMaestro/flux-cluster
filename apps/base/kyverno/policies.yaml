@@ -60,6 +60,14 @@ spec:
                 # the Baseline profile. Switch to Istio CNI to remove the need
                 # for this exclusion.
                 - demo
+                # BOINC DaemonSet requires hostPID (accurate CPU accounting across
+                # host processes) and hostPath (/var/lib/boinc persistent storage).
+                # Both are intentional design choices for a compute workload.
+                - boinc
+                # Kubernetes control plane (etcd, kube-apiserver, kube-scheduler,
+                # kube-controller-manager) and CNI (cilium, cilium-envoy) require
+                # hostNetwork, hostPath, and elevated capabilities by design.
+                - kube-system
       validate:
         podSecurity:
           level: baseline
@@ -238,6 +246,10 @@ spec:
                 # Real observability workloads (Prometheus, Grafana, Loki) all have
                 # explicit securityContexts set in their charts.
                 - observability
+                # Kubernetes control plane and CNI components (cilium, etcd,
+                # kube-apiserver etc.) omit securityContext entirely, causing
+                # JMESPath eval errors. These are privileged by design.
+                - kube-system
       validate:
         message: "All containers must set securityContext.allowPrivilegeEscalation: false."
         foreach:
