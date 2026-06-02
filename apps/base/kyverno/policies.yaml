@@ -60,6 +60,10 @@ spec:
                 # the Baseline profile. Switch to Istio CNI to remove the need
                 # for this exclusion.
                 - demo
+                # BOINC DaemonSet requires hostPID (accurate CPU accounting across
+                # host processes) and hostPath (/var/lib/boinc persistent storage).
+                # Both are intentional design choices for a compute workload.
+                - boinc
       validate:
         podSecurity:
           level: baseline
