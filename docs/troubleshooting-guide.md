@@ -1,7 +1,7 @@
 # Troubleshooting Guide
 
 Cluster: `flux-kind` · KinD 1.35.0 · 1 control-plane + 2 workers
-Stack: Flux CD · Cilium 1.17 · Hubble · cert-manager 1.17 · OpenEBS 4.2 · Istio 1.26 (mesh only) · Gateway API v1.2.1 · Envoy Gateway 1.4 · Tetragon 1.7 · Kyverno 3 · Kubescape 1.40 · Falco 8 · kube-prometheus-stack 72 · Grafana 8 · Grafana Tempo 1 · OpenTelemetry Collector 0 · SOPS + Age
+Stack: Flux CD · Cilium 1.17 · Hubble · cert-manager 1.17 · OpenEBS 4.2 · Istio 1.26 (mesh only) · Gateway API v1.2.1 · Envoy Gateway 1.4 · Tetragon 1.7 · Kyverno 3 · Kubescape 1.40 · Falco 8 · kube-prometheus-stack 72 · Grafana 10 (app 12) · Grafana Tempo 1 · OpenTelemetry Collector 0 · BOINC · SOPS + Age
 
 ---
 
@@ -29,6 +29,7 @@ Stack: Flux CD · Cilium 1.17 · Hubble · cert-manager 1.17 · OpenEBS 4.2 · I
 19. [Kubescape](#19-kubescape)
 20. [SOPS + Age](#20-sops--age)
 21. [Common issues](#21-common-issues)
+22. [BOINC](#22-boinc)
 
 ---
 
@@ -1444,3 +1445,61 @@ kubectl logs -n falco -l app.kubernetes.io/name=falco --since=10m \
 ```
 
 **Root cause if BTF is unavailable:** `modern_ebpf` requires kernel BTF support. KinD nodes on Linux expose the host kernel BTF at `/sys/kernel/btf/vmlinux`. If the host kernel predates 5.8 or was built without `CONFIG_DEBUG_INFO_BTF`, Falco will fail to load. Upgrade the host kernel or switch to a KinD node image with a newer kernel.
+
+---
+
+## 22. BOINC
+
+See `docs/boinc.md` for full operational detail. Quick reference below.
+
+### BOINC status
+
+```bash
+# Pods — one per node, all should be Running
+kubectl get pods -n boinc -o wide
+
+# Recent logs — look for project attach messages on first start
+kubectl logs -n boinc -l app=boinc --tail=50
+```
+
+### Check project attachment
+
+```bash
+POD=$(kubectl get pod -n boinc -l app=boinc -o jsonpath='{.items[0].metadata.name}')
+kubectl exec -n boinc $POD -- boinccmd --get_project_status
+```
+
+Expected: two projects listed — `https://boinc.bakerlab.org/rosetta/` and
+`https://einstein.phys.uwm.edu/`.
+
+### Update credentials
+
+```bash
+# Edit and re-encrypt in one step
+sops apps/base/boinc/boinc-projects-secret.yaml
+
+# After committing and pushing, restart to pick up new credentials
+kubectl rollout restart daemonset/boinc -n boinc
+```
+
+### BOINC logs
+
+```bash
+kubectl logs -n boinc -l app=boinc --tail=50
+
+# Filter to errors only
+kubectl logs -n boinc -l app=boinc | grep -iE "error|failed|invalid"
+```
+
+### initContainer logs (credential copy step)
+
+```bash
+kubectl logs -n boinc <pod-name> -c boinc-account-init
+```
+
+If the initContainer failed, verify the Secret was decrypted by Flux:
+
+```bash
+kubectl get secret boinc-projects-secret -n boinc
+# If missing, check: flux get kustomization apps -n flux-system
+```

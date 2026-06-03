@@ -10,6 +10,18 @@ FluxCD GitOps cluster for KinD — multi-node, Cilium CNI with kube-proxy replac
 | [GitOps Flow](images/flow.svg) | End-to-end reconciliation flow from git commit to running pod, with dependency ordering |
 | [Network Topology](images/network-topology.svg) | KinD node layout, Cilium VXLAN pod network, ingress path, and Istio mesh traffic |
 
+## Documentation
+
+| Document | Description |
+|---|---|
+| [Key Concepts](docs/concepts.md) | What each technology is and why it's here — start here if you're new to Kubernetes |
+| [Troubleshooting Guide](docs/troubleshooting-guide.md) | Per-technology verification commands and common issue resolutions |
+| [SOPS + Age Secrets](docs/sops-age-secrets.md) | Secrets encryption setup, day-to-day workflow, and recovery procedure |
+| [BOINC](docs/boinc.md) | BOINC compute DaemonSet — status commands, credential updates, and troubleshooting |
+| [Kubescape Accepted Risks](docs/kubescape-security.md) | Security findings reviewed and accepted as intentional design decisions |
+| [Istio Basic Reference](docs/ISTIO_basic_notes.md) | Day-to-day Istio admin commands |
+| [Istio Advanced Reference](docs/ISTIO_advanced_notes.md) | mTLS enforcement, authorization policy, tracing config |
+
 ## Repository structure
 
 ```text
@@ -95,6 +107,29 @@ flux-cluster/
     └── setup-without-flux-generic-cluster.sh  # KinD cluster only (no Flux bootstrap)
 ```
 
+## How changes flow
+
+This cluster is fully GitOps — `kubectl apply` is never run directly. Every change
+enters through Git:
+
+```
+1. Edit a manifest or HelmRelease value locally
+2. git commit + git push to the branch Flux is watching
+3. Flux GitRepository detects the new commit (polls every 1 min)
+4. Flux Kustomization runs kustomize build and diffs the result against the cluster
+5. Changed resources are applied; HelmReleases trigger helm upgrade automatically
+6. The cluster converges to match the new desired state in Git
+```
+
+To skip the 1-minute poll and apply immediately after a push:
+
+```bash
+flux reconcile source git flux-system -n flux-system
+```
+
+Any change made with `kubectl apply` directly will be **reverted** on the next
+reconcile. Flux is the source of truth — always commit to Git instead.
+
 ## Dependency chain
 
 ```text
@@ -140,7 +175,7 @@ flux-system (GitRepository)
 | Envoy Gateway | envoy-gateway/gateway | 1.4.x | envoy-gateway-system | |
 | Envoy Gateway data-plane | gatewayClassName: eg | 1.4.x | envoy-ingress | |
 | kube-prometheus-stack | prometheus-community/kube-prometheus-stack | 72.x | observability | |
-| Grafana | grafana/grafana | 8.x | observability | |
+| Grafana | grafana/grafana | 10.x (app 12.x) | observability | |
 | Loki | grafana/loki | 6.x | observability | |
 | Promtail | grafana/promtail | 6.x | observability | |
 | Grafana Tempo | grafana/tempo | 1.x | observability | Single-binary mode; trace backend for the OTel pipeline |
@@ -150,6 +185,22 @@ flux-system (GitRepository)
 | Kubescape | kubescape/kubescape-operator | 1.40.x | kubescape | NSA + MITRE continuous scan; vulnerability scan disabled for KinD |
 | Falco + Falcosidekick | falcosecurity/falco | 8.x | falco | |
 | demo (httpbin) | kennethreitz/httpbin | @sha256 digest pin | demo | No versioned tags published; pinned by digest |
+| BOINC | boinc/client | arm64v8 | boinc | Voluntary compute — Rosetta@Home + Einstein@Home; capped at 1 CPU core for thermal management |
+
+## Container images
+
+Images referenced directly in manifests (outside of Helm charts). Helm-managed
+workloads use images defined by their chart; versions are controlled by the chart
+version constraint in the HelmRelease.
+
+| Image | Tag / Digest | File | Purpose |
+|-------|-------------|------|---------|
+| `boinc/client` | `arm64v8` | `apps/base/boinc/daemonset.yaml` | BOINC compute client (ARM64-native) |
+| `busybox` | `1.37` | `apps/base/boinc/daemonset.yaml` | initContainer: copies account XML credentials to hostPath |
+| `kennethreitz/httpbin` | `@sha256:599f…` | `apps/base/demo/httpbin.yaml` | HTTP echo server — mesh traffic target |
+| `curlimages/curl` | `8.7.1` | `apps/base/demo/load-generator.yaml` | Load generator: curl loop → httpbin every 5 s |
+| `nginx` | `1.27-alpine` | `apps/overlays/kind/istio/nodeport-proxy.yaml` | KinD ingress workaround: proxies host port 8888 → Envoy ClusterIP |
+| `falcosecurity/event-generator` | `0.13.0` | `tests/falco/event-generator.yaml` | Falco live detection test job |
 
 ## Version compatibility
 
@@ -164,7 +215,7 @@ The versions below were validated together. When upgrading a component, check co
 | Gateway API CRDs | v1.2.1 | hardcoded in `setup-fluxcd-gitops-kind-multinode.sh` step 4 |
 | kube-prometheus-stack | 72.x | `prometheus/helmrelease.yaml` |
 | Loki | 6.x | `loki/helmrelease.yaml` |
-| Grafana | 8.x | `grafana/helmrelease.yaml` |
+| Grafana | 10.x (app 12.x) | `grafana/helmrelease.yaml` |
 | Grafana Tempo | 1.x | `tempo/helmrelease.yaml` |
 | OpenTelemetry Collector | 0.x | `opentelemetry/helmrelease.yaml` |
 | Kyverno | 3.x | `kyverno.yaml` |
@@ -279,6 +330,47 @@ After bootstrap, watch Flux reconcile everything:
 flux get all -A
 watch -n 6 "flux get all -A"
 ```
+
+## After bootstrap — Day 1 checklist
+
+Work through these steps in order to confirm the cluster is fully healthy.
+
+```bash
+# 1. All nodes Ready
+kubectl get nodes
+
+# 2. All Flux resources reconciled — every row should show READY: True
+flux get all -A
+
+# 3. No pods stuck — filter out Running and Completed to spot problems
+kubectl get pods -A | grep -v "Running\|Completed"
+
+# 4. Cilium CNI healthy
+cilium status --wait
+
+# 5. Grafana reachable — expected: 302 (login redirect)
+curl -s -o /dev/null -w "%{http_code}" -H "Host: grafana.local" http://localhost:8080/
+
+# 6. Open Grafana: http://grafana.local:8080
+#    Navigate to Dashboards → Node Exporter Full
+#    Verify CPU, memory, and disk graphs have data
+
+# 7. Open the Istio Mesh dashboard
+#    Dashboards → Istio Mesh
+#    Verify request rate > 0 (generated by load-generator in the demo namespace)
+
+# 8. Verify all five Kyverno ClusterPolicies loaded
+kubectl get clusterpolicies
+
+# 9. Verify BOINC attached to both projects
+kubectl logs -n boinc -l app=boinc --tail=30 | grep -iE "project|attach"
+
+# 10. Run offline policy unit tests (no cluster required)
+make test-policies
+```
+
+If any step fails, see the [Troubleshooting Guide](docs/troubleshooting-guide.md) and
+jump to the relevant technology section.
 
 ## Accessing services
 
