@@ -8,7 +8,7 @@ metadata:
 spec:
   interval: 1m0s
   ref:
-    branch: vers-upgrade-grafana
+    branch: main
   secretRef:
     name: flux-system
   url: https://github.com/DevOpsMaestro/flux-cluster.git
