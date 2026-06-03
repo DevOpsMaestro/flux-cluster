@@ -25,4 +25,4 @@ patches:
         namespace: flux-system
       spec:
         ref:
-          branch: vers-upgrade-grafana
+          branch: main
