@@ -103,7 +103,7 @@
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": true,
-      "schedule": ["on weekdays"]
+      "schedule": ["every weekday"]
     },
     {
       "description": "Minor tier: group all Flux HelmRelease minor constraint bumps into one weekly PR for human review",
