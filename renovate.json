@@ -1,0 +1,132 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+
+  "flux": {
+    "fileMatch": [
+      "(^|/)clusters/.+\\.yaml$",
+      "(^|/)apps/.+\\.yaml$",
+      "(^|/)infrastructure/.+\\.yaml$"
+    ]
+  },
+
+  "kubernetes": {
+    "fileMatch": [
+      "(^|/)apps/(?!base/kyverno/tests).+\\.yaml$",
+      "(^|/)infrastructure/.+\\.yaml$"
+    ]
+  },
+
+  "customManagers": [
+    {
+      "description": "Track Cilium chart version in versions.env (used by bootstrap script pre-install)",
+      "customType": "regex",
+      "fileMatch": ["^versions\\.env$"],
+      "matchStrings": ["CILIUM_VERSION=(?<currentValue>[^\\n]+)"],
+      "depNameTemplate": "cilium",
+      "datasourceTemplate": "helm",
+      "registryUrlTemplate": "https://helm.cilium.io"
+    },
+    {
+      "description": "Track Istio chart version in versions.env",
+      "customType": "regex",
+      "fileMatch": ["^versions\\.env$"],
+      "matchStrings": ["ISTIO_VERSION=(?<currentValue>[^\\n]+)"],
+      "depNameTemplate": "istiod",
+      "datasourceTemplate": "helm",
+      "registryUrlTemplate": "https://istio-release.storage.googleapis.com/charts"
+    },
+    {
+      "description": "Track Envoy Gateway version in versions.env",
+      "customType": "regex",
+      "fileMatch": ["^versions\\.env$"],
+      "matchStrings": ["ENVOY_GATEWAY_VERSION=v?(?<currentValue>[^\\n]+)"],
+      "depNameTemplate": "envoyproxy/gateway",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "Track Kubernetes node version in versions.env (KinD node image)",
+      "customType": "regex",
+      "fileMatch": ["^versions\\.env$"],
+      "matchStrings": ["K8S_VER=v?(?<currentValue>[^\\n]+)"],
+      "depNameTemplate": "kubernetes/kubernetes",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "Track Kyverno CLI version pinned in CI workflow",
+      "customType": "regex",
+      "fileMatch": ["^\\.github/workflows/validate\\.yaml$"],
+      "matchStrings": ["KYVERNO_CLI_VERSION: (?<currentValue>[^\\n]+)"],
+      "depNameTemplate": "kyverno/kyverno",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "Track Kubescape CLI version in CI workflow and versions.env",
+      "customType": "regex",
+      "fileMatch": [
+        "^\\.github/workflows/validate\\.yaml$",
+        "^versions\\.env$"
+      ],
+      "matchStrings": [
+        "KUBESCAPE_VERSION: (?<currentValue>[^\\n]+)",
+        "KUBESCAPE_VERSION=(?<currentValue>[^\\n]+)"
+      ],
+      "depNameTemplate": "kubescape/kubescape",
+      "datasourceTemplate": "github-releases"
+    }
+  ],
+
+  "packageRules": [
+    {
+      "description": "Disable BOINC image — arm64v8 is an architecture alias, not a version tag",
+      "matchManagers": ["kubernetes"],
+      "matchPackageNames": ["boinc/client"],
+      "enabled": false
+    },
+    {
+      "description": "Disable httpbin — no versioned tags published; image is pinned by digest",
+      "matchManagers": ["kubernetes"],
+      "matchPackageNames": ["kennethreitz/httpbin"],
+      "enabled": false
+    },
+    {
+      "description": "Disable OpenEBS — pre-upgrade hook references bitnami/kubectl:1.25.15 which no longer exists on Docker Hub; any upgrade triggers the broken hook",
+      "matchManagers": ["flux"],
+      "matchPackageNames": ["openebs"],
+      "enabled": false
+    },
+    {
+      "description": "Patch tier: group container image patch updates and automerge after CI passes",
+      "matchManagers": ["kubernetes"],
+      "matchUpdateTypes": ["patch"],
+      "groupName": "container-image-patch-updates",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
+      "schedule": ["on weekdays"]
+    },
+    {
+      "description": "Minor tier: group all Flux HelmRelease minor constraint bumps into one weekly PR for human review",
+      "matchManagers": ["flux"],
+      "matchUpdateTypes": ["minor"],
+      "groupName": "flux-minor-updates",
+      "automerge": false,
+      "schedule": ["on monday"]
+    },
+    {
+      "description": "GitHub Actions: automerge patch and minor updates — SHA-pinned actions are low supply-chain risk",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "github-actions-updates",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "description": "Infrastructure version pins (versions.env, CI tool versions): group together, no automerge — these affect cluster bootstrap and node version",
+      "matchManagers": ["regex"],
+      "groupName": "infrastructure-version-pins",
+      "automerge": false
+    }
+  ]
+}

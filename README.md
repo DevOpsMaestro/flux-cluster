@@ -18,6 +18,7 @@ FluxCD GitOps cluster for KinD — multi-node, Cilium CNI with kube-proxy replac
 | [Troubleshooting Guide](docs/troubleshooting-guide.md) | Per-technology verification commands and common issue resolutions |
 | [SOPS + Age Secrets](docs/sops-age-secrets.md) | Secrets encryption setup, day-to-day workflow, and recovery procedure |
 | [BOINC](docs/boinc.md) | BOINC compute DaemonSet — status commands, credential updates, and troubleshooting |
+| [Renovate](docs/renovate.md) | Dependency automation — how Renovate is configured, tiered strategy, and what to do when a PR automerges unexpectedly |
 | [Kubescape Accepted Risks](docs/kubescape-security.md) | Security findings reviewed and accepted as intentional design decisions |
 | [Istio Basic Reference](docs/ISTIO_basic_notes.md) | Day-to-day Istio admin commands |
 | [Istio Advanced Reference](docs/ISTIO_advanced_notes.md) | mTLS enforcement, authorization policy, tracing config |
@@ -186,6 +187,7 @@ flux-system (GitRepository)
 | Falco + Falcosidekick | falcosecurity/falco | 8.x | falco | |
 | demo (httpbin) | kennethreitz/httpbin | @sha256 digest pin | demo | No versioned tags published; pinned by digest |
 | BOINC | boinc/client | arm64v8 | boinc | Voluntary compute — Rosetta@Home + Einstein@Home; capped at 1 CPU core for thermal management |
+| Renovate Bot | renovatebot/renovate | (GitHub App) | — | Automated dependency PRs for Helm charts, images, GitHub Actions, and CI tool pins |
 
 ## Container images
 

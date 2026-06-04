@@ -316,6 +316,37 @@ project credentials.
 
 ---
 
+## Dependency Automation — Renovate
+
+**Renovate Bot** automatically opens pull requests when new versions of dependencies are
+available — Helm chart versions, container image tags, GitHub Actions, and CLI tool pins in
+CI. It reads `renovate.json` at the repo root to decide what to track and how to handle
+each type of update.
+
+The automation is tiered by risk:
+
+| Tier | What | Behavior |
+|------|------|----------|
+| Patch images | Direct container image tags (exact pins) | Grouped PR, automerged after CI passes (weekdays) |
+| Minor Helm | Flux HelmRelease constraint bumps (`1.x → 2.x`) | Grouped PR every Monday, human review required |
+| GitHub Actions | Action version bumps | Automerged after CI passes |
+| Infra pins | `versions.env` and CI tool versions (Cilium, Istio, Kubescape, etc.) | PR opened, no automerge — these affect bootstrap |
+
+**Why no patch PRs for most HelmReleases?** Most charts use a semver range constraint like
+`1.17.x`. Flux resolves and deploys the latest matching chart automatically — there is
+nothing for Renovate to bump. Renovate only opens a PR when the constraint range itself
+changes (e.g., `1.17.x → 1.18.x`).
+
+**Automerge safety**: Renovate waits for GitHub branch protection to pass before merging.
+The `validate` CI workflow (kustomize build + Kyverno tests + Kubescape scan) is a required
+check. A failing check keeps the PR open regardless of the automerge setting.
+
+Three packages are explicitly disabled because they have no meaningful version signal:
+`boinc/client` (ARM64 architecture alias, not a version), `kennethreitz/httpbin` (no
+versioned tags, digest-pinned), and `openebs` (pre-upgrade hook references a deleted image).
+
+---
+
 ## Demo Namespace — httpbin and load-generator
 
 The `demo` namespace contains two workloads that exist purely to generate traffic

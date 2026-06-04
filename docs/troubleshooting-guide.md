@@ -1503,3 +1503,63 @@ If the initContainer failed, verify the Secret was decrypted by Flux:
 kubectl get secret boinc-projects-secret -n boinc
 # If missing, check: flux get kustomization apps -n flux-system
 ```
+
+---
+
+## 23. Renovate
+
+See `docs/renovate.md` for full configuration details and design decisions.
+
+### Check pending Renovate PRs
+
+```bash
+gh pr list --label "renovate"
+```
+
+Renovate also creates a **Dependency Dashboard** issue in the repo listing all detected
+updates, their status, and which PRs are open or scheduled.
+
+### Renovate opened a PR — what happens next
+
+1. CI (`validate` workflow) runs automatically on the PR
+2. If CI passes and the update type is automerge-eligible (patch images, GitHub Actions):
+   Renovate merges it automatically via GitHub branch protection
+3. If CI fails: the PR stays open and Renovate does not merge — investigate the failure
+
+### A PR automerged and the cluster is broken — roll back
+
+```bash
+# Find the merge commit
+git log --oneline -10
+
+# Revert it (creates a new commit, does not rewrite history)
+git revert <merge-commit-sha>
+git push origin main
+
+# Force Flux to reconcile immediately
+flux reconcile source git flux-system -n flux-system
+flux reconcile kustomization apps --with-source
+```
+
+### Renovate is not opening PRs
+
+Check that the Renovate GitHub App is installed on the repository. Open the repo on GitHub,
+go to Settings → GitHub Apps, and confirm Renovate is listed.
+
+If it is installed, look at the Dependency Dashboard issue in the repo — Renovate posts
+error messages there when a lookup fails (e.g., a registry is unreachable or a custom
+manager regex did not match).
+
+### Snooze or disable a specific update
+
+Add a `packageRules` entry to `renovate.json`:
+
+```json
+{
+  "matchPackageNames": ["some-chart"],
+  "enabled": false
+}
+```
+
+Or use the Dependency Dashboard issue — Renovate provides checkboxes to ignore specific
+updates directly from the issue.
