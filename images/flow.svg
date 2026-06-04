@@ -196,7 +196,7 @@
   <!-- Grafana row 1 -->
   <rect x="329" y="675" width="118" height="44" rx="6" fill="white" stroke="#1D4ED8" stroke-width="1.5"/>
   <text x="388" y="691" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#1D4ED8">Grafana HR</text>
-  <text x="388" y="705" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">8.x · dependsOn:</text>
+  <text x="388" y="705" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">10.x · dependsOn:</text>
   <text x="388" y="717" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">prometheus + loki</text>
 
   <!-- arrow Loki → Promtail (diagonal down) -->
