@@ -24,7 +24,7 @@ spec:
     spec:
       chart: kube-prometheus-stack
       # Original pinned 56.7.0 (early 2024). Chart is now in the 70s.
-      version: "72.x"
+      version: "86.x"
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
@@ -58,8 +58,14 @@ spec:
         limits:
           cpu: 500m
           memory: 512Mi
-      configReloaderCpu: "100m"
-      configReloaderMemory: "50Mi"
+      prometheusConfigReloader:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
+          limits:
+            cpu: 100m
+            memory: 50Mi
 
     kube-state-metrics:
       resources:
