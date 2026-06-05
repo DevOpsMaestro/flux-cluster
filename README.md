@@ -175,7 +175,7 @@ flux-system (GitRepository)
 | Gateway API CRDs | kubernetes-sigs/gateway-api | v1.2.1 | (cluster-scoped) | |
 | Envoy Gateway | envoy-gateway/gateway | 1.4.x | envoy-gateway-system | |
 | Envoy Gateway data-plane | gatewayClassName: eg | 1.4.x | envoy-ingress | |
-| kube-prometheus-stack | prometheus-community/kube-prometheus-stack | 72.x | observability | |
+| kube-prometheus-stack | prometheus-community/kube-prometheus-stack | 86.x | observability | |
 | Grafana | grafana/grafana | 10.x (app 12.x) | observability | |
 | Loki | grafana/loki | 6.x | observability | |
 | Promtail | grafana/promtail | 6.x | observability | |
@@ -215,7 +215,7 @@ The versions below were validated together. When upgrading a component, check co
 | Istio | 1.26.x | `istio.yaml` chart constraint + `versions.env` |
 | Envoy Gateway | 1.4.x (v1.4.6) | `envoy-gateway.yaml` + `versions.env` |
 | Gateway API CRDs | v1.2.1 | hardcoded in `setup-fluxcd-gitops-kind-multinode.sh` step 4 |
-| kube-prometheus-stack | 72.x | `prometheus/helmrelease.yaml` |
+| kube-prometheus-stack | 86.x | `prometheus/helmrelease.yaml` |
 | Loki | 6.x | `loki/helmrelease.yaml` |
 | Grafana | 10.x (app 12.x) | `grafana/helmrelease.yaml` |
 | Grafana Tempo | 1.x | `tempo/helmrelease.yaml` |
