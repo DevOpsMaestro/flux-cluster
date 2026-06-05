@@ -59,6 +59,11 @@ Renovate only opens a PR when the constraint range itself needs changing:
 
 ## Day-to-day operations
 
+### Manual Run:
+```bash
+RENOVATE_TOKEN=<Your_GH_PAT> RENOVATE_REPOSITORIES=DevOpsMaestro/flux-cluster renovate --dry-run=full
+```
+
 ### View open Renovate PRs
 
 ```bash
