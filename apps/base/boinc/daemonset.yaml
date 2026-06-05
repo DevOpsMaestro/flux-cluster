@@ -18,7 +18,7 @@ spec:
       hostPID: true
       initContainers:
         - name: boinc-account-init
-          image: busybox:1.37
+          image: busybox:1.38
           command:
             - sh
             - -c
