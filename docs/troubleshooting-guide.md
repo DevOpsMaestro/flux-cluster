@@ -1,7 +1,7 @@
 # Troubleshooting Guide
 
 Cluster: `flux-kind` · KinD 1.35.0 · 1 control-plane + 2 workers
-Stack: Flux CD · Cilium 1.17 · Hubble · cert-manager 1.17 · OpenEBS 4.2 · Istio 1.26 (mesh only) · Gateway API v1.2.1 · Envoy Gateway 1.4 · Tetragon 1.7 · Kyverno 3 · Kubescape 1.40 · Falco 8 · kube-prometheus-stack 72 · Grafana 10 (app 12) · Grafana Tempo 1 · OpenTelemetry Collector 0 · BOINC · SOPS + Age
+Stack: Flux CD · Cilium 1.19 · Hubble · cert-manager 1.20 · OpenEBS 4.2 · Istio 1.30 (mesh only) · Gateway API v1.2.1 · Envoy Gateway 1.4 · Tetragon 1.7 · Kyverno 3 · Kubescape 1.40 · Falco 9 · kube-prometheus-stack 86 · Grafana 10 (app 12) · Grafana Tempo 1 · OpenTelemetry Collector 0 · BOINC · SOPS + Age
 
 ---
 
@@ -493,8 +493,8 @@ kubectl create namespace istio-test
 kubectl label namespace istio-test istio-injection=enabled
 
 # Deploy client (sleep) and server (httpbin)
-kubectl apply -n istio-test -f https://raw.githubusercontent.com/istio/istio/release-1.26/samples/sleep/sleep.yaml
-kubectl apply -n istio-test -f https://raw.githubusercontent.com/istio/istio/release-1.26/samples/httpbin/httpbin.yaml
+kubectl apply -n istio-test -f https://raw.githubusercontent.com/istio/istio/release-1.30/samples/sleep/sleep.yaml
+kubectl apply -n istio-test -f https://raw.githubusercontent.com/istio/istio/release-1.30/samples/httpbin/httpbin.yaml
 
 # Wait for 2/2 — the /2 confirms the Envoy sidecar was injected
 kubectl wait --for=condition=ready pod -l app=sleep -n istio-test --timeout=90s

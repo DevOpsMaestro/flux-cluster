@@ -165,26 +165,26 @@ flux-system (GitRepository)
 
 | Component | Chart / Source | Version | Namespace | Notes |
 |---|---|---|---|---|
-| Cilium CNI | cilium/cilium | 1.17.x | kube-system | |
-| Hubble Relay | (bundled with Cilium) | 1.17.x | kube-system | |
+| Cilium CNI | cilium/cilium | 1.19.x | kube-system | |
+| Hubble Relay | (bundled with Cilium) | 1.19.x | kube-system | |
 | Hubble UI | (bundled with Cilium) | 0.13.1 | kube-system | disabled by default; enable via `hubble.ui.enabled: true` in `cilium.yaml` |
-| cert-manager | cert-manager/cert-manager | v1.17.x | cert-manager | |
+| cert-manager | cert-manager/cert-manager | v1.20.x | cert-manager | |
 | OpenEBS localpv | openebs/openebs | 4.2.0 | openebs | |
-| istio-base | istio/base | 1.26.x | istio-system | |
-| istiod | istio/istiod | 1.26.x | istio-system | |
+| istio-base | istio/base | 1.30.x | istio-system | |
+| istiod | istio/istiod | 1.30.x | istio-system | |
 | Gateway API CRDs | kubernetes-sigs/gateway-api | v1.2.1 | (cluster-scoped) | |
 | Envoy Gateway | envoy-gateway/gateway | 1.4.x | envoy-gateway-system | |
 | Envoy Gateway data-plane | gatewayClassName: eg | 1.4.x | envoy-ingress | |
 | kube-prometheus-stack | prometheus-community/kube-prometheus-stack | 86.x | observability | |
 | Grafana | grafana/grafana | 10.x (app 12.x) | observability | |
-| Loki | grafana/loki | 6.x | observability | |
+| Loki | grafana/loki | 7.x | observability | |
 | Promtail | grafana/promtail | 6.x | observability | |
 | Grafana Tempo | grafana/tempo | 1.x | observability | Single-binary mode; trace backend for the OTel pipeline |
 | OpenTelemetry Collector | open-telemetry/opentelemetry-collector | 0.x | observability | contrib distribution; OTLP ingress → Tempo export; Istio sidecar disabled |
 | Tetragon | cilium/tetragon | 1.7.x | tetragon | |
 | Kyverno | kyverno/kyverno | 3.x | kyverno | |
 | Kubescape | kubescape/kubescape-operator | 1.40.x | kubescape | NSA + MITRE continuous scan; vulnerability scan disabled for KinD |
-| Falco + Falcosidekick | falcosecurity/falco | 8.x | falco | |
+| Falco + Falcosidekick | falcosecurity/falco | 9.x | falco | |
 | demo (httpbin) | kennethreitz/httpbin | @sha256 digest pin | demo | No versioned tags published; pinned by digest |
 | BOINC | boinc/client | arm64v8 | boinc | Voluntary compute — Rosetta@Home + Einstein@Home; capped at 1 CPU core for thermal management |
 | Renovate Bot | renovatebot/renovate | (GitHub App) | — | Automated dependency PRs for Helm charts, images, GitHub Actions, and CI tool pins |
@@ -198,10 +198,10 @@ version constraint in the HelmRelease.
 | Image | Tag / Digest | File | Purpose |
 |-------|-------------|------|---------|
 | `boinc/client` | `arm64v8` | `apps/base/boinc/daemonset.yaml` | BOINC compute client (ARM64-native) |
-| `busybox` | `1.37` | `apps/base/boinc/daemonset.yaml` | initContainer: copies account XML credentials to hostPath |
+| `busybox` | `1.38` | `apps/base/boinc/daemonset.yaml` | initContainer: copies account XML credentials to hostPath |
 | `kennethreitz/httpbin` | `@sha256:599f…` | `apps/base/demo/httpbin.yaml` | HTTP echo server — mesh traffic target |
-| `curlimages/curl` | `8.7.1` | `apps/base/demo/load-generator.yaml` | Load generator: curl loop → httpbin every 5 s |
-| `nginx` | `1.27-alpine` | `apps/overlays/kind/istio/nodeport-proxy.yaml` | KinD ingress workaround: proxies host port 8888 → Envoy ClusterIP |
+| `curlimages/curl` | `8.20.0` | `apps/base/demo/load-generator.yaml` | Load generator: curl loop → httpbin every 5 s |
+| `nginx` | `1.31-alpine` | `apps/overlays/kind/istio/nodeport-proxy.yaml` | KinD ingress workaround: proxies host port 8888 → Envoy ClusterIP |
 | `falcosecurity/event-generator` | `0.13.0` | `tests/falco/event-generator.yaml` | Falco live detection test job |
 
 ## Version compatibility
@@ -211,18 +211,18 @@ The versions below were validated together. When upgrading a component, check co
 | Component | Validated version | Constrained by |
 |---|---|---|
 | Kubernetes (KinD node) | v1.35.0 | `K8S_VER` in `versions.env` |
-| Cilium | 1.17.x | `cilium.yaml` chart constraint + `versions.env` |
-| Istio | 1.26.x | `istio.yaml` chart constraint + `versions.env` |
+| Cilium | 1.19.x | `cilium.yaml` chart constraint + `versions.env` |
+| Istio | 1.30.x | `istio.yaml` chart constraint + `versions.env` |
 | Envoy Gateway | 1.4.x (v1.4.6) | `envoy-gateway.yaml` + `versions.env` |
 | Gateway API CRDs | v1.2.1 | hardcoded in `setup-fluxcd-gitops-kind-multinode.sh` step 4 |
 | kube-prometheus-stack | 86.x | `prometheus/helmrelease.yaml` |
-| Loki | 6.x | `loki/helmrelease.yaml` |
+| Loki | 7.x | `loki/helmrelease.yaml` |
 | Grafana | 10.x (app 12.x) | `grafana/helmrelease.yaml` |
 | Grafana Tempo | 1.x | `tempo/helmrelease.yaml` |
 | OpenTelemetry Collector | 0.x | `opentelemetry/helmrelease.yaml` |
 | Kyverno | 3.x | `kyverno.yaml` |
 | Kubescape | 1.40.x | `kubescape.yaml` |
-| Falco | 8.x | `falco.yaml` |
+| Falco | 9.x | `falco.yaml` |
 | Tetragon | 1.7.x | `tetragon.yaml` |
 
 All version pins shared between the Makefile and setup script are sourced from `versions.env` at the repo root — bump them there and both consumers update.
