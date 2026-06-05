@@ -56,7 +56,7 @@
   <!-- Row 1 ─────────────────────────────────────────────── -->
   <!-- Cilium -->
   <rect x="54" y="253" width="258" height="90" rx="8" fill="white" stroke="#C2410C" stroke-width="2"/>
-  <text x="183" y="273" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#C2410C">Cilium 1.17.x</text>
+  <text x="183" y="273" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#C2410C">Cilium 1.19.x</text>
   <line x1="62" y1="280" x2="304" y2="280" stroke="#C2410C" stroke-width="0.75" opacity="0.35"/>
   <text x="183" y="296" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">namespace: kube-system</text>
   <text x="183" y="310" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">kubeProxyReplacement · VXLAN tunnel</text>
@@ -65,7 +65,7 @@
 
   <!-- cert-manager -->
   <rect x="332" y="253" width="258" height="90" rx="8" fill="white" stroke="#15803D" stroke-width="2"/>
-  <text x="461" y="273" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#15803D">cert-manager v1.17.x</text>
+  <text x="461" y="273" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#15803D">cert-manager v1.20.x</text>
   <line x1="340" y1="280" x2="582" y2="280" stroke="#15803D" stroke-width="0.75" opacity="0.35"/>
   <text x="461" y="296" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">namespace: cert-manager</text>
   <text x="461" y="310" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">two-phase CRD install</text>
@@ -83,7 +83,7 @@
 
   <!-- Istio -->
   <rect x="888" y="253" width="258" height="90" rx="8" fill="white" stroke="#15803D" stroke-width="2"/>
-  <text x="1017" y="273" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#15803D">Istio 1.26.x</text>
+  <text x="1017" y="273" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#15803D">Istio 1.30.x</text>
   <line x1="896" y1="280" x2="1138" y2="280" stroke="#15803D" stroke-width="0.75" opacity="0.35"/>
   <text x="1017" y="296" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">namespace: istio-system</text>
   <text x="1017" y="310" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">istio-base + istiod · PERMISSIVE mesh</text>
@@ -120,7 +120,7 @@
 
   <!-- Falco -->
   <rect x="720" y="357" width="206" height="90" rx="8" fill="white" stroke="#B91C1C" stroke-width="2"/>
-  <text x="823" y="377" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#B91C1C">Falco 8.x</text>
+  <text x="823" y="377" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#B91C1C">Falco 9.x</text>
   <line x1="728" y1="384" x2="918" y2="384" stroke="#B91C1C" stroke-width="0.75" opacity="0.35"/>
   <text x="823" y="400" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">namespace: falco</text>
   <text x="823" y="414" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">modern_ebpf · runtime detect</text>
@@ -155,7 +155,7 @@
   <rect x="55" y="550" width="136" height="54" rx="6" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.25"/>
   <text x="123" y="568" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#1D4ED8">Prometheus</text>
   <text x="123" y="583" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">kube-prometheus-stack</text>
-  <text x="123" y="597" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">72.x · dependsOn: openebs</text>
+  <text x="123" y="597" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">86.x · dependsOn: openebs</text>
 
   <!-- AlertManager chip -->
   <rect x="203" y="550" width="132" height="54" rx="6" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.25"/>
@@ -166,7 +166,7 @@
   <!-- Loki chip -->
   <rect x="347" y="550" width="120" height="54" rx="6" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.25"/>
   <text x="407" y="568" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#1D4ED8">Loki</text>
-  <text x="407" y="583" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">grafana/loki 6.x</text>
+  <text x="407" y="583" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">grafana/loki 7.x</text>
   <text x="407" y="597" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">SingleBinary · 5 Gi PVC</text>
 
   <!-- Promtail chip -->
