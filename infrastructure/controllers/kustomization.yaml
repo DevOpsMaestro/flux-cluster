@@ -11,3 +11,4 @@ resources:
   - kyverno.yaml
   - kubescape.yaml
   - falco.yaml
+  - metrics-server.yaml

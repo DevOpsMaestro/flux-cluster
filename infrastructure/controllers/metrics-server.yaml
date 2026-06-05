@@ -1,0 +1,83 @@
+---
+# Metrics Server implements the Kubernetes Resource Metrics API
+# (metrics.k8s.io/v1beta1), powering kubectl top and HPA/VPA.
+# This is separate from Prometheus: Prometheus stores long-term time-series;
+# Metrics Server provides a live in-memory window (15 s) consumed by the API server.
+#
+# --kubelet-insecure-tls: KinD kubelet serving certs are self-signed.
+#   In a production cluster, remove this flag and provide a proper kubelet CA.
+# --kubelet-preferred-address-types: KinD nodes are reachable only via InternalIP.
+#
+# Injection disabled: Metrics Server registers an API extension with the
+# Kubernetes API server, which connects without an Istio sidecar. Enabling
+# injection in this namespace would require a port-level DISABLE exception —
+# disabling it here is simpler and consistent with all other infrastructure controllers.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: metrics-server
+  labels:
+    istio-injection: disabled
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: metrics-server
+  namespace: flux-system
+spec:
+  interval: 1h
+  targetNamespace: metrics-server
+  dependsOn:
+    - name: cilium
+      namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: metrics-server
+      version: "3.x"
+      sourceRef:
+        kind: HelmRepository
+        name: metrics-server
+        namespace: flux-system
+      interval: 24h
+  values:
+    args:
+      - --kubelet-insecure-tls
+      - --kubelet-preferred-address-types=InternalIP
+
+    # Exposes /metrics on port 8080; scraped by Prometheus via additionalScrapeConfigs.
+    metrics:
+      enabled: true
+
+    # Kyverno enforce policy: require-resource-limits applies to this namespace
+    # (metrics-server is not in the exclusion list).
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+    # Kyverno enforce policy: disallow-privilege-escalation applies here.
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 1000
+      capabilities:
+        drop: [ALL]
+
+    # Single replica for KinD. For production HA: replicas: 2 + podDisruptionBudget.enabled: true
+    replicas: 1
+    podDisruptionBudget:
+      enabled: false

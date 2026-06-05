@@ -425,3 +425,25 @@ spec:
                 target_label: namespace
               - source_labels: [__meta_kubernetes_pod_name]
                 target_label: pod
+
+          # Metrics Server self-metrics: API request latency, cache hits, scrape
+          # duration. ServiceMonitor CRD circular-dependency avoided via pod-role
+          # discovery — same pattern as other infrastructure tools.
+          - job_name: metrics-server
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - metrics-server
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                action: keep
+                regex: metrics-server
+              - source_labels: [__address__]
+                target_label: __address__
+                regex: (.+):\d+
+                replacement: $1:8080
+              - source_labels: [__meta_kubernetes_namespace]
+                target_label: namespace
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
