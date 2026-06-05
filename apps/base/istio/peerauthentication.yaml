@@ -89,3 +89,46 @@ spec:
   portLevelMtls:
     "3100":
       mode: PERMISSIVE
+---
+# Alertmanager: allow plain text on port 9093.
+# Prometheus operator configures Prometheus to send alerts to Alertmanager
+# via the headless alertmanager-operated service (resolves to pod IPs).
+# Istio auto-mTLS does not reliably upgrade headless-service pod-IP connections,
+# so Prometheus's sidecar falls back to plain HTTP and STRICT mode returns 503.
+# PERMISSIVE on this port unblocks alert delivery while the namespace default
+# remains STRICT for all other traffic.
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: alertmanager-port-9093
+  namespace: observability
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    "9093":
+      mode: PERMISSIVE
+---
+# Prometheus Operator admission webhook: disable Istio mTLS on port 10250.
+# The Kubernetes API server (no Istio sidecar) connects here with its own
+# CA-signed TLS certificate. STRICT mode causes TLS handshake failures because
+# the API server sends plain TLS, not Istio mTLS. DISABLE tells the sidecar
+# to pass the connection through unchanged so the webhook's own TLS cert
+# handles authentication — no security regression, just a different TLS root.
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: prometheus-operator-webhook-port-10250
+  namespace: observability
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-prometheus-stack-prometheus-operator
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    "10250":
+      mode: DISABLE
