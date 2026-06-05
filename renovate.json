@@ -3,17 +3,17 @@
   "extends": ["config:recommended"],
 
   "flux": {
-    "fileMatch": [
-      "(^|/)clusters/.+\\.yaml$",
-      "(^|/)apps/.+\\.yaml$",
-      "(^|/)infrastructure/.+\\.yaml$"
+    "managerFilePatterns": [
+      "/(^|/)clusters/.+\\.yaml$/",
+      "/(^|/)apps/.+\\.yaml$/",
+      "/(^|/)infrastructure/.+\\.yaml$/"
     ]
   },
 
   "kubernetes": {
-    "fileMatch": [
-      "(^|/)apps/(?!base/kyverno/tests).+\\.yaml$",
-      "(^|/)infrastructure/.+\\.yaml$"
+    "managerFilePatterns": [
+      "/(^|/)apps/(?!base/kyverno/tests).+\\.yaml$/",
+      "/(^|/)infrastructure/.+\\.yaml$/"
     ]
   },
 
@@ -21,7 +21,9 @@
     {
       "description": "Track Cilium chart version in versions.env (used by bootstrap script pre-install)",
       "customType": "regex",
-      "fileMatch": ["^versions\\.env$"],
+      "managerFilePatterns": [
+        "/^versions\\.env$/"
+      ],
       "matchStrings": ["CILIUM_VERSION=(?<currentValue>[^\\n]+)"],
       "depNameTemplate": "cilium",
       "datasourceTemplate": "helm",
@@ -30,7 +32,9 @@
     {
       "description": "Track Istio chart version in versions.env",
       "customType": "regex",
-      "fileMatch": ["^versions\\.env$"],
+      "managerFilePatterns": [
+        "/^versions\\.env$/"
+      ],
       "matchStrings": ["ISTIO_VERSION=(?<currentValue>[^\\n]+)"],
       "depNameTemplate": "istiod",
       "datasourceTemplate": "helm",
@@ -39,7 +43,9 @@
     {
       "description": "Track Envoy Gateway version in versions.env",
       "customType": "regex",
-      "fileMatch": ["^versions\\.env$"],
+      "managerFilePatterns": [
+        "/^versions\\.env$/"
+      ],
       "matchStrings": ["ENVOY_GATEWAY_VERSION=v?(?<currentValue>[^\\n]+)"],
       "depNameTemplate": "envoyproxy/gateway",
       "datasourceTemplate": "github-releases"
@@ -47,7 +53,9 @@
     {
       "description": "Track Kubernetes node version in versions.env (KinD node image)",
       "customType": "regex",
-      "fileMatch": ["^versions\\.env$"],
+      "managerFilePatterns": [
+        "/^versions\\.env$/"
+      ],
       "matchStrings": ["K8S_VER=v?(?<currentValue>[^\\n]+)"],
       "depNameTemplate": "kubernetes/kubernetes",
       "datasourceTemplate": "github-releases"
@@ -55,7 +63,9 @@
     {
       "description": "Track Kyverno CLI version pinned in CI workflow",
       "customType": "regex",
-      "fileMatch": ["^\\.github/workflows/validate\\.yaml$"],
+      "managerFilePatterns": [
+        "/^\\.github/workflows/validate\\.yaml$/"
+      ],
       "matchStrings": ["KYVERNO_CLI_VERSION: (?<currentValue>[^\\n]+)"],
       "depNameTemplate": "kyverno/kyverno",
       "datasourceTemplate": "github-releases"
@@ -63,9 +73,9 @@
     {
       "description": "Track Kubescape CLI version in CI workflow and versions.env",
       "customType": "regex",
-      "fileMatch": [
-        "^\\.github/workflows/validate\\.yaml$",
-        "^versions\\.env$"
+      "managerFilePatterns": [
+        "/^\\.github/workflows/validate\\.yaml$/",
+        "/^versions\\.env$/"
       ],
       "matchStrings": [
         "KUBESCAPE_VERSION: (?<currentValue>[^\\n]+)",
@@ -124,7 +134,7 @@
     },
     {
       "description": "Infrastructure version pins (versions.env, CI tool versions): group together, no automerge — these affect cluster bootstrap and node version",
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "groupName": "infrastructure-version-pins",
       "automerge": false
     }
