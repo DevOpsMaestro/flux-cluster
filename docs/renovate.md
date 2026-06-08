@@ -39,7 +39,6 @@ Kyverno tests + Kubescape scan) must pass. If CI is red, Renovate does not merge
 |---------|--------|
 | `boinc/client` | `arm64v8` is a Docker manifest architecture alias, not a version tag — there is no "newer" to detect |
 | `kennethreitz/httpbin` | No versioned tags published; manifest pins the image by digest. Digest bumps produce noise with no upgrade signal |
-| `openebs` | The chart's pre-upgrade Job references `bitnami/kubectl:1.25.15` which no longer exists on Docker Hub. Any chart upgrade triggers the broken hook |
 
 ---
 

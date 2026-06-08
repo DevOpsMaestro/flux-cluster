@@ -177,7 +177,7 @@ flux-system (GitRepository)
 | Hubble Relay | (bundled with Cilium) | 1.19.x | kube-system | |
 | Hubble UI | (bundled with Cilium) | 0.13.1 | kube-system | disabled by default; enable via `hubble.ui.enabled: true` in `cilium.yaml` |
 | cert-manager | cert-manager/cert-manager | v1.20.x | cert-manager | |
-| OpenEBS localpv | openebs/openebs | 4.2.0 | openebs | |
+| OpenEBS localpv | openebs/openebs | 4.x | openebs | |
 | istio-base | istio/base | 1.30.x | istio-system | |
 | istiod | istio/istiod | 1.30.x | istio-system | |
 | Gateway API CRDs | kubernetes-sigs/gateway-api | v1.2.1 | (cluster-scoped) | |
