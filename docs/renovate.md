@@ -1,6 +1,6 @@
 # Renovate — Dependency Automation
 
-Configuration: `renovate.json` at repo root · GitHub App: Renovate Bot
+Configuration: `renovate.json` at repo root · Workflow: `.github/workflows/renovate.yaml` (daily schedule + `workflow_dispatch`)
 
 ---
 
@@ -59,10 +59,12 @@ Renovate only opens a PR when the constraint range itself needs changing:
 
 ## Day-to-day operations
 
-### Manual Run:
-```bash
-RENOVATE_TOKEN=<Your_GH_PAT> RENOVATE_REPOSITORIES=DevOpsMaestro/flux-cluster renovate --dry-run=full
-```
+### Manual run
+
+Trigger from the GitHub Actions UI: **Actions → Renovate → Run workflow → Run workflow**.
+
+This executes the same job as the nightly scheduled run. Useful after changing
+`renovate.json` to verify the new configuration immediately.
 
 ### View open Renovate PRs
 
@@ -77,10 +79,11 @@ Renovate creates a **Dependency Dashboard** issue in the GitHub repo. It lists:
 - Which PRs are open, pending, or rate-limited
 - Error messages if a registry lookup failed
 
-### Force a Renovate run
+### Force a Renovate run via the dashboard
 
 From the Dependency Dashboard issue, check the "Trigger dependency updates" checkbox.
-Renovate runs on its own schedule (typically every 1–2 hours) regardless.
+On the next scheduled run (midnight UTC) Renovate will act on the checked items.
+For an immediate run, use the **workflow_dispatch** trigger above instead.
 
 ---
 

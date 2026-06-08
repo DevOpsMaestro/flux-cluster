@@ -30,6 +30,8 @@ Stack: Flux CD · Cilium 1.19 · Hubble · cert-manager 1.20 · OpenEBS 4.2 · I
 20. [SOPS + Age](#20-sops--age)
 21. [Common issues](#21-common-issues)
 22. [BOINC](#22-boinc)
+23. [Renovate](#23-renovate)
+24. [Metrics Server](#24-metrics-server)
 
 ---
 
@@ -1543,12 +1545,12 @@ flux reconcile kustomization apps --with-source
 
 ### Renovate is not opening PRs
 
-Check that the Renovate GitHub App is installed on the repository. Open the repo on GitHub,
-go to Settings → GitHub Apps, and confirm Renovate is listed.
+First, check that the scheduled workflow has run: **Actions → Renovate** on GitHub.
+If no recent runs appear, trigger one manually with **Run workflow**.
 
-If it is installed, look at the Dependency Dashboard issue in the repo — Renovate posts
-error messages there when a lookup fails (e.g., a registry is unreachable or a custom
-manager regex did not match).
+If the workflow ran but no PRs appeared, open the **Dependency Dashboard** issue in the
+repo — Renovate posts error messages there when a registry lookup fails or a custom
+manager regex did not match.
 
 ### Snooze or disable a specific update
 
@@ -1563,3 +1565,49 @@ Add a `packageRules` entry to `renovate.json`:
 
 Or use the Dependency Dashboard issue — Renovate provides checkboxes to ignore specific
 updates directly from the issue.
+
+---
+
+## 24. Metrics Server
+
+Metrics Server implements `metrics.k8s.io/v1beta1` — the API behind `kubectl top` and HPA.
+
+### Health check
+
+```bash
+# API service must be Available=True
+kubectl get apiservice v1beta1.metrics.k8s.io
+
+# Pod should be Running in the metrics-server namespace
+kubectl get pods -n metrics-server
+
+# Logs
+kubectl logs -n metrics-server deploy/metrics-server | tail -30
+```
+
+### Verify metrics are flowing
+
+```bash
+# Node resource usage
+kubectl top nodes
+
+# Pod resource usage across all namespaces
+kubectl top pods -A
+```
+
+### Common failure — `kubectl top` returns ServiceUnavailable
+
+This usually means the metrics-server pod is not ready or the API service is degraded.
+
+```bash
+# Check pod status and recent events
+kubectl describe pod -n metrics-server -l app.kubernetes.io/name=metrics-server
+
+# Confirm the --kubelet-insecure-tls arg is present (required for KinD)
+kubectl get deploy -n metrics-server metrics-server -o jsonpath='{.spec.template.spec.containers[0].args}' | tr ',' '\n'
+```
+
+If the pod keeps restarting, check that Kyverno policies are satisfied — the
+`metrics-server` namespace is subject to `require-resource-limits` and
+`disallow-privilege-escalation` enforcement. The HelmRelease values set these correctly;
+if you customised them, restore the `resources` and `containerSecurityContext` blocks.

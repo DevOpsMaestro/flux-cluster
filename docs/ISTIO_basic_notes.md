@@ -1,6 +1,6 @@
 # Istio — Daily Admin Reference
 
-Cluster: `flux-kind` · Istio 1.26 · istiod in `istio-system`
+Cluster: `flux-kind` · Istio 1.30 · istiod in `istio-system`
 
 ---
 
