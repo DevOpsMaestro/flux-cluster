@@ -66,6 +66,7 @@ jobs:
       - name: Kubescape offline scan (NSA + MITRE)
         run: |
           kubescape scan framework nsa,mitre \
+            --offline \
             --format junit \
             --output kubescape-results.xml \
             --compliance-threshold 80 \
