@@ -1,15 +1,15 @@
 # Troubleshooting Guide
 
 Cluster: `flux-kind` · KinD 1.35.0 · 1 control-plane + 2 workers
-Stack: Flux CD · Cilium 1.19 · Hubble · cert-manager 1.20 · OpenEBS 4.2 · Istio 1.30 (mesh only) · Gateway API v1.2.1 · Envoy Gateway 1.4 · Tetragon 1.7 · Kyverno 3 · Kubescape 1.40 · Falco 9 · kube-prometheus-stack 86 · Grafana 10 (app 12) · Grafana Tempo 1 · OpenTelemetry Collector 0 · BOINC · SOPS + Age
+Stack: Flux CD · Cilium 1.19 · Hubble · cert-manager 1.20 · OpenEBS 4.x · Istio 1.30 (mesh only) · Gateway API v1.2.1 · Envoy Gateway 1.4 · Tetragon 1.7 · Kyverno 3 · Kubescape 1.40 · Falco 9 · kube-prometheus-stack 86 · Grafana 10 (app 12) · Grafana Tempo 1 · OpenTelemetry Collector 0 · BOINC · SOPS + Age
 
 ---
 
 ## Table of Contents
 
-0. [Flux reconciliation quick reference](#0-flux-reconciliation-quick-reference)
-1. [Quick cluster health check](#1-quick-cluster-health-check)
-2. [Accessing service UIs](#2-accessing-service-uis)
+0. [Flux Reconciliation Quick Reference](#0-flux-reconciliation-quick-reference)
+1. [Quick Cluster Health Check](#1-quick-cluster-health-check)
+2. [Accessing Service UIs](#2-accessing-service-uis)
 3. [Flux CD](#3-flux-cd)
 4. [Cilium](#4-cilium)
 5. [Hubble](#5-hubble)
@@ -23,22 +23,22 @@ Stack: Flux CD · Cilium 1.19 · Hubble · cert-manager 1.20 · OpenEBS 4.2 · I
 13. [Falco](#13-falco)
 14. [Prometheus](#14-prometheus)
 15. [Grafana](#15-grafana)
-16. [Flux GitHub notifications](#16-flux-github-notifications)
+16. [Flux GitHub Notifications](#16-flux-github-notifications)
 17. [Grafana Tempo](#17-grafana-tempo)
 18. [OpenTelemetry Collector](#18-opentelemetry-collector)
 19. [Kubescape](#19-kubescape)
 20. [SOPS + Age](#20-sops--age)
-21. [Common issues](#21-common-issues)
+21. [Common Issues](#21-common-issues)
 22. [BOINC](#22-boinc)
 23. [Renovate](#23-renovate)
 24. [Metrics Server](#24-metrics-server)
 
 ---
 
-## 0. Flux reconciliation quick reference
+## 0. Flux Reconciliation Quick Reference
 
 ```bash
-# Re-fetch latest git source immediately (do this first after a push)
+# Re-fetch latest git source immediately (run this first after a push)
 flux reconcile source git flux-system -n flux-system
 
 # Re-fetch source + re-apply all kustomizations in one shot
@@ -56,9 +56,9 @@ flux get helmreleases -n flux-system --no-header | \
 
 ---
 
-## 1. Quick cluster health check
+## 1. Quick Cluster Health Check
 
-Run these first. If everything is green here, proceed to the per-technology sections.
+Start with these commands. Proceed to per-technology sections only if a specific component requires investigation.
 
 ```bash
 # All pods across all namespaces — look for anything not Running/Completed
@@ -71,25 +71,25 @@ flux get all -A
 kubectl get nodes -o wide
 ```
 
-Expected output: all pods `Running` or `Completed`, all Flux resources `READY: True`, all nodes `Ready`.
+Expected: all pods `Running` or `Completed`, all Flux resources `READY: True`, all nodes `Ready`.
 
 ---
 
-## 2. Accessing service UIs
+## 2. Accessing Service UIs
 
-Grafana and Prometheus are exposed via Kubernetes Gateway API HTTPRoutes through Envoy Gateway. All other services still use `kubectl port-forward`.
+Grafana and Prometheus are exposed via Kubernetes Gateway API HTTPRoutes through Envoy Gateway. All other services use `kubectl port-forward`.
 
 Traffic path: `localhost:8080 → KinD extraPortMapping (containerPort 8888) → nginx nodeport-proxy (hostNetwork, port 8888) → envoy-proxy ClusterIP (envoy-gateway-system) → Envoy proxy → HTTPRoute → backend service`
 
-### Prerequisite — /etc/hosts (one-time)
+### Prerequisite — /etc/hosts (One-Time)
 
 ```bash
 echo "127.0.0.1 grafana.local prometheus.local" | sudo tee -a /etc/hosts
 ```
 
-### Quick reference
+### Quick Reference
 
-| UI | Access method | Local URL | Credentials |
+| UI | Access Method | Local URL | Credentials |
 |---|---|---|---|
 | Grafana | Gateway API HTTPRoute | `http://grafana.local:8080` | admin / changeme |
 | Prometheus | Gateway API HTTPRoute | `http://prometheus.local:8080` | none |
@@ -98,7 +98,7 @@ echo "127.0.0.1 grafana.local prometheus.local" | sudo tee -a /etc/hosts
 
 ### Grafana
 
-Direct browser access — no port-forward needed:
+No port-forward required:
 
 ```text
 http://grafana.local:8080
@@ -106,7 +106,7 @@ Username: admin
 Password: changeme  (set in apps/base/grafana/helmrelease.yaml)
 ```
 
-Pre-provisioned dashboards — navigate to **Dashboards** after login:
+Pre-provisioned dashboards are available under **Dashboards** after login:
 
 | Dashboard | Source |
 |---|---|
@@ -129,7 +129,7 @@ Pre-provisioned dashboards — navigate to **Dashboards** after login:
 
 ### Prometheus
 
-Direct browser access — no port-forward needed:
+No port-forward required:
 
 ```text
 http://prometheus.local:8080
@@ -151,13 +151,13 @@ kubectl port-forward -n kube-system svc/hubble-ui 12000:80
 # Shows live service map and per-namespace flow visualisation
 ```
 
-Alternatively, the Cilium CLI handles the port-forward automatically:
+The Cilium CLI also handles the port-forward automatically:
 
 ```bash
 cilium hubble ui
 ```
 
-### Gateway and HTTPRoute health
+### Gateway and HTTPRoute Health
 
 ```bash
 # Gateway should show PROGRAMMED: True
@@ -180,7 +180,7 @@ kubectl get svc -n envoy-ingress
 
 ## 3. Flux CD
 
-### Flux status
+### Flux Status
 
 ```bash
 # Overall reconciliation state
@@ -196,7 +196,7 @@ flux get kustomizations -A
 flux get helmreleases -A
 ```
 
-### Flux logs
+### Flux Logs
 
 ```bash
 # All controllers at once
@@ -208,7 +208,7 @@ flux logs --kind=Kustomization
 flux logs --kind=GitRepository
 ```
 
-### Force reconciliation
+### Force Reconciliation
 
 ```bash
 # Force Flux to re-pull git and reconcile everything
@@ -222,7 +222,7 @@ flux reconcile kustomization apps -n flux-system
 flux reconcile helmrelease cilium -n flux-system --with-source
 ```
 
-### Inspect a failing HelmRelease
+### Inspect a Failing HelmRelease
 
 ```bash
 kubectl describe helmrelease <name> -n flux-system | grep -A 30 "Status:"
@@ -232,7 +232,7 @@ kubectl describe helmrelease <name> -n flux-system | grep -A 30 "Status:"
 
 ## 4. Cilium
 
-### Cilium status
+### Cilium Status
 
 ```bash
 # High-level CNI health
@@ -245,14 +245,14 @@ kubectl exec -n kube-system ds/cilium -- cilium-dbg status
 kubectl get pods -n kube-system -l app.kubernetes.io/part-of=cilium -o wide
 ```
 
-### Connectivity test
+### Connectivity Test
 
 ```bash
 # Full mesh connectivity test — deploys test pods, runs ~50 checks, cleans up
 cilium connectivity test
 ```
 
-### kube-proxy replacement
+### kube-proxy Replacement
 
 ```bash
 # Confirm Cilium is handling kube-proxy duties
@@ -260,7 +260,7 @@ kubectl exec -n kube-system ds/cilium -- cilium-dbg status | grep -i "kube-proxy
 # Expected: KubeProxyReplacement: True
 ```
 
-### Network policy
+### Network Policy
 
 ```bash
 # List all CiliumNetworkPolicies in the cluster
@@ -268,7 +268,7 @@ kubectl get ciliumnetworkpolicies -A
 kubectl get ciliumclusterwidenetworkpolicies
 ```
 
-### Cilium logs
+### Cilium Logs
 
 ```bash
 # Agent logs for a specific node
@@ -282,7 +282,7 @@ kubectl logs -n kube-system deploy/cilium-operator | tail -50
 
 ## 5. Hubble
 
-### Hubble status
+### Hubble Status
 
 ```bash
 # Relay and UI pods
@@ -296,10 +296,10 @@ kubectl port-forward -n kube-system svc/hubble-relay 4245:80 &
 hubble status --server localhost:4245
 ```
 
-### Observe live traffic
+### Observe Live Traffic
 
 ```bash
-# Port-forward if hubble CLI isn't already connected
+# Port-forward if hubble CLI is not already connected
 kubectl port-forward -n kube-system svc/hubble-relay 4245:80 &
 
 # Watch all flows cluster-wide
@@ -312,7 +312,7 @@ hubble observe --server localhost:4245 --namespace istio-test
 hubble observe --server localhost:4245 --verdict DROPPED
 ```
 
-### Hubble UI port-forward
+### Hubble UI Port-Forward
 
 ```bash
 kubectl port-forward -n kube-system svc/hubble-ui 12000:80
@@ -323,7 +323,7 @@ kubectl port-forward -n kube-system svc/hubble-ui 12000:80
 
 ## 6. cert-manager
 
-### cert-manager status
+### cert-manager Status
 
 ```bash
 # All cert-manager pods (controller, cainjector, webhook)
@@ -334,7 +334,7 @@ cmctl check api
 # Install cmctl if needed: brew install cmctl
 ```
 
-### End-to-end certificate issuance test
+### End-to-End Certificate Issuance Test
 
 ```bash
 kubectl apply -f - <<'EOF'
@@ -370,7 +370,7 @@ kubectl delete secret cm-test-cert-tls -n default
 kubectl delete clusterissuer selfsigned-test
 ```
 
-### Inspect a failing certificate
+### Inspect a Failing Certificate
 
 ```bash
 kubectl describe certificate <name> -n <namespace>
@@ -379,7 +379,7 @@ kubectl describe order -n <namespace>           # ACME only
 kubectl describe challenge -n <namespace>       # ACME only
 ```
 
-### cert-manager logs
+### cert-manager Logs
 
 ```bash
 kubectl logs -n cert-manager deploy/cert-manager-cert-manager | tail -50
@@ -391,7 +391,7 @@ kubectl logs -n cert-manager deploy/cert-manager-cert-manager-webhook | tail -50
 
 ## 7. OpenEBS
 
-### OpenEBS status
+### OpenEBS Status
 
 ```bash
 # Provisioner pod
@@ -401,7 +401,7 @@ kubectl get pods -n openebs
 kubectl get storageclass
 ```
 
-### End-to-end storage test
+### End-to-End Storage Test
 
 ```bash
 kubectl apply -f - <<'EOF'
@@ -447,7 +447,7 @@ kubectl delete pod openebs-test-pod -n default
 kubectl delete pvc openebs-test-pvc -n default
 ```
 
-### OpenEBS logs
+### OpenEBS Logs
 
 ```bash
 kubectl logs -n openebs deploy/openebs-openebs-localpv-provisioner | tail -50
@@ -457,7 +457,7 @@ kubectl logs -n openebs deploy/openebs-openebs-localpv-provisioner | tail -50
 
 ## 8. Istio
 
-### Istio status
+### Istio Status
 
 ```bash
 # Mesh-wide config analysis — reports misconfigurations, missing labels, port naming issues
@@ -473,7 +473,7 @@ istioctl proxy-status
 istioctl experimental precheck
 ```
 
-### Ingress connectivity test (Envoy Gateway)
+### Ingress Connectivity Test (Envoy Gateway)
 
 ```bash
 # Quick end-to-end check without /etc/hosts (use Host header)
@@ -487,7 +487,7 @@ curl -s -o /dev/null -w "%{http_code}" -H "Host: prometheus.local" http://localh
 curl -s http://localhost:8080/healthz/ready
 ```
 
-### mTLS functional test
+### mTLS Functional Test
 
 ```bash
 # Create a namespace with sidecar injection enabled
@@ -517,7 +517,7 @@ istioctl proxy-config cluster -n istio-test deploy/sleep | grep httpbin
 kubectl delete namespace istio-test
 ```
 
-### Sidecar proxy debugging
+### Sidecar Proxy Debugging
 
 ```bash
 # Inspect all listeners on a pod's Envoy proxy
@@ -533,7 +533,7 @@ istioctl proxy-config cluster <pod-name> -n <namespace> --fqdn <service>.<namesp
 istioctl proxy-config all <pod-name> -n <namespace>
 ```
 
-### Grafana dashboards blank after Mac wakes from sleep — mTLS cert expiry
+### Grafana Dashboards Blank After Mac Wakes from Sleep — mTLS Certificate Expiry
 
 **Symptom:** All Grafana dashboards show:
 ```
@@ -542,7 +542,7 @@ remote connection failure, transport failure reason: TLS_error:|268435581:SSL ro
 OPENSSL_internal:CERTIFICATE_VERIFY_FAILED
 ```
 
-**Cause:** Docker Desktop pauses the Linux VM when the Mac sleeps. Istio issues 24-hour workload certificates to each Envoy sidecar and rotates them at the 80% mark (~19 h). If the VM is frozen through that window, the rotation goroutine never fires. Once the cert expires, Istio does not auto-renew it — the sidecar continues presenting an expired cert until the pod is restarted.
+**Cause:** Docker Desktop pauses the Linux VM when the Mac sleeps. Istio issues 24-hour workload certificates to each Envoy sidecar and rotates them at the 80% mark (~19 h). If the VM is frozen through that window, the rotation goroutine never fires. Once the certificate expires, Istio does not auto-renew it — the sidecar continues presenting an expired certificate until the pod is restarted.
 
 **Verify:**
 
@@ -558,20 +558,20 @@ kubectl rollout restart deployment statefulset -n observability
 kubectl rollout restart deployment -n demo
 ```
 
-**Confirm certs are fresh:**
+**Confirm certificates are fresh:**
 
 ```bash
 istioctl proxy-config secret -n observability deploy/observability-grafana | grep default
 # VALID CERT should now be: true
 ```
 
-### Istio logs
+### Istio Logs
 
 ```bash
 kubectl logs -n istio-system deploy/istiod | tail -50
 ```
 
-OR
+Or filtered:
 
 ```bash
 kubectl logs -n istio-system deploy/istiod | \
@@ -584,7 +584,7 @@ kubectl logs -n istio-system deploy/istiod | \
 
 ## 9. Envoy Gateway
 
-### Envoy Gateway status
+### Envoy Gateway Status
 
 ```bash
 # Controller pod — should be Running in envoy-gateway-system
@@ -606,7 +606,7 @@ kubectl get svc -n envoy-ingress
 kubectl get svc envoy-proxy -n envoy-gateway-system
 ```
 
-### HTTPRoute attachment
+### HTTPRoute Attachment
 
 ```bash
 # All HTTPRoutes — ACCEPTED column must be True
@@ -620,7 +620,7 @@ kubectl get httproute prometheus -n observability \
   -o jsonpath='{.status.parents[0].conditions}' | python3 -m json.tool
 ```
 
-### End-to-end connectivity test
+### End-to-End Connectivity Test
 
 ```bash
 # Quick check without /etc/hosts (use Host header directly)
@@ -635,7 +635,7 @@ curl -s http://localhost:8080/healthz/ready
 # Expected: 200 OK
 ```
 
-### Envoy Gateway logs
+### Envoy Gateway Logs
 
 ```bash
 # Controller logs
@@ -645,14 +645,14 @@ kubectl logs -n envoy-gateway-system deploy/envoy-gateway | tail -50
 kubectl logs -n envoy-gateway-system -l app.kubernetes.io/component=proxy | tail -50
 ```
 
-### EnvoyProxy CR status
+### EnvoyProxy CR Status
 
 ```bash
 # Check if the EnvoyProxy CR is accepted by the controller
 kubectl describe envoyproxy kindconfig -n envoy-ingress
 ```
 
-### Adding a new service via HTTPRoute
+### Adding a New Service via HTTPRoute
 
 Create an `HTTPRoute` in the service's namespace:
 
@@ -698,7 +698,7 @@ kubectl get pods -n observability -l app.kubernetes.io/name=promtail -o wide
 kubectl get pvc -n observability -l app.kubernetes.io/name=loki
 ```
 
-### Verify Loki is ingesting logs
+### Verify Loki Is Ingesting Logs
 
 ```bash
 # Port-forward Loki directly
@@ -713,7 +713,7 @@ curl -s -G 'http://localhost:3100/loki/api/v1/query_range' \
 curl -s 'http://localhost:3100/loki/api/v1/labels' | jq .
 ```
 
-### Promtail is shipping logs
+### Promtail Log Shipping
 
 ```bash
 # Check Promtail targets — each entry should show "ready"
@@ -723,9 +723,9 @@ kubectl port-forward -n observability \
 curl -s http://localhost:3101/targets | python3 -m json.tool | grep -c '"health":"up"'
 ```
 
-### Query Tetragon events in Grafana
+### Query Tetragon Events in Grafana
 
-Open `http://grafana.local:8080`, go to **Explore**, select **Loki** datasource, then run:
+Open `http://grafana.local:8080`, go to **Explore**, select the **Loki** datasource, then run:
 
 ```logql
 {namespace="tetragon", container="export-stdout"}
@@ -750,7 +750,7 @@ kubectl logs -n observability -l app.kubernetes.io/name=promtail | tail -50
 
 ## 11. Tetragon
 
-### Tetragon status
+### Tetragon Status
 
 ```bash
 # DaemonSet — one pod per node, all should be Running
@@ -774,7 +774,7 @@ kubectl logs -n tetragon -l app.kubernetes.io/name=tetragon -c export-stdout --t
   | grep -i "shadow\|openat" | head -5
 ```
 
-### View security events
+### View Security Events
 
 Tetragon exports events as JSON to stdout on the `export-stdout` container:
 
@@ -790,7 +790,7 @@ kubectl logs -n tetragon -l app.kubernetes.io/name=tetragon -c export-stdout \
   | grep '"type":"PROCESS_EXEC"' | head -20
 ```
 
-### Verify Prometheus metrics are being scraped
+### Verify Prometheus Metrics Are Being Scraped
 
 ```bash
 # Port-forward Prometheus (see §14), then query:
@@ -801,7 +801,7 @@ curl -s http://localhost:9090/api/v1/targets \
   | jq '[.data.activeTargets[] | select(.labels.job | test("tetragon")) | {job: .labels.job, health: .health}]'
 ```
 
-### Tetragon logs
+### Tetragon Logs
 
 ```bash
 kubectl logs -n tetragon -l app.kubernetes.io/name=tetragon -c tetragon | tail -50
@@ -812,7 +812,7 @@ kubectl logs -n tetragon deploy/tetragon-operator | tail -50
 
 ## 12. Kyverno
 
-### Kyverno status
+### Kyverno Status
 
 ```bash
 # All four controllers — admission, background, cleanup, reports
@@ -825,9 +825,9 @@ kubectl get pods -n kyverno
 kubectl get clusterpolicies
 ```
 
-### View policy violations
+### View Policy Violations
 
-Violations are in Audit mode — they are recorded but do not block requests:
+Violations in Audit mode are recorded but do not block requests:
 
 ```bash
 # All cluster-wide policy reports
@@ -841,7 +841,7 @@ kubectl get clusteradmissionreports -A -o json \
   | jq '[.items[].spec.summary.fail] | add'
 ```
 
-### Run policy unit tests
+### Run Policy Unit Tests
 
 Offline — no cluster required. Tests all four validation ClusterPolicies against 9 representative pods (45 tests) and the mutation policy against 3 Job/Deployment fixtures (3 tests):
 
@@ -862,7 +862,7 @@ Test layout:
 - `apps/base/kyverno/tests/kyverno-test.yaml` — 45 tests across the four validation ClusterPolicies
 - `apps/base/kyverno/tests/mutations/kyverno-test.yaml` — 3 tests for `mutate-jobs-disable-istio-injection`
 
-### Kyverno logs
+### Kyverno Logs
 
 ```bash
 # Admission controller — most relevant for debugging policy decisions
@@ -876,7 +876,7 @@ kubectl logs -n kyverno deploy/kyverno-background-controller | tail -50
 
 ## 13. Falco
 
-### Falco status
+### Falco Status
 
 ```bash
 # DaemonSet — one pod per node
@@ -890,7 +890,7 @@ kubectl logs -n falco -l app.kubernetes.io/name=falco --tail=5
 # Expected: "Driver loaded: modern_ebpf" in the startup lines
 ```
 
-### View recent alerts
+### View Recent Alerts
 
 ```bash
 # Stream live Falco alerts from all nodes
@@ -904,7 +904,7 @@ kubectl logs -n falco -l app.kubernetes.io/name=falco --tail=200 \
   | grep -i 'Critical\|Error'
 ```
 
-### Query Falco alerts in Grafana
+### Query Falco Alerts in Grafana
 
 Open `http://grafana.local:8080`, navigate to **Dashboards → Falco — Runtime Security**.
 
@@ -920,7 +920,7 @@ Filter to a specific priority:
 {namespace="falco", container="falco"} |= "Critical"
 ```
 
-### Verify Falco metrics in Prometheus
+### Verify Falco Metrics in Prometheus
 
 ```bash
 # Port-forward Prometheus (see §14), then query:
@@ -931,9 +931,9 @@ curl -s http://localhost:9090/api/v1/targets \
   | jq '[.data.activeTargets[] | select(.labels.job | test("falco")) | {job: .labels.job, health: .health}]'
 ```
 
-### Live detection test
+### Live Detection Test
 
-Requires: running cluster with Falco healthy.
+Requires a running cluster with Falco healthy.
 
 ```bash
 make test-falco
@@ -941,7 +941,7 @@ make test-falco
 
 This deploys `falcosecurity/event-generator:0.13.0` as a Job that fires the syscall action suite, then checks the Falco pod log on the same node for 4 expected rule matches. Cleans up the `falco-test` namespace on completion.
 
-### Falco logs
+### Falco Logs
 
 ```bash
 kubectl logs -n falco -l app.kubernetes.io/name=falco | tail -50
@@ -952,7 +952,7 @@ kubectl logs -n falco -l app.kubernetes.io/name=falcosidekick | tail -50
 
 ## 14. Prometheus
 
-### Prometheus status
+### Prometheus Status
 
 ```bash
 kubectl get pods -n observability -l app.kubernetes.io/name=prometheus
@@ -961,7 +961,7 @@ kubectl get pods -n observability -l app.kubernetes.io/name=kube-prometheus-stac
 
 ### Prometheus UI
 
-Direct browser access via Gateway API — no port-forward needed:
+No port-forward required via Gateway API:
 
 ```text
 http://prometheus.local:8080
@@ -974,7 +974,7 @@ kubectl port-forward -n observability svc/observability-kube-prometh-prometheus 
 # Open: http://localhost:9090
 ```
 
-### Verify Cilium metrics are being scraped
+### Verify Cilium Metrics Are Being Scraped
 
 ```bash
 # Port-forward first (see above), then query:
@@ -985,14 +985,14 @@ curl -s 'http://localhost:9090/api/v1/query?query=hubble_flows_processed_total' 
 curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job | test("cilium")) | {job: .labels.job, health: .health}'
 ```
 
-### Check scrape job health
+### Check Scrape Job Health
 
 ```bash
 # All configured scrape jobs and their status
 curl -s http://localhost:9090/api/v1/targets | jq '[.data.activeTargets[] | {job: .labels.job, health: .health, lastError: .lastError}] | group_by(.health)'
 ```
 
-### Verify OTel Collector self-metrics are being scraped
+### Verify OTel Collector Self-Metrics Are Being Scraped
 
 ```bash
 # Port-forward first (see above), then:
@@ -1006,7 +1006,7 @@ curl -s 'http://localhost:9090/api/v1/query?query=otelcol_receiver_accepted_span
   | jq '.data.result'
 ```
 
-### Prometheus logs
+### Prometheus Logs
 
 ```bash
 kubectl logs -n observability -l app.kubernetes.io/name=prometheus --container=prometheus | tail -50
@@ -1018,7 +1018,7 @@ kubectl logs -n observability -l app.kubernetes.io/name=prometheus --container=p
 
 ### Grafana UI
 
-Direct browser access via Gateway API — no port-forward needed:
+No port-forward required via Gateway API:
 
 ```text
 http://grafana.local:8080
@@ -1033,13 +1033,13 @@ kubectl port-forward -n observability svc/observability-grafana 3000:80
 # Open: http://localhost:3000
 ```
 
-### Grafana status
+### Grafana Status
 
 ```bash
 kubectl get pods -n observability -l app.kubernetes.io/name=grafana
 ```
 
-### Verify dashboards loaded
+### Verify Dashboards Loaded
 
 After opening the UI, navigate to **Dashboards** and confirm these 16 are present. Nine are downloaded from grafana.com at pod startup (requires internet access); seven are loaded from a ConfigMap and are always available offline.
 
@@ -1062,7 +1062,7 @@ After opening the UI, navigate to **Dashboards** and confirm these 16 are presen
 | Kubescape Security Posture | ConfigMap — apps/base/grafana/dashboards/ (Prometheus datasource) |
 | OpenTelemetry Collector | ConfigMap — apps/base/grafana/dashboards/ (gnetId 15983, patched) |
 
-### Verify Prometheus datasource
+### Verify Prometheus Datasource
 
 ```bash
 # Test the datasource via Grafana's API
@@ -1071,7 +1071,7 @@ curl -s -u admin:changeme http://localhost:3000/api/datasources | jq '.[].name'
 curl -s -u admin:changeme 'http://localhost:3000/api/datasources/proxy/1/api/v1/query?query=up' | jq '.status'
 ```
 
-### Grafana logs
+### Grafana Logs
 
 ```bash
 kubectl logs -n observability deploy/observability-grafana -c grafana | tail -50
@@ -1079,11 +1079,11 @@ kubectl logs -n observability deploy/observability-grafana -c grafana | tail -50
 
 ---
 
-## 16. Flux GitHub notifications
+## 16. Flux GitHub Notifications
 
 Flux posts commit status checks to GitHub via the notification controller. The Provider and Alerts live in `apps/base/notifications/`; the `github-token` secret is created by the bootstrap script (step 9).
 
-### Check notification controller health
+### Check Notification Controller Health
 
 ```bash
 # Notification controller pod
@@ -1096,7 +1096,7 @@ kubectl get provider -n flux-system github
 kubectl get alert -n flux-system
 ```
 
-### Verify the github-token secret exists
+### Verify the github-token Secret Exists
 
 ```bash
 kubectl get secret github-token -n flux-system
@@ -1106,7 +1106,7 @@ GITHUB_TOKEN="$(gh auth token)" kubectl create secret generic github-token \
   --from-literal=token="${GITHUB_TOKEN}"
 ```
 
-### Notification controller logs
+### Notification Controller Logs
 
 ```bash
 kubectl logs -n flux-system deploy/notification-controller | tail -30
@@ -1118,7 +1118,7 @@ kubectl logs -n flux-system deploy/notification-controller | grep -i "dispatchin
 kubectl logs -n flux-system deploy/notification-controller | grep -i "error"
 ```
 
-### Confirm commit statuses appear on GitHub
+### Confirm Commit Statuses Appear on GitHub
 
 ```bash
 # After a reconcile, check the commit SHA for pending/success/failure statuses
@@ -1132,31 +1132,31 @@ The token must have `repo:status` scope. `gh auth token` provides this scope aut
 
 ## 17. Grafana Tempo
 
-### Tempo status
+### Tempo Status
 
 ```bash
 kubectl get pods -n observability -l app.kubernetes.io/name=tempo
 kubectl get helmrelease tempo -n flux-system
 ```
 
-### Tempo health check
+### Tempo Health Check
 
 ```bash
 kubectl port-forward -n observability svc/observability-tempo 3200:3200 &
 curl -s http://localhost:3200/ready   # expects: ready
 ```
 
-### Query traces via Tempo API
+### Query Traces via Tempo API
 
 ```bash
 # List recent traces by service name
 curl -s 'http://localhost:3200/api/search?tags=service.name%3Dhttpbin.demo' | python3 -m json.tool | head -40
 
-# Total trace count (sanity check — should be > 0 after load-generator runs)
+# Total trace count (should be > 0 after load-generator runs)
 curl -s 'http://localhost:3200/api/search?limit=5' | jq '.traces | length'
 ```
 
-### Verify Grafana Tempo datasource
+### Verify Grafana Tempo Datasource
 
 ```bash
 kubectl port-forward -n observability svc/observability-grafana 3000:80 &
@@ -1165,7 +1165,7 @@ curl -s -u admin:changeme http://localhost:3000/api/datasources \
 # url should be: http://observability-tempo.observability.svc.cluster.local:3200
 ```
 
-### Tempo logs
+### Tempo Logs
 
 ```bash
 kubectl logs -n observability -l app.kubernetes.io/name=tempo --tail=50
@@ -1175,14 +1175,14 @@ kubectl logs -n observability -l app.kubernetes.io/name=tempo --tail=50
 
 ## 18. OpenTelemetry Collector
 
-### OTel Collector status
+### OTel Collector Status
 
 ```bash
 kubectl get pods -n observability -l app.kubernetes.io/name=opentelemetry-collector
 kubectl get helmrelease opentelemetry-collector -n flux-system
 ```
 
-### Verify spans are flowing in
+### Verify Spans Are Flowing In
 
 ```bash
 # Port-forward Prometheus first (see §14), then:
@@ -1191,30 +1191,30 @@ curl -s 'http://localhost:9090/api/v1/query?query=otelcol_receiver_accepted_span
 # Non-zero value confirms Envoy sidecars are delivering spans
 ```
 
-### Verify spans are exported to Tempo
+### Verify Spans Are Exported to Tempo
 
 ```bash
 curl -s 'http://localhost:9090/api/v1/query?query=otelcol_exporter_sent_spans_total' \
   | jq '.data.result'
 ```
 
-### OTel Collector logs
+### OTel Collector Logs
 
 ```bash
 kubectl logs -n observability -l app.kubernetes.io/name=opentelemetry-collector --tail=50
 ```
 
-### Rendered pipeline config
+### Rendered Pipeline Config
 
 ```bash
 kubectl get configmap -n observability \
   -l app.kubernetes.io/name=opentelemetry-collector -o yaml | grep -A 80 "config.yaml:"
 ```
 
-### Envoy cluster stats — confirm sidecars are connecting
+### Envoy Cluster Stats — Confirm Sidecars Are Connecting
 
 ```bash
-# exec into a demo pod and check the OTel exporter cluster
+# Exec into a demo pod and check the OTel exporter cluster
 kubectl exec -n demo deploy/httpbin -c istio-proxy -- \
   curl -s http://localhost:15000/clusters | grep opentelemetry
 # Look for cx_active > 0 and rq_success > 0
@@ -1224,14 +1224,14 @@ kubectl exec -n demo deploy/httpbin -c istio-proxy -- \
 
 ## 19. Kubescape
 
-### Kubescape status
+### Kubescape Status
 
 ```bash
 kubectl get pods -n kubescape
 kubectl get helmrelease kubescape -n flux-system
 ```
 
-### Run a manual scan
+### Run a Manual Scan
 
 ```bash
 # Live cluster scan via Make (NSA + MITRE frameworks)
@@ -1244,15 +1244,15 @@ kubescape scan framework nsa,mitre \
   --verbose
 ```
 
-### View scan results in Grafana
+### View Scan Results in Grafana
 
-Open `http://grafana.local:8080`, navigate to **Dashboards → Kubescape Security Posture**. The dashboard shows compliance scores for NSA and MITRE controls, resource-level findings, and historical trends sourced from the in-cluster Prometheus metrics that the kubescape `prometheus-exporter` pod exposes.
+Open `http://grafana.local:8080`, navigate to **Dashboards → Kubescape Security Posture**. The dashboard shows compliance scores for NSA and MITRE controls, resource-level findings, and historical trends sourced from the in-cluster Prometheus metrics exposed by the kubescape `prometheus-exporter` pod.
 
-### Review accepted risk decisions
+### Review Accepted Risk Decisions
 
-Controls that have been reviewed and deliberately accepted are recorded in `docs/kubescape-security.md` with the control ID, affected resource, and rationale. Check there before investigating a finding — it may already be a known accepted risk.
+Controls that have been reviewed and deliberately accepted are recorded in `docs/kubescape-security.md` with the control ID, affected resource, and rationale. Consult that document before investigating a finding — it may already be a known accepted risk.
 
-### Kubescape logs
+### Kubescape Logs
 
 ```bash
 # Main scanner
@@ -1269,16 +1269,16 @@ kubectl logs -n kubescape deploy/prometheus-exporter | tail -50
 
 ## 20. SOPS + Age
 
-See `docs/sops-age-secrets.md` for the complete setup guide, day-to-day workflow, and cluster rebuild procedure.
+See [docs/sops-age-secrets.md](sops-age-secrets.md) for the complete setup guide, day-to-day workflow, and cluster rebuild procedure.
 
-### Verify the sops-age secret is present
+### Verify the sops-age Secret Is Present
 
 ```bash
 kubectl get secret sops-age -n flux-system
 # If missing: make sops-load-key
 ```
 
-### Verify Flux decrypted a secret successfully
+### Verify Flux Decrypted a Secret Successfully
 
 ```bash
 # grafana-admin-secret is the reference encrypted secret in this project
@@ -1289,7 +1289,7 @@ kubectl get secret grafana-admin-secret -n flux-system \
   -o jsonpath='{.data.admin-password}' | base64 -d
 ```
 
-### Diagnose a decryption failure
+### Diagnose a Decryption Failure
 
 If a Kustomization is stuck with a decryption error:
 
@@ -1305,14 +1305,14 @@ kubectl get secret sops-age -n flux-system \
 # Expected second line: "# public key: age1..."
 ```
 
-### Edit an existing encrypted secret
+### Edit an Existing Encrypted Secret
 
 ```bash
 # Opens decrypted YAML in $EDITOR — re-encrypts automatically on save
 sops apps/base/grafana/admin-secret.yaml
 ```
 
-### Common issue: sops encrypt fails with GPG keyring error
+### Common Issue: sops Encrypt Fails with GPG Keyring Error
 
 A leftover `SOPS_PGP_FP` environment variable overrides `.sops.yaml` and forces SOPS to use a GPG key that no longer exists in the keyring.
 
@@ -1329,12 +1329,12 @@ sed -i '' '/SOPS_PGP_FP/d' ~/.zshrc
 
 ---
 
-## 21. Common issues
+## 21. Common Issues
 
-### All Grafana dashboards blank after Mac wakes from sleep
+### All Grafana Dashboards Blank After Mac Wakes from Sleep
 
 **Symptom:** Every dashboard panel shows a TLS error mentioning `CERTIFICATE_VERIFY_FAILED`.
-**Cause:** Docker Desktop's Linux VM pauses during Mac sleep, freezing Istio's cert-rotation goroutine. Workload certs are valid for 24 h; if the rotation window is missed the sidecar presents an expired cert until the pod restarts.
+**Cause:** Docker Desktop's Linux VM pauses during Mac sleep, freezing Istio's cert-rotation goroutine. Workload certificates are valid for 24 h; if the rotation window is missed the sidecar presents an expired certificate until the pod restarts.
 **Fix:**
 
 ```bash
@@ -1342,11 +1342,11 @@ kubectl rollout restart deployment statefulset -n observability
 kubectl rollout restart deployment -n demo
 ```
 
-See [§8 Istio — Grafana dashboards blank after Mac wakes from sleep](#8-istio) for full diagnosis steps and verification commands.
+See [§8 Istio — Grafana Dashboards Blank After Mac Wakes from Sleep](#8-istio) for full diagnosis steps and verification commands.
 
 ---
 
-### Cilium agent fails to start on worker nodes
+### Cilium Agent Fails to Start on Worker Nodes
 
 **Symptom:** `config` init container loops with `connection refused` to `127.0.0.1:6443`.
 **Cause:** `k8sServiceHost: 127.0.0.1` only resolves to the API server on the control-plane node. Workers have no API server on localhost.
@@ -1357,7 +1357,7 @@ See [§8 Istio — Grafana dashboards blank after Mac wakes from sleep](#8-istio
 kubectl get configmap cilium-config -n kube-system -o jsonpath='{.data.k8s-api-server}'
 ```
 
-### HelmRelease stuck in "install failed" after timeout
+### HelmRelease Stuck in "install failed" After Timeout
 
 ```bash
 # Force an immediate retry without waiting for the interval
@@ -1367,14 +1367,14 @@ flux reconcile helmrelease <name> -n flux-system
 kubectl describe helmrelease <name> -n flux-system | grep -A 20 "Status:"
 ```
 
-### Flux not picking up new commits
+### Flux Not Picking Up New Commits
 
 ```bash
 # Force git pull + full reconcile
 flux reconcile source git flux-system
 ```
 
-### Cilium-managed HelmRelease conflicts with pre-installed release
+### Cilium-Managed HelmRelease Conflicts with Pre-Installed Release
 
 **Symptom:** Flux installs a second release (`kube-system-cilium`) instead of adopting the pre-installed `cilium` release.
 **Fix:** `spec.releaseName: cilium` must be set in the Cilium HelmRelease so Flux targets the correct Helm release name.
@@ -1384,22 +1384,22 @@ flux reconcile source git flux-system
 helm list -n kube-system
 ```
 
-### istioctl analyze reports unlabelled namespaces (IST0102)
+### istioctl analyze Reports Unlabelled Namespaces (IST0102)
 
 **Fix:** All non-mesh namespaces should carry `istio-injection: disabled` on their Namespace resource. This is set in the relevant `infrastructure/controllers/*.yaml` and `apps/base/prometheus/namespace.yaml` files, and via a kustomize patch on `flux-system`.
 
-### Istio port naming warning (IST0118)
+### Istio Port Naming Warning (IST0118)
 
 **Symptom:** `Port name metrics does not follow Istio naming convention`.
 **Fix:** cert-manager webhook services are patched via `postRenderers.kustomize.patches` in `infrastructure/controllers/cert-manager.yaml`. Grafana is fixed via `service.portName: http` in `apps/base/grafana/helmrelease.yaml`.
 
-### localhost:8080 connects but immediately resets (Gateway unreachable)
+### localhost:8080 Connects but Immediately Resets (Gateway Unreachable)
 
-**Symptom:** `curl localhost:8080` connects then gets `Connection reset by peer` after ~15s.
-**Cause:** On macOS Docker Desktop + Cilium kube-proxy replacement, `localhost:8080` traffic arrives at the KinD container's loopback (`127.0.0.1`), not `eth0`. Cilium's NodePort BPF rules only handle traffic incoming on `eth0` (from the Docker bridge). The result is the TCP handshake completes (Docker's proxy accepts it) but the traffic is never forwarded to the NodePort backend.
-**Current setup:** The nginx `nodeport-proxy` DaemonSet in `apps/overlays/kind/istio/nodeport-proxy.yaml` is the **active primary path** — it runs with `hostNetwork: true` on the control-plane, listens on port 8888 (outside the NodePort range), and proxies to the stable `envoy-proxy` ClusterIP Service in `envoy-gateway-system`. KinD maps `localhost:8080 → containerPort: 8888`.
+**Symptom:** `curl localhost:8080` connects then receives `Connection reset by peer` after ~15 s.
+**Cause:** On macOS Docker Desktop + Cilium kube-proxy replacement, `localhost:8080` traffic arrives at the KinD container's loopback (`127.0.0.1`), not `eth0`. Cilium's NodePort BPF rules only handle traffic incoming on `eth0` (from the Docker bridge). The TCP handshake completes (Docker's proxy accepts it) but the traffic is never forwarded to the NodePort backend.
+**Active setup:** The nginx `nodeport-proxy` DaemonSet in `apps/overlays/kind/istio/nodeport-proxy.yaml` is the primary path — it runs with `hostNetwork: true` on the control-plane, listens on port 8888 (outside the NodePort range), and proxies to the stable `envoy-proxy` ClusterIP Service in `envoy-gateway-system`. KinD maps `localhost:8080 → containerPort: 8888`.
 
-If traffic still fails after confirming Flux is reconciled:
+If traffic fails after confirming Flux is reconciled:
 
 ```bash
 # Check the nginx nodeport-proxy pod
@@ -1418,13 +1418,13 @@ kubectl run curl-test --image=curlimages/curl --rm -it --restart=Never -- \
   http://envoy-proxy.envoy-gateway-system.svc.cluster.local/
 ```
 
-### ServiceMonitor CRD not found during Cilium install
+### ServiceMonitor CRD Not Found During Cilium Install
 
 **Symptom:** `no matches for kind "ServiceMonitor" in version "monitoring.coreos.com/v1"`.
 **Cause:** Circular dependency — ServiceMonitor CRD lives in the apps layer (kube-prometheus-stack), which depends on the infrastructure layer (Cilium).
 **Fix:** Cilium's `serviceMonitor.enabled` is `false` for all three monitors. Prometheus scrapes Cilium via `additionalScrapeConfigs` in `apps/base/prometheus/helmrelease.yaml` instead.
 
-### Falco not detecting expected rules
+### Falco Not Detecting Expected Rules
 
 **Symptom:** `make test-falco` reports one or more rules not detected.
 
@@ -1452,9 +1452,9 @@ kubectl logs -n falco -l app.kubernetes.io/name=falco --since=10m \
 
 ## 22. BOINC
 
-See `docs/boinc.md` for full operational detail. Quick reference below.
+See [docs/boinc.md](boinc.md) for full operational detail. Quick reference below.
 
-### BOINC status
+### BOINC Status
 
 ```bash
 # Pods — one per node, all should be Running
@@ -1464,17 +1464,16 @@ kubectl get pods -n boinc -o wide
 kubectl logs -n boinc -l app=boinc --tail=50
 ```
 
-### Check project attachment
+### Check Project Attachment
 
 ```bash
 POD=$(kubectl get pod -n boinc -l app=boinc -o jsonpath='{.items[0].metadata.name}')
 kubectl exec -n boinc $POD -- boinccmd --get_project_status
 ```
 
-Expected: two projects listed — `https://boinc.bakerlab.org/rosetta/` and
-`https://einstein.phys.uwm.edu/`.
+Expected: two projects listed — `https://boinc.bakerlab.org/rosetta/` and `https://einstein.phys.uwm.edu/`.
 
-### Update credentials
+### Update Credentials
 
 ```bash
 # Edit and re-encrypt in one step
@@ -1484,7 +1483,7 @@ sops apps/base/boinc/boinc-projects-secret.yaml
 kubectl rollout restart daemonset/boinc -n boinc
 ```
 
-### BOINC logs
+### BOINC Logs
 
 ```bash
 kubectl logs -n boinc -l app=boinc --tail=50
@@ -1493,7 +1492,7 @@ kubectl logs -n boinc -l app=boinc --tail=50
 kubectl logs -n boinc -l app=boinc | grep -iE "error|failed|invalid"
 ```
 
-### initContainer logs (credential copy step)
+### initContainer Logs (Credential Copy Step)
 
 ```bash
 kubectl logs -n boinc <pod-name> -c boinc-account-init
@@ -1510,25 +1509,23 @@ kubectl get secret boinc-projects-secret -n boinc
 
 ## 23. Renovate
 
-See `docs/renovate.md` for full configuration details and design decisions.
+See [docs/renovate.md](renovate.md) for full configuration details and design decisions.
 
-### Check pending Renovate PRs
+### Check Pending Renovate PRs
 
 ```bash
 gh pr list --label "renovate"
 ```
 
-Renovate also creates a **Dependency Dashboard** issue in the repo listing all detected
-updates, their status, and which PRs are open or scheduled.
+Renovate also creates a **Dependency Dashboard** issue in the repository listing all detected updates, their status, and which PRs are open or scheduled.
 
-### Renovate opened a PR — what happens next
+### Renovate Opened a PR — What Happens Next
 
-1. CI (`validate` workflow) runs automatically on the PR
-2. If CI passes and the update type is automerge-eligible (patch images, GitHub Actions):
-   Renovate merges it automatically via GitHub branch protection
-3. If CI fails: the PR stays open and Renovate does not merge — investigate the failure
+1. CI (`validate` workflow) runs automatically on the PR.
+2. If CI passes and the update type is automerge-eligible (patch images, GitHub Actions): Renovate merges it automatically via GitHub branch protection.
+3. If CI fails: the PR remains open and Renovate does not merge — investigate the failure.
 
-### A PR automerged and the cluster is broken — roll back
+### A PR Automerged and the Cluster Is Broken — Roll Back
 
 ```bash
 # Find the merge commit
@@ -1543,16 +1540,13 @@ flux reconcile source git flux-system -n flux-system
 flux reconcile kustomization apps --with-source
 ```
 
-### Renovate is not opening PRs
+### Renovate Is Not Opening PRs
 
-First, check that the scheduled workflow has run: **Actions → Renovate** on GitHub.
-If no recent runs appear, trigger one manually with **Run workflow**.
+Check that the scheduled workflow has run: **Actions → Renovate** on GitHub. If no recent runs appear, trigger one manually with **Run workflow**.
 
-If the workflow ran but no PRs appeared, open the **Dependency Dashboard** issue in the
-repo — Renovate posts error messages there when a registry lookup fails or a custom
-manager regex did not match.
+If the workflow ran but no PRs appeared, open the **Dependency Dashboard** issue in the repository — Renovate posts error messages there when a registry lookup fails or a custom manager regex did not match.
 
-### Snooze or disable a specific update
+### Snooze or Disable a Specific Update
 
 Add a `packageRules` entry to `renovate.json`:
 
@@ -1563,8 +1557,7 @@ Add a `packageRules` entry to `renovate.json`:
 }
 ```
 
-Or use the Dependency Dashboard issue — Renovate provides checkboxes to ignore specific
-updates directly from the issue.
+Alternatively, use the Dependency Dashboard issue — Renovate provides checkboxes to suppress specific updates directly from the issue.
 
 ---
 
@@ -1572,7 +1565,7 @@ updates directly from the issue.
 
 Metrics Server implements `metrics.k8s.io/v1beta1` — the API behind `kubectl top` and HPA.
 
-### Health check
+### Health Check
 
 ```bash
 # API service must be Available=True
@@ -1585,7 +1578,7 @@ kubectl get pods -n metrics-server
 kubectl logs -n metrics-server deploy/metrics-server | tail -30
 ```
 
-### Verify metrics are flowing
+### Verify Metrics Are Flowing
 
 ```bash
 # Node resource usage
@@ -1595,9 +1588,9 @@ kubectl top nodes
 kubectl top pods -A
 ```
 
-### Common failure — `kubectl top` returns ServiceUnavailable
+### Common Failure — `kubectl top` Returns ServiceUnavailable
 
-This usually means the metrics-server pod is not ready or the API service is degraded.
+This typically indicates the metrics-server pod is not ready or the API service is degraded.
 
 ```bash
 # Check pod status and recent events
@@ -1607,7 +1600,4 @@ kubectl describe pod -n metrics-server -l app.kubernetes.io/name=metrics-server
 kubectl get deploy -n metrics-server metrics-server -o jsonpath='{.spec.template.spec.containers[0].args}' | tr ',' '\n'
 ```
 
-If the pod keeps restarting, check that Kyverno policies are satisfied — the
-`metrics-server` namespace is subject to `require-resource-limits` and
-`disallow-privilege-escalation` enforcement. The HelmRelease values set these correctly;
-if you customised them, restore the `resources` and `containerSecurityContext` blocks.
+If the pod keeps restarting, verify that Kyverno policies are satisfied — the `metrics-server` namespace is subject to `require-resource-limits` and `disallow-privilege-escalation` enforcement. The HelmRelease values set these correctly; if the `resources` or `containerSecurityContext` blocks have been customised, restore them to the values defined in the HelmRelease.

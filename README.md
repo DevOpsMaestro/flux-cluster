@@ -14,16 +14,16 @@ FluxCD GitOps cluster for KinD — multi-node, Cilium CNI with kube-proxy replac
 
 | Document | Description |
 |---|---|
-| [Key Concepts](docs/concepts.md) | What each technology is and why it's here — start here if you're new to Kubernetes |
+| [Key Concepts](docs/concepts.md) | What each technology is and why it exists — recommended starting point for operators new to Kubernetes |
 | [Troubleshooting Guide](docs/troubleshooting-guide.md) | Per-technology verification commands and common issue resolutions |
 | [SOPS + Age Secrets](docs/sops-age-secrets.md) | Secrets encryption setup, day-to-day workflow, and recovery procedure |
 | [BOINC](docs/boinc.md) | BOINC compute DaemonSet — status commands, credential updates, and troubleshooting |
-| [Renovate](docs/renovate.md) | Dependency automation — how Renovate is configured, tiered strategy, and what to do when a PR automerges unexpectedly |
+| [Renovate](docs/renovate.md) | Dependency automation — configuration, tiered strategy, and rollback procedure |
 | [Kubescape Accepted Risks](docs/kubescape-security.md) | Security findings reviewed and accepted as intentional design decisions |
-| [Istio Basic Reference](docs/ISTIO_basic_notes.md) | Day-to-day Istio admin commands |
-| [Istio Advanced Reference](docs/ISTIO_advanced_notes.md) | mTLS enforcement, authorization policy, tracing config |
+| [Istio Basic Reference](docs/ISTIO_basic_notes.md) | Day-to-day Istio administration commands |
+| [Istio Advanced Reference](docs/ISTIO_advanced_notes.md) | mTLS enforcement, authorization policy, tracing configuration |
 
-## Repository structure
+## Repository Structure
 
 ```text
 flux-cluster/
@@ -115,10 +115,9 @@ flux-cluster/
     └── setup-without-flux-generic-cluster.sh  # KinD cluster only (no Flux bootstrap)
 ```
 
-## How changes flow
+## How Changes Flow
 
-This cluster is fully GitOps — `kubectl apply` is never run directly. Every change
-enters through Git:
+This cluster is fully GitOps — `kubectl apply` is never run directly. Every change enters through Git:
 
 ```
 1. Edit a manifest or HelmRelease value locally
@@ -135,10 +134,9 @@ To skip the 1-minute poll and apply immediately after a push:
 flux reconcile source git flux-system -n flux-system
 ```
 
-Any change made with `kubectl apply` directly will be **reverted** on the next
-reconcile. Flux is the source of truth — always commit to Git instead.
+Any change applied directly with `kubectl apply` will be **reverted** on the next reconcile. Flux is the source of truth — all changes must be committed to Git.
 
-## Dependency chain
+## Dependency Chain
 
 ```text
 flux-system (GitRepository)
@@ -169,13 +167,13 @@ flux-system (GitRepository)
     └── envoy-gateway/httproutes      (HTTPRoute — grafana.local, prometheus.local)
 ```
 
-## Deployed components
+## Deployed Components
 
 | Component | Chart / Source | Version | Namespace | Notes |
 |---|---|---|---|---|
 | Cilium CNI | cilium/cilium | 1.19.x | kube-system | |
 | Hubble Relay | (bundled with Cilium) | 1.19.x | kube-system | |
-| Hubble UI | (bundled with Cilium) | 0.13.1 | kube-system | disabled by default; enable via `hubble.ui.enabled: true` in `cilium.yaml` |
+| Hubble UI | (bundled with Cilium) | 0.13.1 | kube-system | Disabled by default; enable via `hubble.ui.enabled: true` in `cilium.yaml` |
 | cert-manager | cert-manager/cert-manager | v1.20.x | cert-manager | |
 | OpenEBS localpv | openebs/openebs | 4.x | openebs | |
 | istio-base | istio/base | 1.30.x | istio-system | |
@@ -189,7 +187,7 @@ flux-system (GitRepository)
 | Loki | grafana/loki | 7.x | observability | |
 | Promtail | grafana/promtail | 6.x | observability | |
 | Grafana Tempo | grafana/tempo | 1.x | observability | Single-binary mode; trace backend for the OTel pipeline |
-| OpenTelemetry Collector | open-telemetry/opentelemetry-collector | 0.x | observability | contrib distribution; OTLP ingress → Tempo export; Istio sidecar disabled |
+| OpenTelemetry Collector | open-telemetry/opentelemetry-collector | 0.x | observability | Contrib distribution; OTLP ingress → Tempo export; Istio sidecar disabled |
 | Tetragon | cilium/tetragon | 1.7.x | tetragon | |
 | Kyverno | kyverno/kyverno | 3.x | kyverno | |
 | Kubescape | kubescape/kubescape-operator | 1.40.x | kubescape | NSA + MITRE continuous scan; vulnerability scan disabled for KinD |
@@ -198,11 +196,9 @@ flux-system (GitRepository)
 | BOINC | boinc/client | arm64v8 | boinc | Voluntary compute — Rosetta@Home + Einstein@Home; capped at 1 CPU core for thermal management |
 | Renovate | renovatebot/github-action | (GitHub Actions workflow) | — | Automated dependency PRs for Helm charts, images, GitHub Actions, and CI tool pins |
 
-## Container images
+## Container Images
 
-Images referenced directly in manifests (outside of Helm charts). Helm-managed
-workloads use images defined by their chart; versions are controlled by the chart
-version constraint in the HelmRelease.
+Images referenced directly in manifests (outside of Helm charts). Helm-managed workloads use images defined by their chart; versions are controlled by the chart version constraint in the HelmRelease.
 
 | Image | Tag / Digest | File | Purpose |
 |-------|-------------|------|---------|
@@ -213,17 +209,17 @@ version constraint in the HelmRelease.
 | `nginx` | `1.31-alpine` | `apps/overlays/kind/istio/nodeport-proxy.yaml` | KinD ingress workaround: proxies host port 8888 → Envoy ClusterIP |
 | `falcosecurity/event-generator` | `0.13.0` | `tests/falco/event-generator.yaml` | Falco live detection test job |
 
-## Version compatibility
+## Version Compatibility
 
-The versions below were validated together. When upgrading a component, check compatibility with its neighbours — Istio and Envoy Gateway both consume Gateway API CRDs, and Cilium + Istio share the sidecar interception ports.
+The versions below were validated together. When upgrading a component, verify compatibility with its neighbours — Istio and Envoy Gateway both consume Gateway API CRDs, and Cilium + Istio share the sidecar interception ports.
 
-| Component | Validated version | Constrained by |
+| Component | Validated Version | Constrained By |
 |---|---|---|
 | Kubernetes (KinD node) | v1.35.0 | `K8S_VER` in `versions.env` |
 | Cilium | 1.19.x | `cilium.yaml` chart constraint + `versions.env` |
 | Istio | 1.30.x | `istio.yaml` chart constraint + `versions.env` |
 | Envoy Gateway | 1.4.x (v1.4.6) | `envoy-gateway.yaml` + `versions.env` |
-| Gateway API CRDs | v1.2.1 | hardcoded in `setup-fluxcd-gitops-kind-multinode.sh` step 4 |
+| Gateway API CRDs | v1.2.1 | Hardcoded in `setup-fluxcd-gitops-kind-multinode.sh` step 4 |
 | kube-prometheus-stack | 86.x | `prometheus/helmrelease.yaml` |
 | Loki | 7.x | `loki/helmrelease.yaml` |
 | Grafana | 10.x (app 12.x) | `grafana/helmrelease.yaml` |
@@ -234,9 +230,9 @@ The versions below were validated together. When upgrading a component, check co
 | Falco | 9.x | `falco.yaml` |
 | Tetragon | 1.7.x | `tetragon.yaml` |
 
-All version pins shared between the Makefile and setup script are sourced from `versions.env` at the repo root — bump them there and both consumers update.
+All version pins shared between the Makefile and setup script are sourced from `versions.env` at the repository root — bumping them there updates both consumers.
 
-## Key design decisions
+## Key Design Decisions
 
 **Cilium pre-installed before Flux bootstrap** — Without a CNI, every pod is Pending, including Flux itself. The setup script runs `helm install cilium` before `flux bootstrap` to break this deadlock. When Flux reconciles `infrastructure/controllers/cilium.yaml` it finds the existing release and adopts it, managing drift as a normal upgrade.
 
@@ -246,7 +242,7 @@ All version pins shared between the Makefile and setup script are sourced from `
 
 **Infrastructure before Apps via `dependsOn`** — The `apps` Flux Kustomization declares `dependsOn: infrastructure-controllers`, so all infrastructure is healthy before any application HelmRelease is attempted.
 
-**Cilium ServiceMonitors disabled; additionalScrapeConfigs used instead** — The `ServiceMonitor` CRD (`monitoring.coreos.com/v1`) is provided by `kube-prometheus-stack` in the apps layer, which depends on infrastructure — a circular dependency. Cilium metrics are scraped via `additionalScrapeConfigs` defined in the kube-prometheus-stack HelmRelease, which uses pod-based Kubernetes SD and works without ServiceMonitor CRDs.
+**Cilium ServiceMonitors disabled; additionalScrapeConfigs used instead** — The `ServiceMonitor` CRD (`monitoring.coreos.com/v1`) is provided by `kube-prometheus-stack` in the apps layer, which depends on infrastructure — a circular dependency. Cilium metrics are scraped via `additionalScrapeConfigs` defined in the kube-prometheus-stack HelmRelease, using pod-based Kubernetes SD without requiring ServiceMonitor CRDs.
 
 **cert-manager uses two-phase CRD install** — `cert-manager-crds` is a separate HelmRelease that installs only CRDs with `installCRDs: true` and zero replicas. `cert-manager` then declares `dependsOn: cert-manager-crds` and sets `crds: Skip`. This eliminates the race condition where the controller starts before its own CRDs are registered.
 
@@ -254,7 +250,7 @@ All version pins shared between the Makefile and setup script are sourced from `
 
 **Envoy Gateway handles all HTTP ingress** — The `envoy-gateway` HelmRelease installs the Envoy Gateway controller into `envoy-gateway-system`. A `Gateway` CR with `gatewayClassName: eg` in `envoy-ingress` causes Envoy Gateway to auto-provision an Envoy Deployment and NodePort Service. The `EnvoyProxy` CR pins `nodePort: 30080` so the value is deterministic and matches the KinD `extraPortMapping` (`containerPort: 30080 → hostPort: 8080`). Services are exposed by adding an `HTTPRoute` in their namespace with a `parentRef` pointing to the `main` Gateway.
 
-**Layered mTLS enforcement** — The mesh-wide `PeerAuthentication` in `istio-system` stays `PERMISSIVE` so infrastructure components without sidecars (Envoy Gateway, cert-manager) can still communicate. Namespaces with full sidecar coverage are hardened individually: `demo` and `observability` each carry a namespace-scoped `default` PeerAuthentication set to `STRICT`. Workload-specific PeerAuthentications carve out PERMISSIVE exceptions on individual ports where non-sidecar clients must still connect (Envoy Gateway → Grafana:3000, Envoy Gateway → httpbin:80, Promtail → Loki:3100). All six PeerAuthentications live in `apps/base/istio/peerauthentication.yaml`.
+**Layered mTLS enforcement** — The mesh-wide `PeerAuthentication` in `istio-system` remains `PERMISSIVE` so infrastructure components without sidecars (Envoy Gateway, cert-manager) can still communicate. Namespaces with full sidecar coverage are hardened individually: `demo` and `observability` each carry a namespace-scoped `default` PeerAuthentication set to `STRICT`. Workload-specific PeerAuthentications carve out PERMISSIVE exceptions on individual ports where non-sidecar clients must still connect (Envoy Gateway → Grafana:3000, Envoy Gateway → httpbin:80, Promtail → Loki:3100). All six PeerAuthentications live in `apps/base/istio/peerauthentication.yaml`.
 
 **All injection-disabled namespaces are explicit** — Every namespace that should not participate in the mesh carries `istio-injection: disabled`. This prevents accidental sidecar injection and suppresses `IST0102` warnings from `istioctl analyze`.
 
@@ -264,31 +260,31 @@ All version pins shared between the Makefile and setup script are sourced from `
 
 **No floating `latest` image tags** — Every image is pinned to a specific tag or digest. `latest` defeats drift detection and breaks rollbacks. `kennethreitz/httpbin` publishes no versioned tags, so it is pinned by digest (`@sha256:…`) instead. The `disallow-latest-image-tag` Kyverno policy accepts digest references as immutable pins.
 
-**Four-layer runtime security model** — Kyverno (admission control) validates pods before they start and audits misconfigurations. Tetragon (eBPF enforcement) can kill processes and block network connections at the syscall level. Falco (behavioral detection) continuously audits running containers and fires alerts on anomalous activity — shell spawning, sensitive file reads, credential exposure — routing them to Loki via Falcosidekick. Kubescape (compliance scanning) continuously audits the cluster's actual running state against NSA and MITRE ATT&CK frameworks and surfaces configuration drift. The four tools are complementary: Kyverno prevents bad config from entering, Tetragon stops active exploitation, Falco logs everything suspicious for forensic review, and Kubescape measures the cluster's overall security posture against industry frameworks.
+**Four-layer runtime security model** — Kyverno (admission control) validates pods before they start and audits misconfigurations. Tetragon (eBPF enforcement) can kill processes and block network connections at the syscall level. Falco (behavioral detection) continuously audits running containers and fires alerts on anomalous activity — shell spawning, sensitive file reads, credential exposure — routing them to Loki via Falcosidekick. Kubescape (compliance scanning) continuously audits the cluster's actual running state against NSA and MITRE ATT&CK frameworks and surfaces configuration drift. The four tools are complementary: Kyverno prevents bad configuration from entering, Tetragon stops active exploitation, Falco logs suspicious activity for forensic review, and Kubescape measures the cluster's overall security posture against industry frameworks.
 
 **Kubescape vulnerability scanning disabled for KinD** — The `vulnerabilityScan`, `nodeScan`, `nodeSbomGeneration`, and `relevancy` capabilities require generating and storing SBOMs for every running image, which is memory-intensive (1+ GB). These are disabled in `infrastructure/controllers/kubescape.yaml` to keep the footprint within KinD constraints. `configurationScan` and `continuousScan` remain enabled, providing continuous NSA + MITRE framework coverage against running workload configurations. Re-enable vulnerability scanning in production clusters with sufficient node memory. Results are available via `kubectl get configurationscansummaries -A` and in the Kubescape Grafana dashboard.
 
 **Trace pipeline: Istio → OTel Collector → Tempo** — Istiod's `meshConfig.extensionProviders` registers the OTel Collector as a named provider (`otel`). A `Telemetry` CR in `apps/base/istio/telemetry.yaml` sets 100% trace sampling and references that provider, causing Envoy sidecars to export OTLP spans directly to the Collector on gRPC port 4317. The OTel Collector (contrib distribution) forwards traces to Grafana Tempo via OTLP. Grafana queries Tempo on its HTTP port (3200). Both the OTel Collector and Tempo opt out of sidecar injection to keep the trace transport plain-text and avoid mTLS bootstrapping complexity on the pipeline itself.
 
-**Falco uses `modern_ebpf` driver** — KinD nodes are Docker containers; kernel module loading is impossible. The legacy eBPF probe is deprecated as of Falco 0.38. `modern_ebpf` is bundled directly in the Falco binary (no init container needed), uses CO-RE (Compile Once, Run Everywhere), and requires only kernel ≥5.8 with BTF — satisfied by all modern KinD hosts. The `falco` namespace is excluded from the Kyverno PSS baseline and privilege-escalation policies because Falco's DaemonSet requires privileged mode and `allowPrivilegeEscalation: true` to attach eBPF probes to the kernel. Same pattern as Tetragon.
+**Falco uses `modern_ebpf` driver** — KinD nodes are Docker containers; kernel module loading is not possible. The legacy eBPF probe is deprecated as of Falco 0.38. `modern_ebpf` is bundled directly in the Falco binary (no init container required), uses CO-RE (Compile Once, Run Everywhere), and requires only kernel ≥5.8 with BTF — satisfied by all modern KinD hosts. The `falco` namespace is excluded from the Kyverno PSS baseline and privilege-escalation policies because Falco's DaemonSet requires privileged mode and `allowPrivilegeEscalation: true` to attach eBPF probes to the kernel. The same pattern applies to Tetragon.
 
-**Kyverno ClusterPolicies mix Audit and Enforce modes** — `pod-security-baseline` and `disallow-latest-image-tag` run in `validationFailureAction: Audit`; violations are recorded in policy reports but not blocked, enabling progressive hardening. `require-resource-limits` and `disallow-privilege-escalation` run in `Enforce` — pods that omit resource limits or allow privilege escalation are rejected at admission. A fifth policy (`mutate-jobs-disable-istio-injection` in `mutations.yaml`) mutates Job pod templates in the `observability` namespace to suppress Istio sidecar injection on hook Jobs. System and infrastructure namespaces (`kube-system`, `flux-system`, `istio-system`, `cert-manager`, `kyverno`) are excluded at the webhook level via `config.resourceFilters` — Kyverno never receives admission events for them, which is more efficient than per-policy exclusions. Namespaces needing partial coverage (`tetragon`, `falco`, `openebs`, `observability`, `envoy-ingress`) are excluded only in the specific policies they would violate.
+**Kyverno ClusterPolicies mix Audit and Enforce modes** — `pod-security-baseline` and `disallow-latest-image-tag` run in `validationFailureAction: Audit`; violations are recorded in policy reports but not blocked, enabling progressive hardening. `require-resource-limits` and `disallow-privilege-escalation` run in `Enforce` — pods that omit resource limits or allow privilege escalation are rejected at admission. A fifth policy (`mutate-jobs-disable-istio-injection` in `mutations.yaml`) mutates Job pod templates in the `observability` namespace to suppress Istio sidecar injection on hook Jobs. System and infrastructure namespaces (`kube-system`, `flux-system`, `istio-system`, `cert-manager`, `kyverno`) are excluded at the webhook level via `config.resourceFilters` — Kyverno never receives admission events for them, which is more efficient than per-policy exclusions. Namespaces requiring partial coverage (`tetragon`, `falco`, `openebs`, `observability`, `envoy-ingress`) are excluded only in the specific policies they would violate.
 
 ## Prerequisites
 
-### Required tools
+### Required Tools
 
 ```bash
 make check-tools   # verifies: docker, kind, kubectl, helm, flux, gh, kyverno, kubescape
 ```
 
-Missing tools install via `brew install <name>` (`kyverno` CLI: `brew install kyverno`; `kubescape` CLI: `brew install kubescape`).
+Missing tools are available via `brew install <name>` (`kyverno` CLI: `brew install kyverno`; `kubescape` CLI: `brew install kubescape`).
 
-### Docker Desktop memory
+### Docker Desktop Memory
 
 The full observability stack (Prometheus, Loki, Grafana, Promtail, node-exporter) plus Cilium, Istio sidecars, Falco, Tetragon, and Kyverno requires significant container memory. Configure Docker Desktop before running `make bootstrap`:
 
-| Host RAM | Recommended Docker Desktop memory |
+| Host RAM | Recommended Docker Desktop Memory |
 |---|---|
 | 16 GB | 12 GB minimum |
 | 24 GB | 18 GB |
@@ -298,9 +294,9 @@ Set in Docker Desktop → Settings → Resources → Memory. Below 10 GB the obs
 
 CPU: set to at least 4 cores. The M-series unified memory architecture means Docker Desktop allocates from the shared pool — Apple Silicon handles this transparently.
 
-## Bootstrap (first time)
+## Bootstrap (First Time)
 
-The setup script handles everything — KinD cluster creation, Cilium pre-install, and Flux bootstrap — in one shot:
+The setup script handles cluster creation, Cilium pre-install, and Flux bootstrap in one operation:
 
 ```bash
 make bootstrap
@@ -319,7 +315,7 @@ What it does:
 8. Runs `flux bootstrap github` to push Flux manifests and start reconciliation
 9. Creates the `github-token` secret in `flux-system` — reuses the token from `gh auth` (already has `repo` scope from step 8) so the Flux notification controller can post commit status checks back to GitHub
 
-### Estimated time
+### Estimated Time
 
 | Scenario | Time |
 |---|---|
@@ -327,24 +323,24 @@ What it does:
 | Subsequent run after `make pull-images` | ~8–10 min |
 | Subsequent run after `make cache-running` (all images cached) | ~5–7 min |
 
-The dominant cost on first run is image pulls. Run `make pull-images` once per version bump to warm the local Docker cache; subsequent `make bootstrap` calls skip all registry traffic for the pre-load step.
+The dominant cost on the first run is image pulls. Running `make pull-images` once per version bump warms the local Docker cache; subsequent `make bootstrap` invocations skip all registry traffic for the pre-load step.
 
-When creating a new branch, update the Flux GitRepository branch patch in one command:
+To update the Flux GitRepository branch patch after creating a new branch:
 
 ```bash
 make branch
 ```
 
-After bootstrap, watch Flux reconcile everything:
+After bootstrap, monitor Flux reconciliation:
 
 ```bash
 flux get all -A
 watch -n 6 "flux get all -A"
 ```
 
-## After bootstrap — Day 1 checklist
+## After Bootstrap — Day 1 Checklist
 
-Work through these steps in order to confirm the cluster is fully healthy.
+Verify the cluster is fully healthy by running the following steps in order:
 
 ```bash
 # 1. All nodes Ready
@@ -380,20 +376,19 @@ kubectl logs -n boinc -l app=boinc --tail=30 | grep -iE "project|attach"
 make test-policies
 ```
 
-If any step fails, see the [Troubleshooting Guide](docs/troubleshooting-guide.md) and
-jump to the relevant technology section.
+If any step fails, consult the [Troubleshooting Guide](docs/troubleshooting-guide.md) and navigate to the relevant technology section.
 
-## Accessing services
+## Accessing Services
 
 The stack exposes Grafana and Prometheus via Kubernetes Gateway API HTTPRoutes through Envoy Gateway.
 
-### 1. Add /etc/hosts entries (one-time)
+### 1. Add /etc/hosts Entries (One-Time)
 
 ```bash
 echo "127.0.0.1 grafana.local prometheus.local" | sudo tee -a /etc/hosts
 ```
 
-### 2. Access in browser
+### 2. Access in Browser
 
 | Service | URL | Credentials |
 |---|---|---|
@@ -402,7 +397,7 @@ echo "127.0.0.1 grafana.local prometheus.local" | sudo tee -a /etc/hosts
 
 KinD routes `localhost:8080 → containerPort 8888 → nginx nodeport-proxy → Envoy Gateway proxy → HTTPRoute match`.
 
-### 3. Verify gateway health
+### 3. Verify Gateway Health
 
 ```bash
 kubectl get gateway -n envoy-ingress
@@ -410,7 +405,7 @@ kubectl get httproute -A
 kubectl get pods -n envoy-gateway-system
 ```
 
-### Adding new services
+### Adding New Services
 
 Create an `HTTPRoute` in the service's namespace with a `parentRef` pointing to the `main` Gateway in `envoy-ingress`:
 
@@ -439,9 +434,9 @@ spec:
 
 ### Adding CiliumNetworkPolicies
 
-`apps/overlays/kind/cilium/` is a placeholder for `CiliumNetworkPolicy` resources. The CNI itself is managed in `infrastructure/controllers/cilium.yaml`; this overlay is where you add network segmentation policy. To activate:
+`apps/overlays/kind/cilium/` is a placeholder for `CiliumNetworkPolicy` resources. The CNI itself is managed in `infrastructure/controllers/cilium.yaml`; this overlay is where network segmentation policy is defined. To activate:
 
-1. Add your `CiliumNetworkPolicy` manifests under `apps/overlays/kind/cilium/`.
+1. Add `CiliumNetworkPolicy` manifests under `apps/overlays/kind/cilium/`.
 2. Create `apps/overlays/kind/cilium/kustomization.yaml` listing them.
 3. Uncomment `- cilium/` in `apps/overlays/kind/kustomization.yaml`.
 
@@ -461,7 +456,7 @@ spec:
             app: allowed-caller
 ```
 
-Without any `CiliumNetworkPolicy` resources, all pod-to-pod traffic is permitted (Cilium's default). Add policies incrementally to harden namespaces as needed.
+Without any `CiliumNetworkPolicy` resources, all pod-to-pod traffic is permitted (Cilium's default). Add policies incrementally to harden namespaces as required.
 
 ## Monitoring
 
@@ -490,7 +485,7 @@ Flux dashboards are served from `apps/base/grafana/dashboards/` because the graf
 
 The `demo` namespace (httpbin + curl load-generator) provides continuous `istio_requests_total` traffic so the Istio mesh/service/workload dashboards always have data.
 
-Falco runtime security alerts flow via two parallel paths: Falcosidekick (a Falco subchart) forwards structured JSON alerts to Loki directly; Promtail also scrapes Falco pod stdout. Both paths feed the **Falco — Runtime Security** dashboard which shows rule match rates by priority (Prometheus) and a live alert log stream (Loki).
+Falco runtime security alerts flow via two parallel paths: Falcosidekick (a Falco subchart) forwards structured JSON alerts to Loki directly; Promtail also scrapes Falco pod stdout. Both paths feed the **Falco — Runtime Security** dashboard, which shows rule match rates by priority (Prometheus) and a live alert log stream (Loki).
 
 Tetragon security events flow through Promtail → Loki → Grafana. To query events directly:
 
@@ -500,7 +495,7 @@ kubectl logs -n tetragon -l app.kubernetes.io/name=tetragon -c export-stdout | h
 
 ## Testing
 
-### Policy unit tests (offline — no cluster required)
+### Policy Unit Tests (Offline — No Cluster Required)
 
 Runs 48 Kyverno CLI tests: 45 covering the four validation ClusterPolicies and 3 covering the mutation policy:
 
@@ -513,7 +508,7 @@ kyverno test apps/base/kyverno/tests/
 
 Requires `kyverno` CLI: `brew install kyverno`.
 
-### Kubescape posture scan (requires: running cluster with Kubescape operator)
+### Kubescape Posture Scan (Requires: Running Cluster with Kubescape Operator)
 
 Runs an NSA + MITRE framework scan against the live cluster using the Kubescape CLI, targeting the `kind-flux-kind` context:
 
@@ -521,14 +516,14 @@ Runs an NSA + MITRE framework scan against the live cluster using the Kubescape 
 make test-kubescape
 ```
 
-Requires `kubescape` CLI: `brew install kubescape`. The operator continuously scans in the background; this target gives an on-demand CLI summary. Scan results are also available via:
+Requires `kubescape` CLI: `brew install kubescape`. The operator continuously scans in the background; this target provides an on-demand CLI summary. Scan results are also available via:
 
 ```bash
 kubectl get configurationscansummaries -A
 kubectl get workloadconfigurationscans -A
 ```
 
-### Falco live detection test (requires: running cluster with Falco)
+### Falco Live Detection Test (Requires: Running Cluster with Falco)
 
 Deploys the official `falcosecurity/event-generator` as a Kubernetes Job that fires the syscall action suite (reads sensitive files, spawns shells, searches for credentials). Waits for the Job to complete, then queries Falco pod logs on the same node for expected rule matches:
 
@@ -546,4 +541,4 @@ make destroy
 
 ## Troubleshooting
 
-See the [Troubleshooting Guide](troubleshooting-guide.md) for per-technology verification commands and common issue resolutions covering Flux, Cilium, Hubble, cert-manager, OpenEBS, Istio, Envoy Gateway, Tetragon, Kyverno, Falco, Kubescape, Prometheus, Grafana, Tempo, OpenTelemetry Collector, and GitHub notification provider setup.
+See the [Troubleshooting Guide](docs/troubleshooting-guide.md) for per-technology verification commands and common issue resolutions covering Flux, Cilium, Hubble, cert-manager, OpenEBS, Istio, Envoy Gateway, Tetragon, Kyverno, Falco, Kubescape, Prometheus, Grafana, Tempo, OpenTelemetry Collector, and GitHub notification provider setup.
