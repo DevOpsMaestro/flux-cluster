@@ -347,6 +347,26 @@ versioned tags, digest-pinned), and `openebs` (pre-upgrade hook references a del
 
 ---
 
+## Resource Metrics — Metrics Server
+
+**Metrics Server** implements the Kubernetes Resource Metrics API
+(`metrics.k8s.io/v1beta1`). It is the component that makes `kubectl top nodes` and
+`kubectl top pods` work, and it is required for the Horizontal Pod Autoscaler (HPA)
+and Vertical Pod Autoscaler (VPA) to function.
+
+Metrics Server is distinct from Prometheus: Prometheus stores long-term time-series
+data for querying and alerting. Metrics Server holds only a short in-memory window
+(~15 seconds) of live resource usage, consumed directly by the Kubernetes API server.
+Both coexist — they serve different consumers.
+
+In this cluster, `--kubelet-insecure-tls` is required because KinD kubelet serving
+certificates are self-signed. In a production cluster this flag would be removed in
+favour of a proper kubelet CA. Istio sidecar injection is disabled in the
+`metrics-server` namespace because the API server connects to it without a sidecar,
+and enabling injection would require per-port exceptions.
+
+---
+
 ## Demo Namespace — httpbin and load-generator
 
 The `demo` namespace contains two workloads that exist purely to generate traffic
