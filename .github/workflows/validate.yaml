@@ -55,7 +55,7 @@ jobs:
 
       - name: Install Kubescape CLI
         env:
-          KUBESCAPE_VERSION: v4.0.8
+          KUBESCAPE_VERSION: v4.0.9
         run: |
           VERSION_CLEAN="${KUBESCAPE_VERSION#v}"
           ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
@@ -63,10 +63,13 @@ jobs:
           chmod +x kubescape
           sudo mv kubescape /usr/local/bin/kubescape
 
+      - name: Download Kubescape artifacts
+        continue-on-error: true
+        run: kubescape download artifacts
+
       - name: Kubescape offline scan (NSA + MITRE)
         run: |
           kubescape scan framework nsa,mitre \
-            --offline \
             --format junit \
             --output kubescape-results.xml \
             --compliance-threshold 80 \
