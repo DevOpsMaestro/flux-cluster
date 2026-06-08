@@ -100,12 +100,6 @@
       "enabled": false
     },
     {
-      "description": "Disable OpenEBS — pre-upgrade hook references bitnami/kubectl:1.25.15 which no longer exists on Docker Hub; any upgrade triggers the broken hook",
-      "matchManagers": ["flux"],
-      "matchPackageNames": ["openebs"],
-      "enabled": false
-    },
-    {
       "description": "Patch tier: group container image patch updates and automerge after CI passes",
       "matchManagers": ["kubernetes"],
       "matchUpdateTypes": ["patch"],
