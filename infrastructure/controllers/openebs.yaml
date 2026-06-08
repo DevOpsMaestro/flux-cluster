@@ -37,6 +37,8 @@ spec:
       interval: 24h
   values:
     # OpenEBS 4.x uses subcharts. For KinD, only localpv-provisioner is needed.
+    # loki/alloy/minio are part of the built-in observability stack added in 4.3+;
+    # this cluster has its own Loki stack in the observability namespace.
     engines:
       replicated:
         mayastor:
@@ -48,9 +50,9 @@ spec:
           enabled: false
     mayastor:
       enabled: false
-    loki-stack:
+    loki:
       enabled: false
-    obs-callhome:
+    alloy:
       enabled: false
     localpv-provisioner:
       enabled: true
