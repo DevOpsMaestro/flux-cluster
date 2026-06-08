@@ -179,7 +179,7 @@
   <text x="115" y="695" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#1D4ED8">kube-prometheus-stack HR</text>
   <text x="115" y="710" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">86.x · dependsOn: openebs</text>
   <text x="115" y="723" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Prometheus + AlertManager</text>
-  <text x="115" y="749" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" font-style="italic" fill="#94A3B8">root dep for observability</text>
+  <text x="115" y="749" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" font-style="italic" fill="#94A3B8">root dependency for observability</text>
 
   <!-- arrow kube-prom → Loki -->
   <line x1="193" y1="700" x2="203" y2="700" stroke="#1D4ED8" stroke-width="1.25" marker-end="url(#arr-blue)"/>
