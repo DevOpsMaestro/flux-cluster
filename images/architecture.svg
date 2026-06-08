@@ -74,7 +74,7 @@
 
   <!-- OpenEBS -->
   <rect x="610" y="253" width="258" height="90" rx="8" fill="white" stroke="#15803D" stroke-width="2"/>
-  <text x="739" y="273" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#15803D">OpenEBS 4.2.x</text>
+  <text x="739" y="273" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#15803D">OpenEBS 4.x</text>
   <line x1="618" y1="280" x2="860" y2="280" stroke="#15803D" stroke-width="0.75" opacity="0.35"/>
   <text x="739" y="296" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">namespace: openebs</text>
   <text x="739" y="310" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">LocalPV provisioner</text>
@@ -138,7 +138,7 @@
 
   <!-- Down arrow Band2 → Band3 -->
   <line x1="600" y1="462" x2="600" y2="482" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
-  <text x="616" y="475" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#6B7280">apps (dependsOn: infra)</text>
+  <text x="616" y="475" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#6B7280">apps (dependsOn: infrastructure-controllers)</text>
 
   <!-- ══════════════════════════════════════════════════════════
        Band 3 · Applications and Observability
@@ -198,7 +198,7 @@
   <text x="408" y="705" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" font-style="italic" fill="#1E40AF">Prometheus also exposed via HTTPRoute: prometheus.local:8080</text>
 
   <!-- Scrape configs note -->
-  <text x="408" y="722" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">additionalScrapeConfigs → Cilium · Falco · Tetragon · Kyverno · Kubescape · Flux (no ServiceMonitor CRD circular dep)</text>
+  <text x="408" y="722" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">additionalScrapeConfigs → Cilium · Falco · Tetragon · Kyverno · Kubescape · Flux (no ServiceMonitor CRD circular dependency)</text>
   <text x="408" y="737" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Loki: Promtail pod logs + Falcosidekick alerts  ·  OTel Collector: OTLP spans from all Istio Envoy sidecars → Tempo</text>
 
   <!-- Demo sub-box -->
