@@ -156,3 +156,26 @@ spec:
               kubernetes.io/metadata.name: envoy-gateway-system
       ports:
         - port: 9090
+---
+# Falcosidekick (in the falco namespace) ships structured alert JSON to Loki on
+# port 3100. The default-deny above blocks all cross-namespace ingress, so this
+# explicit rule is required for alert delivery to work.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: loki-allow-falcosidekick-ingress
+  namespace: observability
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: loki
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: falco
+      ports:
+        - port: 3100
+          protocol: TCP

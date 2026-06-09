@@ -46,6 +46,84 @@ spec:
             cpu: 200m
             memory: 256Mi
 
+      # Alertmanager routing and receiver configuration.
+      # Default: all alerts route to the built-in 'null' receiver (silent).
+      #
+      # To activate a real receiver:
+      #   1. Uncomment one of the receiver blocks below and fill in the URL/creds.
+      #   2. If the config contains secrets (webhook URL, SMTP password, API key),
+      #      store the value in a SOPS-encrypted secret and reference it via
+      #      alertmanager.alertmanagerSpec.configSecret instead of inlining here.
+      #   3. Uncomment the matching route under routes: so alerts flow to it.
+      config:
+        global:
+          resolve_timeout: 5m
+
+        route:
+          group_by: [alertname, namespace, severity]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 12h
+          receiver: "null"
+          routes:
+            # Watchdog fires continuously as a heartbeat — it confirms the entire
+            # alerting pipeline (Prometheus → Alertmanager) is alive.
+            # Route it to a dead-man's-snitch service (healthchecks.io, Better
+            # Uptime, etc.) to get paged when Alertmanager goes silent.
+            - matchers:
+                - alertname = Watchdog
+              receiver: "null"
+              repeat_interval: 1m
+
+            # Uncomment to route critical alerts to your primary receiver:
+            # - matchers:
+            #     - severity = critical
+            #   receiver: primary
+            #   continue: false
+
+            # Uncomment to route warning alerts separately (longer repeat):
+            # - matchers:
+            #     - severity = warning
+            #   receiver: primary
+            #   repeat_interval: 4h
+
+        receivers:
+          - name: "null"
+
+          # ── Slack ─────────────────────────────────────────────────────────
+          # - name: primary
+          #   slack_configs:
+          #     - api_url: '<slack-incoming-webhook-url>'  # use SOPS secret
+          #       channel: '#alerts'
+          #       title: '{{ template "slack.default.title" . }}'
+          #       text: '{{ template "slack.default.text" . }}'
+          #       send_resolved: true
+
+          # ── Email (SMTP) ───────────────────────────────────────────────────
+          # - name: primary
+          #   email_configs:
+          #     - to: 'you@example.com'
+          #       from: 'alertmanager@example.com'
+          #       smarthost: 'smtp.example.com:587'
+          #       auth_username: 'alertmanager@example.com'
+          #       auth_password: '<smtp-password>'          # use SOPS secret
+          #       send_resolved: true
+
+          # ── Generic webhook (Discord, Teams, ntfy.sh, custom handler) ─────
+          # - name: primary
+          #   webhook_configs:
+          #     - url: 'http://your-webhook-endpoint'
+          #       send_resolved: true
+
+        inhibit_rules:
+          # Suppress warning-level alerts when the same alert is already firing
+          # at critical severity — avoids duplicate noise for the same incident.
+          - source_matchers:
+              - severity = critical
+            target_matchers:
+              - severity = warning
+            equal: [alertname, namespace]
+
     # The Prometheus Operator manages the StatefulSets for Prometheus and
     # AlertManager. Its own pod needs explicit resources, and the config-reloader
     # sidecar it injects into every managed StatefulSet needs resource values too
@@ -109,6 +187,12 @@ spec:
         podMonitorSelectorNilUsesHelmValues: false
         podMonitorSelector: {}
         podMonitorNamespaceSelector: {}
+        # Pick up PrometheusRule CRDs from all namespaces (same open pattern
+        # as ServiceMonitors above). Required for apps/base/prometheus/rules.yaml
+        # to be loaded without needing a release: kube-prometheus-stack label.
+        ruleSelectorNilUsesHelmValues: false
+        ruleSelector: {}
+        ruleNamespaceSelector: {}
         # Cilium agent and Hubble relay metrics are exposed on these ports.
         # The ServiceMonitors created by the Cilium chart are sufficient;
         # the additionalScrapeConfigs below serve as a fallback when
@@ -443,6 +527,51 @@ spec:
                 target_label: __address__
                 regex: (.+):\d+
                 replacement: $1:8080
+              - source_labels: [__meta_kubernetes_namespace]
+                target_label: namespace
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
+
+          # Falcosidekick exposes priority-labelled event counters on port 2801.
+          # These power the FalcoCriticalEvent alert in rules.yaml.
+          # The Falco webserver job (port 8765) exposes kernel-level counters;
+          # Falcosidekick is the source of truth for rule-triggered priorities.
+          - job_name: falcosidekick
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - falco
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                action: keep
+                regex: falcosidekick
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:2801"
+              - source_labels: [__meta_kubernetes_namespace]
+                target_label: namespace
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
+
+          # Trivy Operator exposes vulnerability summary counters on port 8080:
+          # trivy_vulnerabilities_total broken down by severity, namespace, and
+          # resource kind. Used by the Grafana Trivy dashboard and future alerts.
+          - job_name: trivy-operator
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - trivy-system
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                action: keep
+                regex: trivy-operator
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:8080"
               - source_labels: [__meta_kubernetes_namespace]
                 target_label: namespace
               - source_labels: [__meta_kubernetes_pod_name]

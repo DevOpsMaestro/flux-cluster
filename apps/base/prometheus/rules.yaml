@@ -1,0 +1,163 @@
+---
+# Custom alerting rules for flux-cluster.
+# Picked up by Prometheus Operator because prometheusSpec.ruleSelector: {}
+# (open selector) is set in the kube-prometheus-stack HelmRelease.
+#
+# Severity convention (matches Alertmanager route tiers):
+#   critical — service is down or security event confirmed; page immediately
+#   warning  — degraded but not yet broken; investigate within the hour
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: flux-cluster-alerts
+  namespace: observability
+spec:
+  groups:
+
+    # ── Cluster health ─────────────────────────────────────────────────────────
+    - name: cluster.health
+      interval: 1m
+      rules:
+        - alert: PodCrashLooping
+          expr: |
+            increase(kube_pod_container_status_restarts_total[15m]) > 3
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash-looping"
+            description: >-
+              Container {{ $labels.container }} has restarted more than 3 times
+              in the last 15 minutes. Check logs:
+              kubectl logs -n {{ $labels.namespace }} {{ $labels.pod }} -c {{ $labels.container }} --previous
+
+        - alert: DeploymentUnavailable
+          expr: |
+            kube_deployment_status_replicas_available == 0
+            and on (namespace, deployment)
+            kube_deployment_spec_replicas > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has no available replicas"
+            description: >-
+              All replicas are unavailable. The deployment may be in a failed
+              rollout or the underlying pods are crash-looping.
+
+        - alert: NodeNotReady
+          expr: |
+            kube_node_status_condition{condition="Ready",status="true"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Node {{ $labels.node }} is not ready"
+            description: >-
+              The node has been in NotReady state for more than 2 minutes.
+              Check: kubectl describe node {{ $labels.node }}
+
+    # ── Flux GitOps health ─────────────────────────────────────────────────────
+    - name: flux.gitops
+      interval: 1m
+      rules:
+        - alert: FluxHelmReleaseNotReady
+          expr: |
+            gotk_resource_info{customresource_kind="HelmRelease",ready="False"} == 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "HelmRelease {{ $labels.namespace }}/{{ $labels.name }} is not ready"
+            description: >-
+              The HelmRelease has been failing to reconcile for 15+ minutes.
+              Check: flux get helmreleases -A
+              Describe: flux describe helmrelease {{ $labels.name }} -n {{ $labels.namespace }}
+
+        - alert: FluxKustomizationNotReady
+          expr: |
+            gotk_resource_info{customresource_kind="Kustomization",ready="False"} == 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Kustomization {{ $labels.namespace }}/{{ $labels.name }} is not ready"
+            description: >-
+              The Kustomization has been failing to reconcile for 15+ minutes.
+              Check: flux get kustomizations -A
+
+    # ── Certificate management ─────────────────────────────────────────────────
+    - name: certificates
+      interval: 5m
+      rules:
+        - alert: CertificateExpiringSoon
+          expr: |
+            certmanager_certificate_expiration_timestamp_seconds - time() < (7 * 24 * 3600)
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Certificate {{ $labels.namespace }}/{{ $labels.name }} expires in less than 7 days"
+            description: >-
+              The certificate will expire at
+              {{ $value | humanizeDuration }} from now.
+              cert-manager should renew it automatically; this alert means renewal
+              is failing. Check: kubectl describe certificate {{ $labels.name }} -n {{ $labels.namespace }}
+
+        - alert: CertificateNotReady
+          expr: |
+            certmanager_certificate_ready_status{condition="False"} == 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Certificate {{ $labels.namespace }}/{{ $labels.name }} is not ready"
+            description: >-
+              cert-manager has been unable to issue or renew this certificate
+              for more than 10 minutes.
+              Check: kubectl describe certificaterequest -n {{ $labels.namespace }}
+
+    # ── Security: Falco runtime detection ─────────────────────────────────────
+    - name: security.falco
+      interval: 1m
+      rules:
+        - alert: FalcoCriticalEvent
+          # Falcosidekick exposes falcosidekick_falco_inputs_total with a
+          # priority label matching Falco rule priorities (lowercase).
+          # Scraped via the falcosidekick job in additionalScrapeConfigs.
+          expr: |
+            increase(falcosidekick_falco_inputs_total{priority=~"critical|emergency"}[5m]) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Falco detected a critical security event"
+            description: >-
+              {{ $value }} critical/emergency Falco events in the last 5 minutes.
+              Query Loki for details:
+              {app="falcosidekick"} | json | priority=~"Critical|Emergency"
+
+    # ── Security: Kyverno policy enforcement ──────────────────────────────────
+    - name: security.kyverno
+      interval: 5m
+      rules:
+        - alert: KyvernoEnforcedPolicyViolation
+          # Counts policy rule results with result="fail" in Enforce mode.
+          # Audit-mode failures are expected noise; Enforce failures mean a
+          # workload was blocked — that warrants investigation.
+          expr: |
+            increase(
+              kyverno_policy_results_total{
+                rule_result="fail",
+                policy_validation_mode="enforce"
+              }[10m]
+            ) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Kyverno blocked a workload in namespace {{ $labels.resource_namespace }}"
+            description: >-
+              Policy {{ $labels.policy_name }}/{{ $labels.rule_name }} blocked
+              a {{ $labels.resource_kind }} in {{ $labels.resource_namespace }}.
+              Check: kubectl get policyreport -n {{ $labels.resource_namespace }}

@@ -12,3 +12,4 @@ resources:
   - kubescape.yaml
   - falco.yaml
   - metrics-server.yaml
+  - trivy.yaml

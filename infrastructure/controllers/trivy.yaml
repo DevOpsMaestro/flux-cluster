@@ -1,0 +1,194 @@
+---
+# Trivy Operator runs in-cluster vulnerability scanning against every container
+# image in use. It generates VulnerabilityReport CRDs (one per workload) and
+# exposes Prometheus metrics so Grafana can surface CVE counts by severity.
+#
+# This complements Kubescape (posture/compliance) — Kubescape catches
+# misconfigurations; Trivy catches known CVEs in image layers.
+#
+# Injection disabled: Trivy Operator creates ephemeral scan Job pods that pull
+# the vulnerability DB from ghcr.io. Istio sidecar injection in those Jobs adds
+# unnecessary complexity and can break outbound HTTPS to the registry.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: trivy-system
+  labels:
+    istio-injection: disabled
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: trivy-operator
+  namespace: flux-system
+spec:
+  interval: 1h
+  targetNamespace: trivy-system
+  dependsOn:
+    - name: cilium
+      namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: trivy-operator
+      version: "0.x"
+      sourceRef:
+        kind: HelmRepository
+        name: aquasecurity
+        namespace: flux-system
+      interval: 24h
+  values:
+    trivy:
+      # Only report CVEs that have a fix available — unfixed CVEs produce noise
+      # with no actionable remediation path.
+      ignoreUnfixed: true
+
+      # Resources for the scanner container inside each ephemeral scan Job pod.
+      # Kyverno enforce policy (require-resource-limits) applies to trivy-system.
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+    operator:
+      # Resources for the operator pod itself.
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+      # Bind metrics on :8080 — scraped via additionalScrapeConfigs in
+      # apps/base/prometheus/helmrelease.yaml (ServiceMonitor avoided to
+      # break the same circular dependency as other infrastructure tools).
+      metricsBindAddress: ":8080"
+
+    # Security context for the operator container.
+    # Kyverno enforce policy (disallow-privilege-escalation) applies.
+    securityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      runAsUser: 1000
+      capabilities:
+        drop: [ALL]
+
+    # Security context applied to containers in ephemeral scan Job pods.
+    scanJobPodTemplateContainerSecurityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      capabilities:
+        drop: [ALL]
+
+    # Disable ServiceMonitor — use additionalScrapeConfigs instead.
+    serviceMonitor:
+      enabled: false
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: trivy-system
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: trivy-system
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+# Trivy Operator lists workloads and reads image references across all namespaces.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-apiserver-egress
+  namespace: trivy-system
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - port: 6443
+---
+# Ephemeral scan Jobs pull the Trivy vulnerability database from ghcr.io and
+# aquasecurity's GitHub releases. No practical destination restriction is possible
+# for internet registries; allow HTTPS egress cluster-wide.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-https-egress
+  namespace: trivy-system
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-intra-namespace
+  namespace: trivy-system
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {}
+  egress:
+    - to:
+        - podSelector: {}
+---
+# Prometheus (in observability) scrapes Trivy Operator metrics on port 8080.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: trivy-allow-prometheus-scrape-ingress
+  namespace: trivy-system
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - port: 8080
