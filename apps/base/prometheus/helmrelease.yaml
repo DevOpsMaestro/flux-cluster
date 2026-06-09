@@ -187,6 +187,12 @@ spec:
         podMonitorSelectorNilUsesHelmValues: false
         podMonitorSelector: {}
         podMonitorNamespaceSelector: {}
+        # Pick up PrometheusRule CRDs from all namespaces (same open pattern
+        # as ServiceMonitors above). Required for apps/base/prometheus/rules.yaml
+        # to be loaded without needing a release: kube-prometheus-stack label.
+        ruleSelectorNilUsesHelmValues: false
+        ruleSelector: {}
+        ruleNamespaceSelector: {}
         # Cilium agent and Hubble relay metrics are exposed on these ports.
         # The ServiceMonitors created by the Cilium chart are sufficient;
         # the additionalScrapeConfigs below serve as a fallback when
@@ -521,6 +527,29 @@ spec:
                 target_label: __address__
                 regex: (.+):\d+
                 replacement: $1:8080
+              - source_labels: [__meta_kubernetes_namespace]
+                target_label: namespace
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
+
+          # Falcosidekick exposes priority-labelled event counters on port 2801.
+          # These power the FalcoCriticalEvent alert in rules.yaml.
+          # The Falco webserver job (port 8765) exposes kernel-level counters;
+          # Falcosidekick is the source of truth for rule-triggered priorities.
+          - job_name: falcosidekick
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - falco
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                action: keep
+                regex: falcosidekick
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:2801"
               - source_labels: [__meta_kubernetes_namespace]
                 target_label: namespace
               - source_labels: [__meta_kubernetes_pod_name]
