@@ -1,0 +1,25 @@
+---
+# PrometheusRule CRDs are installed by kube-prometheus-stack (in the `apps`
+# kustomization). Bundling PrometheusRule resources in the same kustomization
+# causes a dry-run deadlock: Flux validates everything before applying anything,
+# so the CRD is never present when the dry-run runs.
+#
+# This separate kustomization depends on `apps` which has wait:true — Flux will
+# not mark `apps` healthy until kube-prometheus-stack is fully running and the
+# PrometheusRule CRD is registered. Only then does this kustomization apply.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: monitoring-rules
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 2m
+  timeout: 5m
+  prune: true
+  dependsOn:
+    - name: apps
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./apps/base/monitoring-rules
