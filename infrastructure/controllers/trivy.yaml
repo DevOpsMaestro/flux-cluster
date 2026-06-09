@@ -77,6 +77,11 @@ spec:
       # break the same circular dependency as other infrastructure tools).
       metricsBindAddress: ":8080"
 
+      # Disable infrastructure assessment scanning — the node-collector
+      # Deployment it creates has cloud-node affinity rules that never
+      # match KinD worker nodes, leaving a pod permanently Pending.
+      infraAssessmentScannerEnabled: false
+
     # Security context for the operator container.
     # Kyverno enforce policy (disallow-privilege-escalation) applies.
     securityContext:

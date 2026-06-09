@@ -119,7 +119,7 @@ spec:
       replicaCount: 1
       config:
         loki:
-          hostport: "http://loki.observability.svc.cluster.local:3100"
+          hostport: "http://observability-loki.observability.svc.cluster.local:3100"
           tenant: ""
           format: json
       resources:
