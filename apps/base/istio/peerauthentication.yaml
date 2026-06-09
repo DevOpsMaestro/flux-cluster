@@ -90,6 +90,24 @@ spec:
     "3100":
       mode: PERMISSIVE
 ---
+# Prometheus: allow plain text on port 9090.
+# Envoy Gateway (no Istio sidecar) routes prometheus.local here and sends
+# plain text. All other ports on Prometheus remain STRICT.
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: prometheus-port-9090
+  namespace: observability
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    "9090":
+      mode: PERMISSIVE
+---
 # Alertmanager: allow plain text on port 9093.
 # Prometheus operator configures Prometheus to send alerts to Alertmanager
 # via the headless alertmanager-operated service (resolves to pod IPs).

@@ -8,7 +8,8 @@ metadata:
   labels:
     istio-injection: disabled
 ---
-# Envoy Gateway data-plane (auto-provisioned Envoy proxy pods) runs in envoy-ingress.
+# envoy-ingress holds only the nginx nodeport-proxy DaemonSet (KinD port-mapping shim).
+# Envoy Gateway auto-provisions the data-plane proxy pod in envoy-gateway-system (1.4.x).
 # Injection disabled: Envoy Gateway manages its own Envoy proxies; Istio sidecar
 # injection would conflict with the gateway container lifecycle.
 apiVersion: v1
@@ -127,26 +128,51 @@ spec:
     - to:
         - podSelector: {}
 ---
-# The controller pushes xDS configuration to Envoy proxy pods in envoy-ingress
-# on port 18000.
+# The nodeport-proxy (envoy-ingress) uses hostNetwork: true, so its traffic originates
+# from the node IP rather than a pod CIDR. Standard NetworkPolicy cannot express "from
+# host entity", so we allow all sources on the Envoy proxy's HTTP listen port. Port
+# 10080 is only reachable inside the cluster, limiting the exposure.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-xds-egress-to-envoy-ingress
+  name: allow-proxy-http-ingress
   namespace: envoy-gateway-system
 spec:
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: proxy
+      app.kubernetes.io/managed-by: envoy-gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 10080
+---
+# Envoy proxy pods (in envoy-gateway-system) route HTTP traffic to backend services.
+# Ports are pod ports: Cilium's socket-level DNAT translates Service port 80 → pod
+# port 3000 before egress NetworkPolicy is evaluated.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-proxy-egress-to-backends
+  namespace: envoy-gateway-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: proxy
+      app.kubernetes.io/managed-by: envoy-gateway
   policyTypes:
     - Egress
   egress:
     - to:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: envoy-ingress
+              kubernetes.io/metadata.name: observability
       ports:
-        - port: 18000
+        - port: 3000
+        - port: 9090
 ---
-# ── envoy-ingress (data-plane Envoy proxy pods) ───────────────────────────────
+# ── envoy-ingress (nginx nodeport-proxy DaemonSet only) ──────────────────────
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -209,41 +235,3 @@ spec:
     - ports:
         - port: 8080
         - port: 8443
----
-# Envoy proxy receives xDS configuration from the controller.
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-xds-ingress-from-controller
-  namespace: envoy-ingress
-spec:
-  podSelector: {}
-  policyTypes:
-    - Ingress
-  ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: envoy-gateway-system
-      ports:
-        - port: 18000
----
-# Envoy proxies route traffic to backend services in the observability namespace
-# (Grafana :3000, Prometheus :9090).
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-egress-to-observability
-  namespace: envoy-ingress
-spec:
-  podSelector: {}
-  policyTypes:
-    - Egress
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: observability
-      ports:
-        - port: 3000
-        - port: 9090
