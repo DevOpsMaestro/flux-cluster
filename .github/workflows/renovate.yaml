@@ -30,7 +30,7 @@ jobs:
         #                 workflows:write, metadata:read
         # The `workflow` / `workflows:write` scope is mandatory — without it
         # GitHub silently rejects any push that touches .github/workflows/*.
-        uses: renovatebot/github-action@a7b39bb5a4c15a2c0aa3025ac7a1a77b91afec5d # v41.0.14
+        uses: renovatebot/github-action@8217b3fc286df088d7c27f3255fe8414463bc0fd # v46.1.15
         with:
           configurationFile: renovate.json
           token: ${{ secrets.RENOVATE_TOKEN }}
