@@ -554,3 +554,25 @@ spec:
                 target_label: namespace
               - source_labels: [__meta_kubernetes_pod_name]
                 target_label: pod
+
+          # Trivy Operator exposes vulnerability summary counters on port 8080:
+          # trivy_vulnerabilities_total broken down by severity, namespace, and
+          # resource kind. Used by the Grafana Trivy dashboard and future alerts.
+          - job_name: trivy-operator
+            kubernetes_sd_configs:
+              - role: pod
+                namespaces:
+                  names:
+                    - trivy-system
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                action: keep
+                regex: trivy-operator
+              - source_labels: [__meta_kubernetes_pod_ip]
+                action: replace
+                target_label: __address__
+                replacement: "$1:8080"
+              - source_labels: [__meta_kubernetes_namespace]
+                target_label: namespace
+              - source_labels: [__meta_kubernetes_pod_name]
+                target_label: pod
