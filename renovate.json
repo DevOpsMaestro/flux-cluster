@@ -12,10 +12,14 @@
 
   "kubernetes": {
     "managerFilePatterns": [
-      "/(^|/)apps/(?!base/kyverno/tests).+\\.yaml$/",
+      "/(^|/)apps/.+\\.yaml$/",
       "/(^|/)infrastructure/.+\\.yaml$/"
     ]
   },
+
+  "ignorePaths": [
+    "apps/base/kyverno/tests/**"
+  ],
 
   "customManagers": [
     {
