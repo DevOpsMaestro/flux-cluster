@@ -10,6 +10,22 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
+      - name: Install Gitleaks
+        env:
+          GITLEAKS_VERSION: v8.18.4
+        run: |
+          ARCH=$(uname -m | sed 's/x86_64/x64/' | sed 's/aarch64/arm64/')
+          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION#v}_linux_${ARCH}.tar.gz" \
+            | tar -xz gitleaks
+          sudo mv gitleaks /usr/local/bin/gitleaks
+
+      - name: Scan for secrets
+        run: |
+          gitleaks detect --source . --no-git --redact
+        # --no-git scans all files in the working tree as-is (no history traversal).
+        # Catches any secret present in the branch right now.
+        # --redact replaces matched secret values with REDACTED in CI log output.
+
       - name: Setup Flux CLI
         uses: fluxcd/flux2/action@1fd61a06264d71cf445ed55c4f14d401d26a1c64 # v2.8.8
 

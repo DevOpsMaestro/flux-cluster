@@ -83,6 +83,16 @@
       ],
       "depNameTemplate": "kubescape/kubescape",
       "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "Track Gitleaks CLI version pinned in CI workflow",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/validate\\.yaml$/"
+      ],
+      "matchStrings": ["GITLEAKS_VERSION: (?<currentValue>[^\\n]+)"],
+      "depNameTemplate": "gitleaks/gitleaks",
+      "datasourceTemplate": "github-releases"
     }
   ],
 
