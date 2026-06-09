@@ -1,7 +1,7 @@
 # Troubleshooting Guide
 
-Cluster: `flux-kind` · KinD 1.35.0 · 1 control-plane + 2 workers
-Stack: Flux CD · Cilium 1.19 · Hubble · cert-manager 1.20 · OpenEBS 4.x · Istio 1.30 (mesh only) · Gateway API v1.2.1 · Envoy Gateway 1.4 · Tetragon 1.7 · Kyverno 3 · Kubescape 1.40 · Falco 9 · kube-prometheus-stack 86 · Grafana 10 (app 12) · Grafana Tempo 1 · OpenTelemetry Collector 0 · BOINC · SOPS + Age
+Cluster: `flux-kind` · KinD 1.36.1 · 1 control-plane + 2 workers
+Stack: Flux CD · Cilium 1.19 · Hubble · cert-manager 1.20 · OpenEBS 4.x · Istio 1.30 (mesh only) · Gateway API v1.2.1 · Envoy Gateway 1.4 · Metrics Server 3.x · Tetragon 1.7 · Kyverno 3 · Kubescape 1.40 · Falco 9 · Trivy Operator 0.x · kube-prometheus-stack 86 · Grafana 10 (app 12) · Grafana Tempo 1 · OpenTelemetry Collector 0 · BOINC · SOPS + Age
 
 ---
 
@@ -32,6 +32,7 @@ Stack: Flux CD · Cilium 1.19 · Hubble · cert-manager 1.20 · OpenEBS 4.x · I
 22. [BOINC](#22-boinc)
 23. [Renovate](#23-renovate)
 24. [Metrics Server](#24-metrics-server)
+25. [Trivy Operator](#25-trivy-operator)
 
 ---
 
@@ -1601,3 +1602,57 @@ kubectl get deploy -n metrics-server metrics-server -o jsonpath='{.spec.template
 ```
 
 If the pod keeps restarting, verify that Kyverno policies are satisfied — the `metrics-server` namespace is subject to `require-resource-limits` and `disallow-privilege-escalation` enforcement. The HelmRelease values set these correctly; if the `resources` or `containerSecurityContext` blocks have been customised, restore them to the values defined in the HelmRelease.
+
+---
+
+## 25. Trivy Operator
+
+Trivy Operator continuously scans every running container image for known CVEs and produces `VulnerabilityReport` CRDs (one per workload). Only fixable CVEs are reported (`ignoreUnfixed: true`). Metrics are exposed on port 8080 and scraped by Prometheus via `additionalScrapeConfigs`.
+
+### Health Check
+
+```bash
+# Operator pod should be Running in trivy-system
+kubectl get pods -n trivy-system
+
+# List generated vulnerability reports
+kubectl get vulnerabilityreports -A
+
+# Summary by severity across all namespaces
+kubectl get vulnerabilityreports -A -o json \
+  | jq '[.items[].report.summary] | {
+      critical: (map(.criticalCount) | add),
+      high:     (map(.highCount)     | add),
+      medium:   (map(.mediumCount)   | add)
+    }'
+```
+
+### View CVEs for a Specific Workload
+
+```bash
+# List reports in a namespace
+kubectl get vulnerabilityreports -n observability
+
+# Describe a specific report (shows CVE IDs, severity, fixed version)
+kubectl describe vulnerabilityreport -n observability <report-name>
+```
+
+### Common Failure — node-collector Pod Stays Pending
+
+The `infraAssessmentScannerEnabled` option is disabled in `infrastructure/controllers/trivy.yaml` because the node-collector Deployment uses cloud-node affinity rules that never match KinD worker nodes. If a `node-collector` pod appears Pending, confirm the setting is present:
+
+```bash
+kubectl get helmrelease trivy-operator -n flux-system -o jsonpath='{.spec.values.operator}'
+```
+
+Expected output includes `"infraAssessmentScannerEnabled":false`.
+
+### Prometheus Metrics
+
+```bash
+# Confirm Trivy metrics are being scraped
+curl -s http://prometheus.local:8080/api/v1/label/__name__/values \
+  | jq '.data[] | select(startswith("trivy_"))'
+```
+
+Key metrics: `trivy_image_vulnerabilities` (by severity), `trivy_resource_configaudits` (policy violations).
