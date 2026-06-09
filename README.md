@@ -29,7 +29,7 @@ FluxCD GitOps cluster for KinD — multi-node, Cilium CNI with kube-proxy replac
 flux-cluster/
 ├── .github/workflows/
 │   ├── renovate.yaml              # Scheduled self-hosted Renovate run (daily + workflow_dispatch)
-│   └── validate.yaml              # CI: kustomize build + Kyverno tests + Kubescape scan on every PR
+│   └── validate.yaml              # CI: Gitleaks secret scan + kustomize build + Kyverno tests + Kubescape scan on every PR
 │
 ├── clusters/
 │   └── kind/
@@ -41,6 +41,7 @@ flux-cluster/
 │       ├── infrastructure.yaml          # Flux Kustomization → infrastructure/controllers
 │       ├── infrastructure-configs.yaml  # Flux Kustomization → infrastructure/configs (dependsOn infra)
 │       ├── apps.yaml                    # Flux Kustomization → apps/overlays/kind (dependsOn infra)
+│       ├── monitoring-rules.yaml        # Flux Kustomization → apps/base/monitoring-rules (dependsOn apps)
 │       └── kustomization.yaml
 │
 ├── infrastructure/
@@ -56,6 +57,7 @@ flux-cluster/
 │   │   ├── kyverno.yaml           # Kyverno admission controller + ClusterPolicies (dependsOn cilium)
 │   │   ├── kubescape.yaml         # Kubescape operator — NSA + MITRE continuous scan (dependsOn cilium)
 │   │   ├── falco.yaml             # Falco eBPF runtime detection + Falcosidekick (dependsOn cilium)
+│   │   ├── trivy.yaml             # Trivy Operator — image CVE scanning + VulnerabilityReport CRDs (dependsOn cilium)
 │   │   └── kustomization.yaml
 │   └── configs/
 │       ├── tracingpolicies.yaml   # Tetragon TracingPolicies — defines syscalls/events to watch
@@ -87,6 +89,7 @@ flux-cluster/
 │   │   ├── promtail/              # Promtail log collector DaemonSet (dependsOn loki)
 │   │   ├── tempo/                 # Grafana Tempo trace backend (single-binary, dependsOn prometheus)
 │   │   ├── opentelemetry/         # OTel Collector — OTLP ingress from Istio sidecars → Tempo export
+│   │   ├── monitoring-rules/      # PrometheusRule CRDs — separate from prometheus/ to avoid CRD ordering deadlock
 │   │   └── demo/                  # Demo workloads for mesh traffic generation
 │   │       ├── namespace.yaml     # demo namespace with istio-injection: enabled
 │   │       ├── httpbin.yaml       # httpbin Deployment + Service
@@ -152,9 +155,10 @@ flux-system (GitRepository)
     ├── kyverno               (HelmRelease — dependsOn: cilium)
     ├── kubescape             (HelmRelease — dependsOn: cilium; configurationScan + continuousScan)
     ├── falco                 (HelmRelease — dependsOn: cilium; includes falcosidekick subchart)
+    ├── trivy-operator        (HelmRelease — dependsOn: cilium; image CVE scanning, VulnerabilityReport CRDs)
     └── metrics-server        (HelmRelease — dependsOn: cilium; powers kubectl top and HPA)
-└── apps (Kustomization — dependsOn: infrastructure-controllers)
-    ├── kube-prometheus-stack         (HelmRelease — dependsOn: openebs)
+└── apps (Kustomization — dependsOn: infrastructure-controllers, wait: true)
+    ├── kube-prometheus-stack         (HelmRelease — dependsOn: openebs; installs PrometheusRule CRD)
     ├── loki                          (HelmRelease — dependsOn: kube-prometheus-stack)
     ├── promtail                      (HelmRelease DaemonSet — dependsOn: loki)
     ├── grafana                       (HelmRelease — dependsOn: kube-prometheus-stack, loki)
@@ -165,6 +169,9 @@ flux-system (GitRepository)
     ├── istio/telemetry               (Telemetry CR — 100% sampling, extensionProvider: otel)
     ├── envoy-gateway/gateway         (EnvoyProxy CR + Gateway CR — gatewayClassName: eg)
     └── envoy-gateway/httproutes      (HTTPRoute — grafana.local, prometheus.local)
+└── monitoring-rules (Kustomization — dependsOn: apps)
+    └── PrometheusRule flux-cluster-alerts (custom alerts: PodCrashLooping, FluxHelmReleaseNotReady,
+                                            CertificateExpiringSoon, FalcoCriticalEvent, KyvernoViolation…)
 ```
 
 ## Deployed Components
@@ -192,9 +199,11 @@ flux-system (GitRepository)
 | Kyverno | kyverno/kyverno | 3.x | kyverno | |
 | Kubescape | kubescape/kubescape-operator | 1.40.x | kubescape | NSA + MITRE continuous scan; vulnerability scan disabled for KinD |
 | Falco + Falcosidekick | falcosecurity/falco | 9.x | falco | |
+| Trivy Operator | aquasecurity/trivy-operator | 0.x | trivy-system | Image CVE scanning — VulnerabilityReport CRDs + Prometheus metrics; `ignoreUnfixed: true` |
 | demo (httpbin) | kennethreitz/httpbin | @sha256 digest pin | demo | No versioned tags published; pinned by digest |
 | BOINC | boinc/client | arm64v8 | boinc | Voluntary compute — Rosetta@Home + Einstein@Home; capped at 1 CPU core for thermal management |
 | Renovate | renovatebot/github-action | (GitHub Actions workflow) | — | Automated dependency PRs for Helm charts, images, GitHub Actions, and CI tool pins |
+| Gitleaks | gitleaks/gitleaks | (CI workflow pin) | — | Secret scanning on every PR — detects accidentally committed credentials before merge |
 
 ## Container Images
 
@@ -215,7 +224,7 @@ The versions below were validated together. When upgrading a component, verify c
 
 | Component | Validated Version | Constrained By |
 |---|---|---|
-| Kubernetes (KinD node) | v1.35.0 | `K8S_VER` in `versions.env` |
+| Kubernetes (KinD node) | v1.36.1 | `K8S_VER` in `versions.env` |
 | Cilium | 1.19.x | `cilium.yaml` chart constraint + `versions.env` |
 | Istio | 1.30.x | `istio.yaml` chart constraint + `versions.env` |
 | Envoy Gateway | 1.4.x (v1.4.6) | `envoy-gateway.yaml` + `versions.env` |
@@ -229,6 +238,7 @@ The versions below were validated together. When upgrading a component, verify c
 | Kubescape | 1.40.x | `kubescape.yaml` |
 | Falco | 9.x | `falco.yaml` |
 | Tetragon | 1.7.x | `tetragon.yaml` |
+| Trivy Operator | 0.x | `trivy.yaml` |
 
 All version pins shared between the Makefile and setup script are sourced from `versions.env` at the repository root — bumping them there updates both consumers.
 
@@ -260,7 +270,11 @@ All version pins shared between the Makefile and setup script are sourced from `
 
 **No floating `latest` image tags** — Every image is pinned to a specific tag or digest. `latest` defeats drift detection and breaks rollbacks. `kennethreitz/httpbin` publishes no versioned tags, so it is pinned by digest (`@sha256:…`) instead. The `disallow-latest-image-tag` Kyverno policy accepts digest references as immutable pins.
 
-**Four-layer runtime security model** — Kyverno (admission control) validates pods before they start and audits misconfigurations. Tetragon (eBPF enforcement) can kill processes and block network connections at the syscall level. Falco (behavioral detection) continuously audits running containers and fires alerts on anomalous activity — shell spawning, sensitive file reads, credential exposure — routing them to Loki via Falcosidekick. Kubescape (compliance scanning) continuously audits the cluster's actual running state against NSA and MITRE ATT&CK frameworks and surfaces configuration drift. The four tools are complementary: Kyverno prevents bad configuration from entering, Tetragon stops active exploitation, Falco logs suspicious activity for forensic review, and Kubescape measures the cluster's overall security posture against industry frameworks.
+**Five-layer runtime security model** — Kyverno (admission control) validates pods before they start and audits misconfigurations. Tetragon (eBPF enforcement) can kill processes and block network connections at the syscall level. Falco (behavioral detection) continuously audits running containers and fires alerts on anomalous activity — shell spawning, sensitive file reads, credential exposure — routing them to Loki via Falcosidekick. Kubescape (compliance scanning) continuously audits the cluster's actual running state against NSA and MITRE ATT&CK frameworks and surfaces configuration drift. Trivy Operator (image CVE scanning) continuously scans every running container image and produces `VulnerabilityReport` CRDs with Prometheus metrics. The five tools are complementary: Kyverno prevents bad configuration from entering, Tetragon stops active exploitation, Falco logs suspicious activity for forensic review, Kubescape measures posture against industry frameworks, and Trivy surfaces known CVEs in the images actually running in the cluster.
+
+**Gitleaks runs on every PR** — The `validate.yaml` CI workflow runs Gitleaks as its first step (before kustomize build or Kyverno tests) to detect accidentally committed credentials, API keys, and private key material. The version pin is tracked by Renovate via a custom regex manager so it stays current automatically.
+
+**PrometheusRules in a separate Flux Kustomization** — Custom `PrometheusRule` CRDs (cluster health, GitOps health, certificate expiry, Falco critical events, Kyverno enforcement violations) cannot be bundled in the same Flux Kustomization as the kube-prometheus-stack HelmRelease that installs the CRD. Flux dry-runs all resources before applying any of them, so the CRD is never present when the dry-run runs — causing a deadlock that prevents the HelmRelease from applying too. The fix: a separate `monitoring-rules` Kustomization (`clusters/kind/monitoring-rules.yaml`) with `dependsOn: apps`. Because `apps` has `wait: true`, Flux marks it healthy only after kube-prometheus-stack is fully running and the CRD is registered.
 
 **Kubescape vulnerability scanning disabled for KinD** — The `vulnerabilityScan`, `nodeScan`, `nodeSbomGeneration`, and `relevancy` capabilities require generating and storing SBOMs for every running image, which is memory-intensive (1+ GB). These are disabled in `infrastructure/controllers/kubescape.yaml` to keep the footprint within KinD constraints. `configurationScan` and `continuousScan` remain enabled, providing continuous NSA + MITRE framework coverage against running workload configurations. Re-enable vulnerability scanning in production clusters with sufficient node memory. Results are available via `kubectl get configurationscansummaries -A` and in the Kubescape Grafana dashboard.
 
@@ -460,7 +474,7 @@ Without any `CiliumNetworkPolicy` resources, all pod-to-pod traffic is permitted
 
 ## Monitoring
 
-Cilium, Hubble, Tetragon, Falco, Kyverno, Kubescape, Flux, Istio, and cert-manager metrics are scraped by Prometheus. All pod logs are collected by Promtail and stored in Loki. Grafana is pre-loaded with 16 dashboards (14 Prometheus-backed + 1 Loki-backed + 1 mixed Prometheus/Loki):
+Cilium, Hubble, Tetragon, Falco, Kyverno, Kubescape, Trivy Operator, Metrics Server, Flux, Istio, and cert-manager metrics are scraped by Prometheus. All pod logs are collected by Promtail and stored in Loki. Grafana is pre-loaded with 16 dashboards (14 Prometheus-backed + 1 Loki-backed + 1 mixed Prometheus/Loki):
 
 | Dashboard | Source | Provisioning |
 |---|---|---|

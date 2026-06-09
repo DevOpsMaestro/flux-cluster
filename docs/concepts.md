@@ -248,6 +248,25 @@ In this cluster, `--kubelet-insecure-tls` is required because KinD kubelet servi
 
 ---
 
+## Image CVE Scanning — Trivy Operator
+
+**Trivy Operator** continuously scans every container image running in the cluster for known CVEs (Common Vulnerabilities and Exposures) and records the results as `VulnerabilityReport` CRDs — one per workload. This is complementary to Kubescape: Kubescape catches configuration misconfigurations; Trivy catches known vulnerabilities in image layers.
+
+Key design choices for this cluster:
+
+- **`ignoreUnfixed: true`** — Only CVEs with an available fix are reported. Unfixed CVEs have no actionable remediation path; including them produces noise without enabling any response.
+- **`infraAssessmentScannerEnabled: false`** — The node-collector component (which scans node filesystems for infrastructure misconfigurations) requires cloud-specific node labels not present on KinD worker nodes. It is disabled to prevent a permanently-pending pod.
+- **Istio injection disabled** — Scan Jobs pull the vulnerability database from `ghcr.io`. Adding an Istio sidecar to ephemeral scan Jobs adds mTLS bootstrapping complexity with no benefit.
+- **Metrics via additionalScrapeConfigs** — Like other infrastructure tools, Trivy Operator exposes Prometheus metrics on port 8080, scraped without a ServiceMonitor to avoid the apps-layer circular dependency.
+
+Vulnerability reports are available immediately after the operator scans a workload:
+
+```bash
+kubectl get vulnerabilityreports -A
+```
+
+---
+
 ## Demo Namespace — httpbin and load-generator
 
 The `demo` namespace contains two workloads that exist purely to generate traffic through the Istio mesh:
