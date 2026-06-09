@@ -47,13 +47,22 @@ spec:
         namespace: flux-system
       interval: 24h
   values:
+    # Resources for the operator container itself (top-level key in this chart).
+    # Kyverno enforce policy (require-resource-limits) applies to trivy-system.
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
     trivy:
       # Only report CVEs that have a fix available — unfixed CVEs produce noise
       # with no actionable remediation path.
       ignoreUnfixed: true
 
       # Resources for the scanner container inside each ephemeral scan Job pod.
-      # Kyverno enforce policy (require-resource-limits) applies to trivy-system.
       resources:
         requests:
           cpu: 100m
@@ -63,15 +72,6 @@ spec:
           memory: 512Mi
 
     operator:
-      # Resources for the operator pod itself.
-      resources:
-        requests:
-          cpu: 100m
-          memory: 128Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
-
       # Bind metrics on :8080 — scraped via additionalScrapeConfigs in
       # apps/base/prometheus/helmrelease.yaml (ServiceMonitor avoided to
       # break the same circular dependency as other infrastructure tools).
