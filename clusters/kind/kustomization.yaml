@@ -6,3 +6,4 @@ resources:
   - infrastructure.yaml
   - infrastructure-configs.yaml
   - apps.yaml
+  - monitoring-rules.yaml
