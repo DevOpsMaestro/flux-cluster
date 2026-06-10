@@ -1,0 +1,84 @@
+name: PQC Readiness Monitor
+
+on:
+  schedule:
+    - cron: '0 6 * * 0'  # Weekly, Sunday 06:00 UTC
+  workflow_dispatch:      # Manual trigger via Actions UI
+
+permissions:
+  issues: write   # create/update the dashboard issue
+  contents: read
+
+jobs:
+  pqc-watch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check upstream releases and update dashboard issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Keywords that indicate a tool has shipped PQC algorithm support.
+          # Covers NIST standard names, former names, and common shorthand.
+          KEYWORDS="ML-KEM|ML-DSA|SLH-DSA|post-quantum|post_quantum|FIPS.203|FIPS.204|FIPS.205|Kyber|Dilithium|Sphincs"
+
+          check_tool() {
+            local label="$1" repo="$2"
+            local version notes
+            version=$(gh api "repos/$repo/releases/latest" --jq '.tag_name' 2>/dev/null || echo "unknown")
+            notes=$(gh api "repos/$repo/releases/latest" --jq '.body // ""' 2>/dev/null || echo "")
+            if echo "$notes" | grep -qiE "$KEYWORDS"; then
+              echo "| **$label** | \`$version\` | ✅ **PQC SUPPORT DETECTED** |"
+            else
+              echo "| **$label** | \`$version\` | ❌ Not yet |"
+            fi
+          }
+
+          ROWS=""
+          ROWS+=$(check_tool "Istio"         "istio/istio")$'\n'
+          ROWS+=$(check_tool "cert-manager"  "cert-manager/cert-manager")$'\n'
+          ROWS+=$(check_tool "Age"           "FiloSottile/age")$'\n'
+          ROWS+=$(check_tool "Envoy Gateway" "envoyproxy/gateway")$'\n'
+          ROWS+=$(check_tool "Cilium"        "cilium/cilium")$'\n'
+
+          DETECTED=$(echo "$ROWS" | grep -c "✅" || true)
+
+          BODY="## 🔐 PQC Readiness Monitor
+
+**Last checked:** $(date -u '+%Y-%m-%d %H:%M UTC')
+
+See \`docs/post-quantum-readiness.md\` for the full analysis — what each tool needs to change and why.
+
+| Tool | Latest Release | PQC Status |
+|---|---|---|
+$ROWS
+---
+
+**Watching for:** ML-KEM (FIPS 203) · ML-DSA (FIPS 204) · SLH-DSA (FIPS 205) · post-quantum · Kyber · Dilithium · Sphincs
+
+**Schedule:** Sundays 06:00 UTC · Manual trigger: Actions → PQC Readiness Monitor → Run workflow"
+
+          TITLE="🔐 PQC Readiness Monitor"
+          if [ "$DETECTED" -gt 0 ]; then
+            TITLE="[ACTION REQUIRED] 🔐 PQC Readiness Monitor — $DETECTED tool(s) ready"
+          fi
+
+          # Update existing open issue, or create a new one.
+          ISSUE_NUM=$(gh issue list \
+            --repo "$REPO" \
+            --state open \
+            --search "PQC Readiness Monitor in:title" \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -n "$ISSUE_NUM" ]; then
+            gh issue edit "$ISSUE_NUM" --repo "$REPO" --title "$TITLE" --body "$BODY"
+            echo "Updated issue #$ISSUE_NUM"
+          else
+            gh issue create \
+              --repo "$REPO" \
+              --title "$TITLE" \
+              --body "$BODY" \
+              --label "documentation"
+            echo "Created new PQC dashboard issue"
+          fi
