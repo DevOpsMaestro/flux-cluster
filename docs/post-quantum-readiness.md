@@ -159,6 +159,7 @@ its own built-in certificate generator (RSA or ECDSA, version-dependent).
 
 ## References
 
+- [Overview of Post Quantum Cryptography](https://en.wikipedia.org/wiki/Post-quantum_cryptography)
 - [NIST Releases First 3 Finalized Post-Quantum Encryption Standards (August 2024)](https://www.nist.gov/news-events/news/2024/08/nist-releases-first-3-finalized-post-quantum-encryption-standards)
 - [FIPS 203 — ML-KEM](https://csrc.nist.gov/pubs/fips/203/final)
 - [FIPS 204 — ML-DSA](https://csrc.nist.gov/pubs/fips/204/final)
