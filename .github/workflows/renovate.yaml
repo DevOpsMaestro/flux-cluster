@@ -2,7 +2,7 @@ name: Renovate
 on:
   workflow_dispatch: # Allows manual trigger
   schedule:
-    - cron: '0 0 * * *' # Automatically runs every day at midnight
+    - cron: "0 0 * * *" # Automatically runs every day at midnight
 
 concurrency:
   group: renovate
@@ -12,9 +12,10 @@ concurrency:
 # controlled by the scopes set when the token was created — see the comment
 # on the "Self-hosted Renovate" step below for required PAT scopes.
 permissions:
-  contents: write      # push renovate/* branches
+  contents: write # push renovate/* branches
   pull-requests: write # open PRs
-  issues: write        # read and update the Dependency Dashboard issue
+  issues: write # read and update the Dependency Dashboard issue
+  security-events: read # needed for vulnerability alerts API
 
 jobs:
   renovate:
