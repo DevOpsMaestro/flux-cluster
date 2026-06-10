@@ -4,7 +4,41 @@ Configuration: `renovate.json` at repository root · Workflow: `.github/workflow
 
 ---
 
-## What Renovate Does
+## How Renovate Works
+
+Renovate is a bot that automatically checks if your project's dependencies — the outside libraries and tools your code relies on — are out of date, then opens a pull request to update them. Think of it like a robot that reads your list of dependencies, checks whether newer versions exist, and hands you a suggested update to review.
+
+### Onboarding (First Run Only)
+
+The first time Renovate visits a repository, it looks for a `renovate.json` config file. If one doesn't exist, it creates a branch called `renovate/configure` and opens an **onboarding PR** that proposes a starter config. Renovate will not open any other PRs until that onboarding PR is merged — it is asking for permission before doing any work.
+
+### The Pipeline
+
+Each time Renovate runs, it follows this sequence:
+
+1. **Initialize** — reads and merges all config (`renovate.json`, admin settings, defaults) and connects to the Git platform (GitHub, GitLab, etc.)
+2. **Scan** — the Manager module walks the repository file by file, extracts every dependency and its current version, and tags each one with the right datasource
+3. **Look up** — the Datasource module contacts registries (npm, Docker Hub, Helm chart repos, etc.) and fetches all available versions
+4. **Filter** — the Versioning module sorts valid upgrades based on your constraints (e.g. "only patch updates", "stay on `1.17.x`")
+5. **Create PRs** — the Platform module creates a branch and opens a PR for each update, including the changelog, how old the new version is, and how many other projects have already adopted it
+6. **Clean up** — stale branches for updates that were superseded by even newer versions are closed automatically
+
+Renovate is stateless — it does not keep a database. It re-reads your repository and registries on every run, so if it crashes mid-run, the next run picks up cleanly.
+
+### The Four Core Modules
+
+| Module | Job | Analogy |
+|---|---|---|
+| **Manager** | Finds dependency files and reads what versions you're on | A reader who scans your code |
+| **Datasource** | Contacts registries to fetch available versions | A shopper who checks the store shelves |
+| **Versioning** | Decides which versions are valid upgrades | A filter that sorts good options from bad |
+| **Platform** | Talks to GitHub/GitLab to create branches and PRs | The delivery driver who submits the update |
+
+Different package ecosystems use different version formats (npm uses `1.0.0-beta.1`, pip uses `1.0.0b1`, etc.) — the swappable Versioning module handles these differences per manager.
+
+---
+
+## What Renovate Tracks in This Cluster
 
 Renovate scans the repository for version strings and opens pull requests when newer versions are available. It tracks:
 
@@ -107,3 +141,12 @@ Add a `packageRules` entry to `renovate.json`:
 ```
 
 Alternatively, use the Dependency Dashboard issue — Renovate provides checkboxes to suppress specific updates without editing configuration.
+
+---
+
+## Further Reading
+
+- [How Renovate Works — Renovate Docs](https://docs.renovatebot.com/key-concepts/how-renovate-works/)
+- [Installing & Onboarding — Renovate Docs](https://docs.renovatebot.com/getting-started/installing-onboarding/)
+- [Manager and Datasource System — DeepWiki](https://deepwiki.com/renovatebot/renovate/5-package-manager-integrations)
+- [Versioning — Renovate Docs](https://docs.renovatebot.com/modules/versioning/)
