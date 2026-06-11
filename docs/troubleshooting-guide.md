@@ -1,7 +1,7 @@
 # Troubleshooting Guide
 
 Cluster: `flux-kind` · KinD 1.36.1 · 1 control-plane + 2 workers
-Stack: Flux CD · Cilium 1.19 · Hubble · cert-manager 1.20 · OpenEBS 4.x · Istio 1.30 (mesh only) · Gateway API v1.2.1 · Envoy Gateway 1.4 · Metrics Server 3.x · Tetragon 1.7 · Kyverno 3 · Kubescape 1.40 · Falco 9 · Trivy Operator 0.x · kube-prometheus-stack 86 · Grafana 10 (app 12) · Grafana Tempo 1 · OpenTelemetry Collector 0 · BOINC · SOPS + Age
+Stack: Flux CD · Cilium 1.19 · Hubble · cert-manager 1.20 · OpenEBS 4.x · Istio 1.30 (mesh only) · Gateway API v1.2.1 · Envoy Gateway 1.4 · Metrics Server 3.x · Tetragon 1.7 · Kyverno 3 · Kubescape 1.40 · Falco 9 · Trivy Operator 0.x · kube-prometheus-stack 86 · Grafana 10 (app 12) · Grafana Tempo 1 · OpenTelemetry Collector 0 · BOINC · SOPS + Age · iperf3
 
 ---
 
@@ -33,6 +33,7 @@ Stack: Flux CD · Cilium 1.19 · Hubble · cert-manager 1.20 · OpenEBS 4.x · I
 23. [Renovate](#23-renovate)
 24. [Metrics Server](#24-metrics-server)
 25. [Trivy Operator](#25-trivy-operator)
+26. [iperf3](#26-iperf3)
 
 ---
 
@@ -1656,3 +1657,166 @@ curl -s http://prometheus.local:8080/api/v1/label/__name__/values \
 ```
 
 Key metrics: `trivy_image_vulnerabilities` (by severity), `trivy_resource_configaudits` (policy violations).
+
+---
+
+## 26. iperf3
+
+iperf3 runs as a single-replica server in the `iperf3` namespace. External tests are initiated from the host Mac and travel through Docker port mappings, the nginx nodeport-proxy `stream {}` block, the Envoy Gateway data plane, and a `TCPRoute` before reaching the server pod. See [docs/iperf3.md](iperf3.md) for the full architecture and test procedures.
+
+### Quick Health Check
+
+```bash
+# Pod should be 1/1 Running
+kubectl get pods -n iperf3
+
+# TCPRoute should show Accepted: True and ResolvedRefs: True
+kubectl get tcproute -n iperf3 iperf3 \
+  -o jsonpath='{.status.parents[0].conditions}' | python3 -m json.tool
+
+# Confirm the server is listening inside the pod
+kubectl logs -n iperf3 deploy/iperf3-server --tail=20
+```
+
+### Issue — "Connection refused" immediately
+
+**Symptom:** `iperf3 -c localhost -p 32111` returns `Connection refused` within milliseconds.
+
+**Cause:** On macOS, `localhost` resolves to `::1` (IPv6) before `127.0.0.1`. Docker binds only to `0.0.0.0:32111` (IPv4), so the IPv6 attempt is refused immediately. iperf3 does not fall back to IPv4.
+
+**Fix:**
+
+```bash
+iperf3 -4 -c localhost -p 32111 -t 30
+# or
+iperf3 -c 127.0.0.1 -p 32111 -t 30
+```
+
+Verify the Docker port mapping is present:
+
+```bash
+docker port flux-kind-control-plane 9111
+# Expected: 0.0.0.0:32111
+```
+
+### Issue — Connection times out (no response)
+
+**Symptom:** `iperf3 -4 -c localhost -p 32111` hangs for several seconds before failing.
+
+**Cause:** A NetworkPolicy is dropping packets somewhere in the path. The most common gap is a missing port entry on the `allow-proxy-http-ingress` policy in `envoy-gateway-system` — if port `32111` is absent, all iperf3 connections are silently dropped after nginx forwards them to the Envoy proxy.
+
+**Diagnose:**
+
+```bash
+# Confirm port 32111 is present in the allow-proxy-http-ingress policy
+kubectl get networkpolicy -n envoy-gateway-system allow-proxy-http-ingress \
+  -o jsonpath='{.spec.ingress}' | python3 -m json.tool
+
+# Test TCP reachability from the nginx proxy pod
+kubectl exec -n envoy-ingress <nodeport-proxy-pod> -- \
+  nc -zv envoy-proxy.envoy-gateway-system.svc.cluster.local 32111
+# A timeout (not "refused") confirms NetworkPolicy DROP
+
+# Confirm port 9111 is active inside the control-plane node
+kubectl exec -n envoy-ingress <nodeport-proxy-pod> -- ss -tlnp | grep 9111
+```
+
+**Fix:** Ensure `infrastructure/controllers/envoy-gateway.yaml` includes port `32111` in `allow-proxy-http-ingress`:
+
+```yaml
+  ingress:
+    - ports:
+        - port: 10080
+        - port: 32111
+```
+
+After merging the fix, force Flux to reconcile:
+
+```bash
+flux reconcile kustomization infrastructure-controllers -n flux-system
+```
+
+### Issue — Pod in ImagePullBackOff
+
+**Symptom:** `kubectl get pods -n iperf3` shows `ImagePullBackOff`.
+
+**Cause:** The image tag does not exist on Docker Hub. `networkstatic/iperf3` only publishes `latest` and `multiarch` — versioned tags (e.g. `3.17`) are not available.
+
+**Fix:** The deployment in `apps/base/iperf3/deployment.yaml` must use `networkstatic/iperf3:multiarch`. The `multiarch` tag provides a multi-architecture image that covers both amd64 and arm64 (required for the M5 MacBook Air KinD cluster).
+
+```bash
+kubectl describe pod -n iperf3 <pod-name> | grep -A 5 "Events:"
+# Look for: failed to resolve reference "docker.io/networkstatic/iperf3:<tag>": not found
+```
+
+### Issue — "control socket has closed unexpectedly"
+
+**Symptom:** `iperf3 -P 20` connects all 20 streams but then exits with `control socket has closed unexpectedly`.
+
+**Cause:** This is the circuit breaker working as designed. The `BackendTrafficPolicy` in `apps/base/iperf3/traffic-policy.yaml` sets `maxConnections: 10`. When 20 parallel streams are opened, Envoy allows 10 upstream connections and overflows the remaining 10. Terminating the excess connections while data is in flight causes iperf3 to lose its control channel.
+
+**Confirm the circuit breaker fired:**
+
+```bash
+PROXY_POD=$(kubectl get pods -n envoy-gateway-system \
+  -l app.kubernetes.io/component=proxy \
+  -o jsonpath='{.items[0].metadata.name}')
+
+kubectl port-forward -n envoy-gateway-system "$PROXY_POD" 19000:19000 &
+sleep 1
+
+curl -s localhost:19000/stats \
+  | grep "tcproute/iperf3/iperf3/rule/-1.upstream_cx_overflow"
+
+kill %1
+# Expected: upstream_cx_overflow > 0 after a -P 20 test
+```
+
+To run a test that stays within the circuit-breaker threshold, keep parallel streams at or below 10:
+
+```bash
+iperf3 -4 -c localhost -p 32111 -P 10 -t 30
+```
+
+### Issue — nginx stream block not forwarding TCP
+
+**Symptom:** Port 9111 is not listed in `ss -tlnp` output inside the nginx pod, or nginx logs show a stream configuration error.
+
+**Cause:** The nginx image in use may not have the `ngx_stream_module` compiled in. Confirm the module is loaded:
+
+```bash
+kubectl exec -n envoy-ingress <nodeport-proxy-pod> -- nginx -V 2>&1 | grep stream
+# Expected output includes: --with-stream
+```
+
+If the module is absent, the `stream {}` block in the ConfigMap will be silently ignored or cause a startup error. Verify the ConfigMap was applied correctly:
+
+```bash
+kubectl get configmap -n envoy-ingress nodeport-proxy-conf -o yaml | grep -A 10 "stream"
+```
+
+Restart the DaemonSet to pick up a ConfigMap change:
+
+```bash
+kubectl rollout restart daemonset -n envoy-ingress nodeport-proxy
+```
+
+### Issue — KinD cluster missing the port mapping
+
+**Symptom:** `docker port flux-kind-control-plane 9111` returns nothing, and `localhost:32111` is not reachable at all.
+
+**Cause:** `extraPortMappings` in KinD are set at cluster creation time and cannot be changed on a running cluster. If the cluster was created before the iperf3 port mapping was added to `scripts/setup-fluxcd-gitops-kind-multinode.sh`, the mapping does not exist.
+
+**Fix:** Recreate the cluster. All state is in Git; the cluster is rebuilt from scratch using the setup script.
+
+```bash
+kind delete cluster --name flux-kind
+./scripts/setup-fluxcd-gitops-kind-multinode.sh
+```
+
+After the cluster is up, verify the mapping exists:
+
+```bash
+docker port flux-kind-control-plane 9111
+# Expected: 0.0.0.0:32111
+```
