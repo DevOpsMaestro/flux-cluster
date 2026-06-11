@@ -57,13 +57,16 @@ spec:
     autoscaling:
       enabled: false
     deployment:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
+      # Chart key is deployment.envoyGateway.resources (not deployment.resources).
+      # The bare deployment.resources path is silently ignored by the chart.
+      envoyGateway:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
 ---
 # ── envoy-gateway-system (controller) ────────────────────────────────────────
 apiVersion: networking.k8s.io/v1
