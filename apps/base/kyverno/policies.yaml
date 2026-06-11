@@ -180,6 +180,12 @@ spec:
                 # workloads (Prometheus, Loki, Grafana, AlertManager) have
                 # explicit resource limits defined in their HelmReleases.
                 - observability
+                # gateway-helm runs a certgen pre-upgrade hook Job that has no
+                # values key for resource limits and cannot be patched without
+                # forking the chart. All real envoy-gateway workloads (controller,
+                # data-plane Envoy, shutdown-manager) have explicit limits set via
+                # deployment.envoyGateway.resources and envoyDeployment.patch.
+                - envoy-gateway-system
       validate:
         message: "All containers must declare cpu and memory requests and limits."
         foreach:
