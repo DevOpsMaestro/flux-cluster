@@ -73,15 +73,27 @@ spec:
           cpu: 500m
           memory: 256Mi
 
-    trivyServer:
-      # Resources for the built-in Trivy DB server pod.
-      resources:
-        requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
+      server:
+        # Resources for the built-in Trivy DB server StatefulSet pod.
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+
+        # Kyverno enforce policies (disallow-privilege-escalation, require-resource-limits)
+        # apply to all pods in trivy-system, including the trivy-server StatefulSet.
+        podSecurityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop: [ALL]
 
     operator:
       # Bind metrics on :8080 — scraped via additionalScrapeConfigs in
