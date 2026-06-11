@@ -1,4 +1,4 @@
-# Makefile — flux-cluster
+# Makefile — homelab-gitops-k8s-2026
 # Wraps common cluster operations and provides an image pre-pull workflow to
 # speed up repeated cluster rebuilds on macOS with Docker Desktop + KinD.
 #

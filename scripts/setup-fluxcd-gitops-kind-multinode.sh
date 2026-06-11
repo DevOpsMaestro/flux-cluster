@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${REPO_ROOT}/versions.env"
 
 GITHUB_USER="DevOpsMaestro"
-REPO_NAME="flux-cluster"
+REPO_NAME="homelab-gitops-k8s-2026"
 BRANCH="${BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
 CLUSTER_PATH="clusters/kind"
 
