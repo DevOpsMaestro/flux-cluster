@@ -51,6 +51,11 @@ spec:
       admissionController: disable
       httpDetection: disable
       seccompProfileService: disable
+      # Run without an ARMO cloud account. When disabled (the default), the
+      # operator attempts to submit scan results to api.armosec.io and logs a
+      # 400 "missing account id" error on every scan cycle because no account
+      # or accessKey is configured. Enable offline mode to suppress this.
+      kubescapeOffline: enable
     configurations:
       prometheusAnnotations: disable
 ---
