@@ -82,6 +82,11 @@ spec:
       # match KinD worker nodes, leaving a pod permanently Pending.
       infraAssessmentScannerEnabled: false
 
+      # Limit parallel scan Jobs to 2 — KinD runs on a single machine and
+      # concurrent Jobs fight over the Trivy DB cache, causing lock timeout
+      # failures and wasted retries.
+      concurrentScanJobsLimit: 2
+
     # Security context for the operator container.
     # Kyverno enforce policy (disallow-privilege-escalation) applies.
     securityContext:
