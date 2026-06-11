@@ -63,6 +63,18 @@ spec:
       ignoreUnfixed: true
 
       # Resources for the scanner container inside each ephemeral scan Job pod.
+      # In ClientServer mode these containers query the server rather than
+      # initializing a local DB, so memory demand is lower — 128Mi is enough.
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+
+    trivyServer:
+      # Resources for the built-in Trivy DB server pod.
       resources:
         requests:
           cpu: 100m
@@ -82,9 +94,14 @@ spec:
       # match KinD worker nodes, leaving a pod permanently Pending.
       infraAssessmentScannerEnabled: false
 
-      # Limit parallel scan Jobs to 2 — KinD runs on a single machine and
-      # concurrent Jobs fight over the Trivy DB cache, causing lock timeout
-      # failures and wasted retries.
+      # Spin up a shared Trivy DB server pod. Scan job containers connect to
+      # it as lightweight clients instead of each initializing their own local
+      # DB copy. Eliminates cache lock contention between containers in the
+      # same scan Job pod (the root cause of the startup burst errors).
+      builtInTrivyServer: true
+
+      # Limit parallel scan Jobs to 2 — still useful for resource management
+      # even in ClientServer mode.
       scanJobsConcurrentLimit: 2
 
     # Security context for the operator container.
