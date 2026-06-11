@@ -51,6 +51,25 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+        # The shutdown-manager sidecar is injected by the controller and has no
+        # dedicated EnvoyProxy field. A strategic-merge patch is the only way to
+        # set its resource limits; without this the sidecar fails the Kyverno
+        # require-resource-limits policy at admission and blocks pod restarts.
+        patch:
+          type: StrategicMerge
+          value:
+            spec:
+              template:
+                spec:
+                  containers:
+                    - name: shutdown-manager
+                      resources:
+                        requests:
+                          cpu: 10m
+                          memory: 32Mi
+                        limits:
+                          cpu: 50m
+                          memory: 64Mi
 ---
 # Gateway CR — Envoy Gateway auto-provisions the Envoy Deployment + Service in this
 # namespace when it sees gatewayClassName: eg. The infrastructure.parametersRef

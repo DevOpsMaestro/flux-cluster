@@ -62,6 +62,18 @@ spec:
         limits:
           cpu: 500m
           memory: 512Mi
+    # export.resources controls the export-stdout sidecar container (chart key is
+    # top-level, separate from tetragon.resources which covers the main agent).
+    # Without this the sidecar has no limits and fails the require-resource-limits
+    # Kyverno policy at admission time whenever the DaemonSet pod restarts.
+    export:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 50m
+          memory: 32Mi
     tetragonOperator:
       prometheus:
         enabled: true
