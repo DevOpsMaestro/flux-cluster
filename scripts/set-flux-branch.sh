@@ -17,7 +17,7 @@ if [[ "$current" == "$BRANCH" ]]; then
   exit 0
 fi
 
-sed -i '' "s/branch: .*/branch: ${BRANCH}/" "$PATCH_FILE"
+sed -i '' "s|branch: .*|branch: ${BRANCH}|" "$PATCH_FILE"
 printf "Updated Flux branch: %s → %s\n" "$current" "$BRANCH"
 
 git add "$PATCH_FILE"
