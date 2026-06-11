@@ -133,8 +133,8 @@ spec:
 ---
 # The nodeport-proxy (envoy-ingress) uses hostNetwork: true, so its traffic originates
 # from the node IP rather than a pod CIDR. Standard NetworkPolicy cannot express "from
-# host entity", so we allow all sources on the Envoy proxy's HTTP listen port. Port
-# 10080 is only reachable inside the cluster, limiting the exposure.
+# host entity", so we allow all sources on the Envoy proxy's listen ports. Ports
+# 10080 (HTTP) and 32111 (TCP iperf3) are only reachable inside the cluster.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -150,6 +150,7 @@ spec:
   ingress:
     - ports:
         - port: 10080
+        - port: 32111
 ---
 # Envoy proxy pods (in envoy-gateway-system) route HTTP traffic to backend services.
 # Ports are pod ports: Cilium's socket-level DNAT translates Service port 80 → pod
