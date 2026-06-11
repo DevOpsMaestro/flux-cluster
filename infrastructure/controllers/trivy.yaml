@@ -62,6 +62,12 @@ spec:
       # with no actionable remediation path.
       ignoreUnfixed: true
 
+      # --slow was deprecated in Trivy in favour of --parallel. Setting slow: false
+      # stops the operator from injecting the deprecated flag into scan job containers;
+      # parallel: 1 preserves the same low-resource sequential behaviour.
+      slow: false
+      parallel: 1
+
       # Resources for the scanner container inside each ephemeral scan Job pod.
       # ClientServer mode offloads DB lookups to the server, but each container
       # still pulls the image and extracts layers locally. Large images (Cilium,
