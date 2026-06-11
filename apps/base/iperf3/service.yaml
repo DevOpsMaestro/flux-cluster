@@ -1,0 +1,17 @@
+---
+# ClusterIP Service — the backend target for the Envoy Gateway TCPRoute.
+# The Envoy proxy connects to this Service on port 32111 after matching
+# the tcp-iperf3 Gateway listener.
+apiVersion: v1
+kind: Service
+metadata:
+  name: iperf3
+  namespace: iperf3
+spec:
+  selector:
+    app: iperf3-server
+  ports:
+    - name: tcp
+      port: 32111
+      targetPort: 32111
+      protocol: TCP
