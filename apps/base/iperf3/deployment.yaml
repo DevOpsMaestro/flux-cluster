@@ -21,7 +21,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: iperf3
-          image: networkstatic/iperf3:3.17
+          image: networkstatic/iperf3:multiarch
           args: ["-s", "-p", "32111", "--forceflush"]
           ports:
             - name: tcp
