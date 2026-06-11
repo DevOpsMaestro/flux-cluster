@@ -63,15 +63,16 @@ spec:
       ignoreUnfixed: true
 
       # Resources for the scanner container inside each ephemeral scan Job pod.
-      # In ClientServer mode these containers query the server rather than
-      # initializing a local DB, so memory demand is lower — 128Mi is enough.
+      # ClientServer mode offloads DB lookups to the server, but each container
+      # still pulls the image and extracts layers locally. Large images (Cilium,
+      # Envoy) OOMKill at 256Mi — 512Mi accommodates the largest images in the stack.
       resources:
         requests:
           cpu: 100m
-          memory: 128Mi
+          memory: 256Mi
         limits:
           cpu: 500m
-          memory: 256Mi
+          memory: 512Mi
 
       server:
         # Resources for the built-in Trivy DB server StatefulSet pod.
