@@ -85,7 +85,7 @@ spec:
       # Limit parallel scan Jobs to 2 — KinD runs on a single machine and
       # concurrent Jobs fight over the Trivy DB cache, causing lock timeout
       # failures and wasted retries.
-      concurrentScanJobsLimit: 2
+      scanJobsConcurrentLimit: 2
 
     # Security context for the operator container.
     # Kyverno enforce policy (disallow-privilege-escalation) applies.
