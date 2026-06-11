@@ -1,4 +1,4 @@
-# flux-cluster
+# homelab-gitops-k8s-2026
 
 FluxCD GitOps cluster for KinD — multi-node, Cilium CNI with kube-proxy replacement, Hubble observability, Istio service mesh (mTLS), Envoy Gateway for HTTP ingress.
 
@@ -26,7 +26,7 @@ FluxCD GitOps cluster for KinD — multi-node, Cilium CNI with kube-proxy replac
 ## Repository Structure
 
 ```text
-flux-cluster/
+homelab-gitops-k8s-2026/
 ├── .github/workflows/
 │   ├── renovate.yaml              # Scheduled self-hosted Renovate run (daily + workflow_dispatch)
 │   └── validate.yaml              # CI: Gitleaks secret scan + kustomize build + Kyverno tests + Kubescape scan on every PR
