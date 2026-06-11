@@ -51,6 +51,11 @@ spec:
       admissionController: disable
       httpDetection: disable
       seccompProfileService: disable
+      # Run without an ARMO cloud account. When disabled (the default), the
+      # operator attempts to submit scan results to api.armosec.io and logs a
+      # 400 "missing account id" error on every scan cycle because no account
+      # or accessKey is configured. Enable offline mode to suppress this.
+      kubescapeOffline: enable
     configurations:
       prometheusAnnotations: disable
 ---
@@ -148,3 +153,27 @@ spec:
               kubernetes.io/metadata.name: observability
       ports:
         - port: 8080
+---
+# The kube-apiserver reaches the storage aggregated APIService from the node's
+# host network IP. Standard NetworkPolicy cannot select host-network peers by
+# namespace or label, so ipBlock covers the full KinD node subnet (172.18.0.0/16).
+# Without this, default-deny blocks the aggregated API health check and the
+# v1beta1.spdx.softwarecomposition.kubescape.io APIService stays Available: False.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-apiserver-storage-ingress
+  namespace: kubescape
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: storage
+      app.kubernetes.io/name: kubescape-operator
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 172.18.0.0/16
+      ports:
+        - port: 443
