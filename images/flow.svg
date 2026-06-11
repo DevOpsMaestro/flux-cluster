@@ -18,7 +18,7 @@
   <rect width="900" height="830" fill="#FAFAFA"/>
 
   <!-- Title -->
-  <text x="450" y="34" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">flux-cluster — GitOps Reconciliation Flow</text>
+  <text x="450" y="34" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">homelab-gitops-k8s-2026 — GitOps Reconciliation Flow</text>
 
   <!-- ══════════════════════════════════════════════════════
        TRIGGER SECTION
@@ -35,11 +35,11 @@
   <!-- GitHub box -->
   <rect x="310" y="118" width="280" height="52" rx="8" fill="#1E293B" stroke="#0F172A" stroke-width="1.5"/>
   <text x="450" y="137" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="white">GitHub</text>
-  <text x="450" y="154" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#94A3B8">DevOpsMaestro/flux-cluster · branch: main</text>
+  <text x="450" y="154" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#94A3B8">DevOpsMaestro/homelab-gitops-k8s-2026 · branch: main</text>
 
   <!-- arrow to source-controller -->
   <line x1="450" y1="170" x2="450" y2="192" stroke="#4F46E5" stroke-width="1.5" marker-end="url(#arr-indigo)"/>
-  <text x="462" y="184" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#4F46E5">poll 1h / webhook</text>
+  <text x="462" y="184" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#4F46E5">poll 1m / webhook</text>
 
   <!-- source-controller box -->
   <rect x="290" y="196" width="320" height="52" rx="8" fill="white" stroke="#4F46E5" stroke-width="2"/>

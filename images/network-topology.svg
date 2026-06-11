@@ -24,7 +24,7 @@
   <rect width="1100" height="780" fill="#F8FAFC"/>
 
   <!-- Title -->
-  <text x="550" y="30" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">flux-cluster — Network Topology</text>
+  <text x="550" y="30" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A">homelab-gitops-k8s-2026 — Network Topology</text>
 
   <!-- ══════════════════════════════════════════════════
        macOS HOST

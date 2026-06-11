@@ -267,6 +267,67 @@ kubectl get vulnerabilityreports -A
 
 ---
 
+## Observability Stack
+
+**Observability** means being able to answer "what is the cluster doing right now?" without modifying any application code. This cluster uses six tools that each capture a different type of signal and feed them into a single dashboard system.
+
+| Tool | What It Captures | Chart Version |
+|------|-----------------|---------------|
+| **Prometheus** (`kube-prometheus-stack`) | Metrics — numbers over time (CPU %, request rate, error count) | 86.2.2 |
+| **Grafana** | Dashboards — visual graphs and tables built from Prometheus and Loki data | 10.5.15 |
+| **Loki** | Logs — the text output of every container in the cluster | 7.0.0 |
+| **Promtail** | Log collector — a DaemonSet that reads log files on each node and ships them to Loki | 6.17.1 |
+| **Grafana Tempo** | Distributed traces — records the full path a request takes through multiple services | 1.24.4 |
+| **OpenTelemetry Collector** | Trace pipeline — receives OTLP trace spans from Istio Envoy sidecars and forwards them to Tempo | 0.158.1 |
+
+**How they connect:**
+
+```
+Every pod log file
+  └─► Promtail (DaemonSet, runs on every node)
+        └─► Loki (log storage, SingleBinary mode)
+              └─► Grafana (dashboards query Loki for log panels)
+
+Every cluster component
+  └─► Prometheus (scrapes /metrics endpoints every 30 s)
+        └─► Grafana (dashboards query Prometheus for metric panels)
+
+Istio Envoy sidecar (every injected pod)
+  └─► OTel Collector (receives OTLP spans on gRPC port 4317)
+        └─► Tempo (trace storage)
+              └─► Grafana (trace explorer + dashboard links)
+```
+
+Grafana comes pre-loaded with 16 dashboards covering Cilium, Hubble, Istio, Flux, Falco, Tetragon, Kubescape, cert-manager, node resources, and the OpenTelemetry Collector itself.
+
+**Why `additionalScrapeConfigs` instead of `ServiceMonitor` CRDs?** Infrastructure tools like Cilium, Falco, and Trivy Operator are deployed in the `infrastructure-controllers` layer, which runs before Prometheus is installed. The `ServiceMonitor` CRD (provided by `kube-prometheus-stack`) does not exist at that point, so configuring scraping through it would fail. Instead, Prometheus is given static scrape configs that use Kubernetes pod-based service discovery — no CRD dependency required.
+
+---
+
+## Post-Quantum Cryptography
+
+**Post-Quantum Cryptography (PQC)** refers to encryption algorithms designed to remain secure even against a cryptographically relevant quantum computer. Conventional public-key cryptography — such as RSA and Elliptic Curve Cryptography (ECC) — can be broken by Shor's algorithm running on a sufficiently powerful quantum computer. NIST finalized three replacement standards in August 2024:
+
+- **ML-KEM (FIPS 203)** — replaces X25519/ECDH key exchange (used in SOPS + Age)
+- **ML-DSA (FIPS 204)** — replaces ECDSA digital signatures (used in Istio workload certificates)
+- **SLH-DSA (FIPS 205)** — a hash-based backup signature scheme
+
+**What this cluster uses today:**
+
+| Component | Algorithm at Risk | Status |
+|-----------|------------------|--------|
+| SOPS + Age | X25519 key encapsulation | No PQC support yet |
+| Istio mTLS workload certs | ECDSA P-256 | No PQC support yet |
+| Envoy Gateway | None (HTTP only, no TLS) | N/A |
+
+**Important note:** Symmetric encryption (AES-256, ChaCha20-Poly1305) is already quantum-safe — Grover's algorithm only halves effective key strength, leaving 256-bit keys with approximately 128 bits of security, which is considered adequate. The threat is confined to asymmetric key exchange and digital signatures.
+
+No component in this cluster can be switched to a NIST PQC algorithm today without breaking things. Every relevant tool (Age, Istio, cert-manager, Envoy) lacks stable PQC support. The `Post Quantum Computing` GitHub Actions workflow (`.github/workflows/pqc-watch.yaml`) runs weekly and creates a dashboard issue in this repository when any of the five tracked tools ships PQC support.
+
+See [docs/post-quantum-readiness.md](post-quantum-readiness.md) for the complete per-component inventory, algorithm mapping, and upgrade roadmap.
+
+---
+
 ## Demo Namespace — httpbin and load-generator
 
 The `demo` namespace contains two workloads that exist purely to generate traffic through the Istio mesh:
