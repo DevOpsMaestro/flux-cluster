@@ -39,6 +39,18 @@ data:
   nginx.conf: |
     worker_processes 1;
     events {}
+    # TCP stream proxy for iperf3 load testing.
+    # KinD extraPortMapping: localhost:32111 → containerPort:9111 (TCP).
+    # nginx forwards raw TCP to the Envoy Gateway proxy ClusterIP on port
+    # 32111, where the TCPRoute picks it up for the iperf3 backend.
+    # Port 9111 is used instead of 32111 because Cilium's BPF kube-proxy
+    # replacement blocks userspace bind() on the NodePort range 30000-32767.
+    stream {
+        server {
+            listen 9111;
+            proxy_pass envoy-proxy.envoy-gateway-system.svc.cluster.local:32111;
+        }
+    }
     http {
         access_log off;
         server {
@@ -90,6 +102,7 @@ spec:
           image: nginx:1.31-alpine
           ports:
             - containerPort: 8888
+            - containerPort: 9111
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

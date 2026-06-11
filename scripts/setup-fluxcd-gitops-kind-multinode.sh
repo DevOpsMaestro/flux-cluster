@@ -135,6 +135,14 @@ nodes:
       - containerPort: 30443
         hostPort: 8443
         protocol: TCP
+      # iperf3 TCP load-testing path:
+      #   localhost:32111  →  containerPort:9111  →  nginx stream{}
+      #   nginx  →  envoy-proxy.envoy-gateway-system.svc:32111  →  TCPRoute
+      # Port 9111 is below the NodePort range (30000-32767) so nginx can
+      # bind() on it despite Cilium's BPF socket programs blocking that range.
+      - containerPort: 9111
+        hostPort: 32111
+        protocol: TCP
   # - role: control-plane
   #   image: kindest/node:${K8S_VER}
   # - role: control-plane

@@ -20,3 +20,7 @@ spec:
     - name: http
       port: 80
       targetPort: 10080
+    - name: tcp-iperf3
+      port: 32111
+      targetPort: 32111
+      protocol: TCP

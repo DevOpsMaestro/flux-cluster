@@ -42,6 +42,14 @@ spec:
                   protocol: TCP
                   targetPort: 10080
                   nodePort: 30080
+                # iperf3 TCP load-testing port. nginx stream{} connects to the
+                # Envoy proxy ClusterIP on 32111 (via the stable envoy-proxy
+                # Service in proxy-service.yaml). No NodePort needed — nginx
+                # uses the ClusterIP, not the node network.
+                - name: tcp-iperf3
+                  port: 32111
+                  protocol: TCP
+                  targetPort: 32111
       envoyDeployment:
         container:
           resources:
@@ -93,3 +101,12 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+    - name: tcp-iperf3
+      port: 32111
+      protocol: TCP
+      allowedRoutes:
+        namespaces:
+          from: All
+        kinds:
+          - group: gateway.networking.k8s.io
+            kind: TCPRoute

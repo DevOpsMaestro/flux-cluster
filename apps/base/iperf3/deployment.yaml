@@ -1,0 +1,40 @@
+---
+# iperf3 runs in server mode (-s) on TCP port 32111.
+# Traffic arrives from the Envoy Gateway proxy via TCPRoute.
+# --forceflush flushes interval output immediately so logs are readable
+# during live load tests.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iperf3-server
+  namespace: iperf3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iperf3-server
+  template:
+    metadata:
+      labels:
+        app: iperf3-server
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: iperf3
+          image: networkstatic/iperf3:3.17
+          args: ["-s", "-p", "32111", "--forceflush"]
+          ports:
+            - name: tcp
+              containerPort: 32111
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
