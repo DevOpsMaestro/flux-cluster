@@ -78,7 +78,7 @@ sidecar-injected pod. Certificates rotate every 24 hours by default.
 
 ### 3. cert-manager (Installed, No Active Issuers)
 
-**Config:** `infrastructure/controllers/cert-manager.yaml` — version 1.20.x
+**Config:** `infrastructure/controllers/cert-manager.yaml` — version v1.20.2
 
 cert-manager is installed as an Istio dependency. No `Certificate`, `Issuer`, or
 `ClusterIssuer` CRDs are deployed — it is not currently issuing any certificates.
@@ -142,6 +142,12 @@ its own built-in certificate generator (RSA or ECDSA, version-dependent).
 | Envoy Gateway | None (HTTP only) | ML-KEM (FIPS 203) when HTTPS added | N/A |
 | OTel → Tempo gRPC | None (TLS disabled) | N/A | N/A |
 | Cilium Hubble PKI | ECDSA / RSA (default) | ML-DSA (FIPS 204) | ❌ No |
+
+---
+
+## Automated Monitoring
+
+The `Post Quantum Computing` GitHub Actions workflow (`.github/workflows/pqc-watch.yaml`) runs on a weekly schedule. It checks whether Age, Istio, cert-manager, Envoy, and Cilium have shipped PQC support, and creates or updates a GitHub issue in this repository summarizing the findings. When the issue shows a tool has added support, return to the relevant section in this document and proceed with the upgrade steps.
 
 ---
 

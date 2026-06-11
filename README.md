@@ -14,11 +14,13 @@ FluxCD GitOps cluster for KinD — multi-node, Cilium CNI with kube-proxy replac
 
 | Document | Description |
 |---|---|
-| [Key Concepts](docs/concepts.md) | What each technology is and why it exists — recommended starting point for operators new to Kubernetes |
+| [Key Concepts](docs/key_concepts.md) | What each technology is and why it exists — recommended starting point for operators new to Kubernetes |
 | [Troubleshooting Guide](docs/troubleshooting-guide.md) | Per-technology verification commands and common issue resolutions |
 | [SOPS + Age Secrets](docs/sops-age-secrets.md) | Secrets encryption setup, day-to-day workflow, and recovery procedure |
 | [BOINC](docs/boinc.md) | BOINC compute DaemonSet — status commands, credential updates, and troubleshooting |
 | [Renovate](docs/renovate.md) | Dependency automation — configuration, tiered strategy, and rollback procedure |
+| [Trivy Operator](docs/trivy.md) | Image vulnerability scanning — listing reports, filtering CVEs, Prometheus metrics, and force re-scan |
+| [Post-Quantum Cryptography Readiness](docs/post-quantum-readiness.md) | Cryptographic inventory, NIST PQC standards mapping, and upgrade roadmap |
 | [Kubescape Accepted Risks](docs/kubescape-security.md) | Security findings reviewed and accepted as intentional design decisions |
 | [Istio Basic Reference](docs/ISTIO_basic_notes.md) | Day-to-day Istio administration commands |
 | [Istio Advanced Reference](docs/ISTIO_advanced_notes.md) | mTLS enforcement, authorization policy, tracing configuration |
@@ -178,28 +180,28 @@ flux-system (GitRepository)
 
 | Component | Chart / Source | Version | Namespace | Notes |
 |---|---|---|---|---|
-| Cilium CNI | cilium/cilium | 1.19.x | kube-system | |
-| Hubble Relay | (bundled with Cilium) | 1.19.x | kube-system | |
+| Cilium CNI | cilium/cilium | 1.19.4 | kube-system | |
+| Hubble Relay | (bundled with Cilium) | 1.19.4 | kube-system | |
 | Hubble UI | (bundled with Cilium) | 0.13.1 | kube-system | Disabled by default; enable via `hubble.ui.enabled: true` in `cilium.yaml` |
-| cert-manager | cert-manager/cert-manager | v1.20.x | cert-manager | |
-| OpenEBS localpv | openebs/openebs | 4.x | openebs | |
-| istio-base | istio/base | 1.30.x | istio-system | |
-| istiod | istio/istiod | 1.30.x | istio-system | |
+| cert-manager | cert-manager/cert-manager | v1.20.2 | cert-manager | |
+| OpenEBS localpv | openebs/openebs | 4.5.0 | openebs | |
+| istio-base | istio/base | 1.30.1 | istio-system | |
+| istiod | istio/istiod | 1.30.1 | istio-system | |
 | Gateway API CRDs | kubernetes-sigs/gateway-api | v1.2.1 | (cluster-scoped) | |
-| Envoy Gateway | envoy-gateway/gateway | 1.4.x | envoy-gateway-system | |
-| Envoy Gateway data-plane | gatewayClassName: eg | 1.4.x | envoy-ingress | |
-| Metrics Server | metrics-server/metrics-server | 3.x | metrics-server | Powers `kubectl top` and HPA; `--kubelet-insecure-tls` required for KinD |
-| kube-prometheus-stack | prometheus-community/kube-prometheus-stack | 86.x | observability | |
-| Grafana | grafana/grafana | 10.x (app 12.x) | observability | |
-| Loki | grafana/loki | 7.x | observability | |
-| Promtail | grafana/promtail | 6.x | observability | |
-| Grafana Tempo | grafana/tempo | 1.x | observability | Single-binary mode; trace backend for the OTel pipeline |
-| OpenTelemetry Collector | open-telemetry/opentelemetry-collector | 0.x | observability | Contrib distribution; OTLP ingress → Tempo export; Istio sidecar disabled |
-| Tetragon | cilium/tetragon | 1.7.x | tetragon | |
-| Kyverno | kyverno/kyverno | 3.x | kyverno | |
-| Kubescape | kubescape/kubescape-operator | 1.40.x | kubescape | NSA + MITRE continuous scan; vulnerability scan disabled for KinD |
-| Falco + Falcosidekick | falcosecurity/falco | 9.x | falco | |
-| Trivy Operator | aquasecurity/trivy-operator | 0.x | trivy-system | Image CVE scanning — VulnerabilityReport CRDs + Prometheus metrics; `ignoreUnfixed: true` |
+| Envoy Gateway | envoy-gateway/gateway | 1.4.6 | envoy-gateway-system | |
+| Envoy Gateway data-plane | gatewayClassName: eg | 1.4.6 | envoy-ingress | |
+| Metrics Server | metrics-server/metrics-server | 3.13.1 | metrics-server | Powers `kubectl top` and HPA; `--kubelet-insecure-tls` required for KinD |
+| kube-prometheus-stack | prometheus-community/kube-prometheus-stack | 86.2.2 | observability | |
+| Grafana | grafana/grafana | 10.5.15 | observability | |
+| Loki | grafana/loki | 7.0.0 | observability | |
+| Promtail | grafana/promtail | 6.17.1 | observability | |
+| Grafana Tempo | grafana/tempo | 1.24.4 | observability | Single-binary mode; trace backend for the OTel pipeline |
+| OpenTelemetry Collector | open-telemetry/opentelemetry-collector | 0.158.1 | observability | Contrib distribution; OTLP ingress → Tempo export; Istio sidecar disabled |
+| Tetragon | cilium/tetragon | 1.7.0 | tetragon | |
+| Kyverno | kyverno/kyverno | 3.8.1 | kyverno | |
+| Kubescape | kubescape/kubescape-operator | 1.40.2 | kubescape | NSA + MITRE continuous scan; vulnerability scan disabled for KinD |
+| Falco + Falcosidekick | falcosecurity/falco | 9.1.0 | falco | |
+| Trivy Operator | aquasecurity/trivy-operator | 0.33.1 | trivy-system | Image CVE scanning — VulnerabilityReport CRDs + Prometheus metrics; `ignoreUnfixed: true` |
 | demo (httpbin) | kennethreitz/httpbin | @sha256 digest pin | demo | No versioned tags published; pinned by digest |
 | BOINC | boinc/client | arm64v8 | boinc | Voluntary compute — Rosetta@Home + Einstein@Home; capped at 1 CPU core for thermal management |
 | Renovate | renovatebot/github-action | (GitHub Actions workflow) | — | Automated dependency PRs for Helm charts, images, GitHub Actions, and CI tool pins |
@@ -225,20 +227,20 @@ The versions below were validated together. When upgrading a component, verify c
 | Component | Validated Version | Constrained By |
 |---|---|---|
 | Kubernetes (KinD node) | v1.36.1 | `K8S_VER` in `versions.env` |
-| Cilium | 1.19.x | `cilium.yaml` chart constraint + `versions.env` |
-| Istio | 1.30.x | `istio.yaml` chart constraint + `versions.env` |
-| Envoy Gateway | 1.4.x (v1.4.6) | `envoy-gateway.yaml` + `versions.env` |
+| Cilium | 1.19.4 | `cilium.yaml` chart constraint + `versions.env` |
+| Istio | 1.30.1 | `istio.yaml` chart constraint + `versions.env` |
+| Envoy Gateway | 1.4.6 | `envoy-gateway.yaml` + `versions.env` |
 | Gateway API CRDs | v1.2.1 | Hardcoded in `setup-fluxcd-gitops-kind-multinode.sh` step 4 |
-| kube-prometheus-stack | 86.x | `prometheus/helmrelease.yaml` |
-| Loki | 7.x | `loki/helmrelease.yaml` |
-| Grafana | 10.x (app 12.x) | `grafana/helmrelease.yaml` |
-| Grafana Tempo | 1.x | `tempo/helmrelease.yaml` |
-| OpenTelemetry Collector | 0.x | `opentelemetry/helmrelease.yaml` |
-| Kyverno | 3.x | `kyverno.yaml` |
-| Kubescape | 1.40.x | `kubescape.yaml` |
-| Falco | 9.x | `falco.yaml` |
-| Tetragon | 1.7.x | `tetragon.yaml` |
-| Trivy Operator | 0.x | `trivy.yaml` |
+| kube-prometheus-stack | 86.2.2 | `prometheus/helmrelease.yaml` |
+| Loki | 7.0.0 | `loki/helmrelease.yaml` |
+| Grafana | 10.5.15 | `grafana/helmrelease.yaml` |
+| Grafana Tempo | 1.24.4 | `tempo/helmrelease.yaml` |
+| OpenTelemetry Collector | 0.158.1 | `opentelemetry/helmrelease.yaml` |
+| Kyverno | 3.8.1 | `kyverno.yaml` |
+| Kubescape | 1.40.2 | `kubescape.yaml` |
+| Falco | 9.1.0 | `falco.yaml` |
+| Tetragon | 1.7.0 | `tetragon.yaml` |
+| Trivy Operator | 0.33.1 | `trivy.yaml` |
 
 All version pins shared between the Makefile and setup script are sourced from `versions.env` at the repository root — bumping them there updates both consumers.
 

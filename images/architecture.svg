@@ -12,7 +12,7 @@
   <rect width="1200" height="900" fill="#FAFAFA"/>
 
   <!-- Title -->
-  <text x="600" y="36" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="20" font-weight="700" fill="#0F172A">flux-cluster — Architecture Overview</text>
+  <text x="600" y="36" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="20" font-weight="700" fill="#0F172A">homelab-gitops-k8s-2026 — Architecture Overview</text>
 
   <!-- ══════════════════════════════════════════════════════════
        Band 1 · GitOps Control Plane
@@ -24,9 +24,9 @@
   <rect x="50" y="82" width="210" height="104" rx="8" fill="white" stroke="#1E293B" stroke-width="2"/>
   <text x="155" y="103" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" fill="#1E293B">GitHub</text>
   <line x1="58" y1="110" x2="252" y2="110" stroke="#1E293B" stroke-width="0.75" opacity="0.35"/>
-  <text x="155" y="127" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">DevOpsMaestro/flux-cluster</text>
+  <text x="155" y="127" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">DevOpsMaestro/homelab-gitops-k8s-2026</text>
   <text x="155" y="143" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">branch: main</text>
-  <text x="155" y="159" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">GitRepository poll · 1h interval</text>
+  <text x="155" y="159" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">GitRepository poll · 1m interval</text>
   <text x="155" y="175" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" fill="#475569">CI: validate.yaml on every PR</text>
 
   <!-- Arrow GitHub → Flux -->
@@ -246,5 +246,5 @@
     <tspan font-weight="700" fill="#B91C1C">Kubescape</tspan>
     <tspan> — NSA + MITRE continuous compliance scan · configurationScan + continuousScan · posture metrics on :8080 → Prometheus</tspan>
   </text>
-  <text x="600" y="898" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" font-style="italic" fill="#94A3B8">Four-layer defense: prevent (Kyverno) · enforce (Tetragon) · detect &amp; alert (Falco) · audit posture (Kubescape)</text>
+  <text x="600" y="898" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" font-style="italic" fill="#94A3B8">Five-layer defense: prevent (Kyverno) · enforce (Tetragon) · detect &amp; alert (Falco) · audit posture (Kubescape) · scan CVEs (Trivy)</text>
 </svg>
