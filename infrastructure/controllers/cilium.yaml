@@ -94,6 +94,12 @@ spec:
     # correctly and restores external DNS resolution.
     bpf:
       masquerade: false
+      # none: emit a flow event for every packet; required for cilium connectivity
+      # test's Hubble flow-validation steps (pod-to-service, pod-to-itself-via-service)
+      # to observe Service ClusterIP flows. At medium (default), per-connection events
+      # for ClusterIP traffic are aggregated away, leaving Hubble with zero matches.
+      # The performance cost is negligible on a three-node KinD cluster.
+      monitorAggregation: none
 
     # ── IPAM ─────────────────────────────────────────────────────────────────
     ipam:
