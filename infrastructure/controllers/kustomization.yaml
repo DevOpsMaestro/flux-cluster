@@ -13,3 +13,4 @@ resources:
   - falco.yaml
   - metrics-server.yaml
   - trivy.yaml
+  - contour.yaml

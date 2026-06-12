@@ -13,6 +13,7 @@ resources:
   - ../../base/tempo
   - ../../base/opentelemetry
   - ../../base/boinc
+  - contour/
   # Uncomment to enable:
   # - ../../base/iperf3        # iperf3 feature flag — run: make iperf3-enable to restore
   # - cert-manager/
