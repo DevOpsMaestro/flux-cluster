@@ -7,8 +7,13 @@
 # Inside a KinD container, BOINC reads /proc/stat from the host machine
 # (the Mac), not the container cgroup, so it sees the Mac's total CPU load
 # and repeatedly suspends itself even though the container is the source
-# of that load. Setting the threshold to 0 (disabled) eliminates the
-# spurious suspend/resume loop without affecting the container CPU limit.
+# of that load. Setting the threshold to 0 eliminates the spurious
+# suspend/resume loop without affecting the container CPU limit.
+#
+# run_if_user_active: 1  tells BOINC to compute even while the host user
+# is active. BOINC detects keyboard/mouse input on the host (via hostPID)
+# and with the default value of 0 it refuses to run while the Mac is in
+# use. In a dedicated cluster container this check is meaningless.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -18,4 +23,5 @@ data:
   global_prefs_override.xml: |
     <global_preferences>
       <suspend_cpu_usage>0</suspend_cpu_usage>
+      <run_if_user_active>1</run_if_user_active>
     </global_preferences>
