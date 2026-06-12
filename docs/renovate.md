@@ -42,10 +42,12 @@ Different package ecosystems use different version formats (npm uses `1.0.0-beta
 
 Renovate scans the repository for version strings and opens pull requests when newer versions are available. It tracks:
 
-- **Flux HelmRelease version constraints** — `1.17.x`, `3.x`, etc. in `apps/` and `infrastructure/`
+- **Flux HelmRelease version constraints** — `1.17.x`, `3.x`, `0.x`, etc. in `apps/` and `infrastructure/`; this includes the Contour chart constraint (`0.x` in `infrastructure/controllers/contour.yaml`)
 - **Direct container image tags** — images in Kubernetes manifests (BOINC, httpbin, etc.)
 - **GitHub Actions** — version pins in `.github/workflows/`
 - **CLI tool versions** — `versions.env` and workflow environment variables for Cilium, Istio, Envoy Gateway, Kubernetes node image, Kyverno CLI, and Kubescape
+
+`CONTOUR_VERSION` in `versions.env` is not tracked by a custom regex manager. Unlike Cilium, Istio, and Envoy Gateway — which must be pre-installed by the bootstrap script before Flux runs — Contour is installed entirely by Flux. The `CONTOUR_VERSION` value in `versions.env` is recorded for reference only. Renovate tracks the chart constraint (`0.x`) through the `flux` manager; when that constraint advances, Flux deploys the updated chart automatically without requiring a change to any script or bootstrap step.
 
 ---
 

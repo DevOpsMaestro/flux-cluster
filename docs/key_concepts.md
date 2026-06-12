@@ -130,6 +130,34 @@ To expose a new service, create an `HTTPRoute` in its namespace — see the READ
 
 ---
 
+## Second Ingress Stack — Contour
+
+**Contour** is a second HTTP ingress controller that runs alongside Envoy Gateway. It uses a different API — the `HTTPProxy` custom resource (`projectcontour.io/v1`) instead of Gateway API — and manages its own separate Envoy DaemonSet.
+
+Two roles make up the Contour stack:
+
+- **Control plane (Contour controller)** — watches `HTTPProxy` and `Ingress` resources, translates them into Envoy xDS configuration, and streams that configuration to the data plane over gRPC on port 8001.
+- **Data plane (Contour Envoy DaemonSet)** — receives the xDS configuration pushed by the controller and handles actual HTTP traffic. These pods run in the `contour` namespace and are separate from the Envoy pods auto-provisioned by Envoy Gateway.
+
+**Contour vs. Envoy Gateway:**
+
+| Aspect | Envoy Gateway | Contour |
+|---|---|---|
+| API | Gateway API (`HTTPRoute`) | `HTTPProxy` CRD (`projectcontour.io/v1`) |
+| Controller namespace | `envoy-gateway-system` | `contour` |
+| Data-plane namespace | `envoy-gateway-system` | `contour` |
+| Data-plane provisioning | Auto-provisioned when the `Gateway` CR is created | Bundled DaemonSet installed by the Helm chart |
+
+Both stacks use Envoy as the underlying proxy. The difference lies in which controller programs it and which Kubernetes API an operator uses to define routes.
+
+**How routing works:** The nginx `nodeport-proxy` receives all external traffic on port 8888 and routes it by the HTTP `Host` header. Requests for `httpbin-contour.local` are forwarded to the Contour Envoy DaemonSet; all other hostnames are forwarded to Envoy Gateway's Envoy proxy. Each hostname reaches the correct ingress stack without any port-level configuration change.
+
+**In this cluster,** Contour routes `httpbin-contour.local` to the `httpbin` service in the `demo` namespace via an `HTTPProxy` resource defined in `apps/base/contour/httproxy.yaml`. Istio sidecar injection is disabled in the `contour` namespace because Contour manages the Envoy DaemonSet's lifecycle directly through xDS; an Istio sidecar would conflict with that control loop.
+
+To expose a service through Contour, create an `HTTPProxy` in its namespace — see the README for the template.
+
+---
+
 ## Certificate Management — cert-manager
 
 TLS certificates expire. Manual renewal is error-prone and causes outages. **cert-manager** automates certificate issuance and renewal. It watches `Certificate` CRDs, requests certificates from a configured issuer (self-signed CA, Let's Encrypt, Vault, etc.), stores the result in a Kubernetes Secret, and renews automatically before expiry.

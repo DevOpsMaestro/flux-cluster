@@ -1,6 +1,6 @@
 # homelab-gitops-k8s-2026
 
-FluxCD GitOps cluster for KinD — multi-node, Cilium CNI with kube-proxy replacement, Hubble observability, Istio service mesh (mTLS), Envoy Gateway for HTTP ingress.
+FluxCD GitOps cluster for KinD — multi-node, Cilium CNI with kube-proxy replacement, Hubble observability, Istio service mesh (mTLS), Envoy Gateway and Contour for HTTP ingress.
 
 ## Diagrams
 
@@ -64,6 +64,7 @@ homelab-gitops-k8s-2026/
 │   │   ├── kubescape.yaml         # Kubescape operator — NSA + MITRE continuous scan (dependsOn cilium)
 │   │   ├── falco.yaml             # Falco eBPF runtime detection + Falcosidekick (dependsOn cilium)
 │   │   ├── trivy.yaml             # Trivy Operator — image CVE scanning + VulnerabilityReport CRDs (dependsOn cilium)
+│   │   ├── contour.yaml           # Contour ingress controller + Envoy DaemonSet + 6 NetworkPolicies (dependsOn cilium)
 │   │   └── kustomization.yaml
 │   └── configs/
 │       ├── tracingpolicies.yaml   # Tetragon TracingPolicies — defines syscalls/events to watch
@@ -101,7 +102,8 @@ homelab-gitops-k8s-2026/
 │   │   │   ├── httpbin.yaml       # httpbin Deployment + Service
 │   │   │   └── load-generator.yaml  # curl loop generating GET/404 traffic every 5s
 │   │   ├── boinc/                 # BOINC DaemonSet — voluntary compute with SOPS-encrypted credentials
-│   │   └── iperf3/                # iperf3 server — TCPRoute via Envoy Gateway + BackendTrafficPolicy circuit-breaker
+│   │   ├── iperf3/                # iperf3 server — TCPRoute via Envoy Gateway + BackendTrafficPolicy circuit-breaker
+│   │   └── contour/               # Contour HTTPProxy CR routing httpbin-contour.local → httpbin in the demo namespace
 │   └── overlays/
 │       └── kind/                  # KinD-specific composition; add patches here
 │           ├── prometheus/
@@ -116,7 +118,8 @@ homelab-gitops-k8s-2026/
 │           ├── cert-manager/      # Placeholder — uncomment in kustomization.yaml to enable
 │           ├── openebs/           # Placeholder — uncomment in kustomization.yaml to enable
 │           ├── cilium/            # Placeholder — add CiliumNetworkPolicy resources here (see note below)
-│           └── kustomization.yaml # Active: prometheus, grafana, istio, envoy-gateway, kyverno, loki, promtail, demo, tempo, opentelemetry, boinc, iperf3
+│           ├── contour/           # KinD overlay for contour base (pass-through)
+│           └── kustomization.yaml # Active: prometheus, grafana, istio, envoy-gateway, kyverno, loki, promtail, demo, tempo, opentelemetry, boinc, iperf3, contour
 │
 └── scripts/
     ├── setup-fluxcd-gitops-kind-multinode.sh  # Full 9-step cluster bootstrap
@@ -164,7 +167,8 @@ flux-system (GitRepository)
     ├── kubescape             (HelmRelease — dependsOn: cilium; configurationScan + continuousScan)
     ├── falco                 (HelmRelease — dependsOn: cilium; includes falcosidekick subchart)
     ├── trivy-operator        (HelmRelease — dependsOn: cilium; image CVE scanning, VulnerabilityReport CRDs)
-    └── metrics-server        (HelmRelease — dependsOn: cilium; powers kubectl top and HPA)
+    ├── metrics-server        (HelmRelease — dependsOn: cilium; powers kubectl top and HPA)
+    └── contour               (HelmRelease — dependsOn: cilium; Contour controller + Envoy DaemonSet, chart 0.x)
 └── apps (Kustomization — dependsOn: infrastructure-controllers, wait: true)
     ├── kube-prometheus-stack         (HelmRelease — dependsOn: openebs; installs PrometheusRule CRD)
     ├── loki                          (HelmRelease — dependsOn: kube-prometheus-stack)
@@ -178,7 +182,8 @@ flux-system (GitRepository)
     ├── istio/peerauthentication      (PeerAuthentication — mesh-wide PERMISSIVE mTLS)
     ├── istio/telemetry               (Telemetry CR — 100% sampling, extensionProvider: otel)
     ├── envoy-gateway/gateway         (EnvoyProxy CR + Gateway CR — gatewayClassName: eg)
-    └── envoy-gateway/httproutes      (HTTPRoute — grafana.local, prometheus.local)
+    ├── envoy-gateway/httproutes      (HTTPRoute — grafana.local, prometheus.local)
+    └── contour/httproxy              (HTTPProxy — httpbin-contour.local → httpbin.demo:80)
 └── monitoring-rules (Kustomization — dependsOn: apps)
     └── PrometheusRule flux-cluster-alerts (custom alerts: PodCrashLooping, FluxHelmReleaseNotReady,
                                             CertificateExpiringSoon, FalcoCriticalEvent, KyvernoViolation…)
@@ -197,7 +202,9 @@ flux-system (GitRepository)
 | istiod | istio/istiod | 1.30.1 | istio-system | |
 | Gateway API CRDs | kubernetes-sigs/gateway-api | v1.2.1 | (cluster-scoped) | |
 | Envoy Gateway | envoy-gateway/gateway | 1.8.1 | envoy-gateway-system | |
-| Envoy Gateway data-plane | gatewayClassName: eg | 1.8.1 | envoy-ingress | |
+| Envoy Gateway data-plane | gatewayClassName: eg | 1.8.1 | envoy-ingress | Auto-provisioned by Envoy Gateway controller; uses Gateway API (HTTPRoute) |
+| Contour | projectcontour/contour | 0.6.0 (app v1.33.5) | contour | HTTPProxy CRD control plane; streams xDS to its own Envoy DaemonSet on gRPC port 8001 |
+| Contour Envoy data-plane | (bundled with Contour chart) | 0.6.0 (app v1.33.5) | contour | DaemonSet data plane; separate from Envoy Gateway auto-provisioned pods |
 | Metrics Server | metrics-server/metrics-server | 3.13.1 | metrics-server | Powers `kubectl top` and HPA; `--kubelet-insecure-tls` required for KinD |
 | kube-prometheus-stack | prometheus-community/kube-prometheus-stack | 86.2.2 | observability | |
 | Grafana | grafana/grafana | 10.5.15 | observability | |
@@ -240,6 +247,7 @@ The versions below were validated together. When upgrading a component, verify c
 | Cilium | 1.19.4 | `cilium.yaml` chart constraint + `versions.env` |
 | Istio | 1.30.1 | `istio.yaml` chart constraint + `versions.env` |
 | Envoy Gateway | 1.8.1 | `envoy-gateway.yaml` + `versions.env` |
+| Contour | 0.6.0 (app v1.33.5) | `contour.yaml` chart constraint `0.x`; `CONTOUR_VERSION` in `versions.env` (informational — not pre-installed by bootstrap) |
 | Gateway API CRDs | v1.2.1 | Hardcoded in `setup-fluxcd-gitops-kind-multinode.sh` step 4 |
 | kube-prometheus-stack | 86.2.2 | `prometheus/helmrelease.yaml` |
 | Loki | 7.0.0 | `loki/helmrelease.yaml` |
@@ -271,6 +279,8 @@ All version pins shared between the Makefile and setup script are sourced from `
 **Istio is service-mesh only** — `infrastructure/controllers/istio.yaml` installs `istio-base` and `istiod` for mesh control (mTLS, sidecar injection). There is no `istio-ingressgateway` HelmRelease and no `istio-ingress` namespace. Ingress is handled entirely by Envoy Gateway. Cilium's `socketLB.hostNamespaceOnly: true` prevents eBPF from re-NATing Envoy's traffic interception ports (15001/15006).
 
 **Envoy Gateway handles all HTTP ingress** — The `envoy-gateway` HelmRelease installs the Envoy Gateway controller into `envoy-gateway-system`. A `Gateway` CR with `gatewayClassName: eg` in `envoy-ingress` causes Envoy Gateway to auto-provision an Envoy Deployment and NodePort Service. The `EnvoyProxy` CR pins `nodePort: 30080` so the value is deterministic and matches the KinD `extraPortMapping` (`containerPort: 30080 → hostPort: 8080`). Services are exposed by adding an `HTTPRoute` in their namespace with a `parentRef` pointing to the `main` Gateway.
+
+**Contour provides a second, independent ingress stack** — Contour watches `HTTPProxy` CRDs (`projectcontour.io/v1`), compiles them into xDS configuration, and streams that configuration to its own Envoy DaemonSet over gRPC on port 8001. This Envoy DaemonSet is separate from the pods auto-provisioned by Envoy Gateway. Both stacks use Envoy as the data plane but are driven by different controllers and different APIs: Envoy Gateway uses Gateway API (`HTTPRoute`); Contour uses its own `HTTPProxy` CRD. The nginx nodeport-proxy routes by hostname: `httpbin-contour.local` goes to Contour's Envoy (`contour-contour-envoy.contour`), and all other hostnames go to Envoy Gateway's Envoy (`envoy-proxy.envoy-gateway-system`). Istio sidecar injection is disabled in the `contour` namespace because Contour manages Envoy's container lifecycle directly through xDS; adding a sidecar would conflict with that control loop.
 
 **Layered mTLS enforcement** — The mesh-wide `PeerAuthentication` in `istio-system` remains `PERMISSIVE` so infrastructure components without sidecars (Envoy Gateway, cert-manager) can still communicate. Namespaces with full sidecar coverage are hardened individually: `demo` and `observability` each carry a namespace-scoped `default` PeerAuthentication set to `STRICT`. Workload-specific PeerAuthentications carve out PERMISSIVE exceptions on individual ports where non-sidecar clients must still connect (Envoy Gateway → Grafana:3000, Envoy Gateway → httpbin:80, Promtail → Loki:3100). All six PeerAuthentications live in `apps/base/istio/peerauthentication.yaml`.
 
@@ -398,7 +408,12 @@ kubectl get clusterpolicies
 # 9. Verify BOINC attached to both projects
 kubectl logs -n boinc -l app=boinc --tail=30 | grep -iE "project|attach"
 
-# 10. Run offline policy unit tests (no cluster required)
+# 10. Verify Contour is healthy and the HTTPProxy resource is accepted
+kubectl get pods -n contour
+kubectl get httpproxy -n demo
+# Expected: pods Running; HTTPProxy STATUS: valid
+
+# 11. Run offline policy unit tests (no cluster required)
 make test-policies
 ```
 
@@ -411,7 +426,7 @@ The stack exposes Grafana and Prometheus via Kubernetes Gateway API HTTPRoutes t
 ### 1. Add /etc/hosts Entries (One-Time)
 
 ```bash
-echo "127.0.0.1 grafana.local prometheus.local" | sudo tee -a /etc/hosts
+echo "127.0.0.1 grafana.local prometheus.local httpbin-contour.local" | sudo tee -a /etc/hosts
 ```
 
 ### 2. Access in Browser
@@ -420,8 +435,9 @@ echo "127.0.0.1 grafana.local prometheus.local" | sudo tee -a /etc/hosts
 |---|---|---|
 | Grafana | `http://grafana.local:8080` | `admin` / `changeme` |
 | Prometheus | `http://prometheus.local:8080` | — |
+| httpbin (Contour stack) | `http://httpbin-contour.local:8080` | — |
 
-KinD routes `localhost:8080 → containerPort 8888 → nginx nodeport-proxy → Envoy Gateway proxy → HTTPRoute match`.
+KinD routes `localhost:8080 → containerPort 8888 → nginx nodeport-proxy`. The nginx proxy then routes by hostname: `httpbin-contour.local` → Contour Envoy data-plane → HTTPProxy match; all other hostnames → Envoy Gateway proxy → HTTPRoute match.
 
 ### 3. Verify Gateway Health
 
@@ -457,6 +473,31 @@ spec:
         - name: my-service
           port: 8080
 ```
+
+Then add `127.0.0.1 my-app.local` to `/etc/hosts`.
+
+### Adding New Services via Contour (HTTPProxy)
+
+To route a new hostname through Contour instead of Envoy Gateway, create an `HTTPProxy` in the service's namespace:
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: my-app
+  namespace: my-namespace
+spec:
+  virtualhost:
+    fqdn: my-app-contour.local
+  routes:
+    - conditions:
+        - prefix: /
+      services:
+        - name: my-service
+          port: 8080
+```
+
+Then add a hostname-specific `server {}` block to the nginx ConfigMap in `apps/overlays/kind/istio/nodeport-proxy.yaml` — placed before the `listen 8888 default_server` catch-all block — that proxies the new hostname to `contour-contour-envoy.contour.svc.cluster.local:80`. See the existing `httpbin-contour.local` block as the template.
 
 ### Adding CiliumNetworkPolicies
 
@@ -579,4 +620,4 @@ make destroy
 
 ## Troubleshooting
 
-See the [Troubleshooting Guide](docs/troubleshooting-guide.md) for per-technology verification commands and common issue resolutions covering Flux, Cilium, Hubble, cert-manager, OpenEBS, Istio, Envoy Gateway, Tetragon, Kyverno, Falco, Kubescape, Prometheus, Grafana, Tempo, OpenTelemetry Collector, and GitHub notification provider setup.
+See the [Troubleshooting Guide](docs/troubleshooting-guide.md) for per-technology verification commands and common issue resolutions covering Flux, Cilium, Hubble, cert-manager, OpenEBS, Istio, Envoy Gateway, Contour, Tetragon, Kyverno, Falco, Kubescape, Prometheus, Grafana, Tempo, OpenTelemetry Collector, and GitHub notification provider setup.
