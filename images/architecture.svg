@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="920" viewBox="0 0 1200 920">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="990" viewBox="0 0 1200 990">
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="#6B7280"/>
@@ -9,7 +9,7 @@
   </defs>
 
   <!-- Canvas -->
-  <rect width="1200" height="900" fill="#FAFAFA"/>
+  <rect width="1200" height="970" fill="#FAFAFA"/>
 
   <!-- Title -->
   <text x="600" y="36" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="20" font-weight="700" fill="#0F172A">homelab-gitops-k8s-2026 — Architecture Overview</text>
@@ -93,7 +93,7 @@
   <!-- Row 2 (5 boxes, w=206, gap=16) ────────────────────── -->
   <!-- Envoy Gateway -->
   <rect x="54" y="357" width="206" height="90" rx="8" fill="white" stroke="#15803D" stroke-width="2"/>
-  <text x="157" y="377" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#15803D">Envoy Gateway 1.4.x</text>
+  <text x="157" y="377" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#15803D">Envoy Gateway 1.8.x</text>
   <line x1="62" y1="384" x2="252" y2="384" stroke="#15803D" stroke-width="0.75" opacity="0.35"/>
   <text x="157" y="400" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">envoy-gateway-system</text>
   <text x="157" y="414" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9.5" fill="#475569">GatewayClass: eg · NP 30080</text>
@@ -143,11 +143,11 @@
   <!-- ══════════════════════════════════════════════════════════
        Band 3 · Applications and Observability
   ══════════════════════════════════════════════════════════ -->
-  <rect x="20" y="486" width="1160" height="282" rx="10" fill="#EFF6FF" stroke="#1E40AF" stroke-width="2"/>
+  <rect x="20" y="486" width="1160" height="352" rx="10" fill="#EFF6FF" stroke="#1E40AF" stroke-width="2"/>
   <text x="34" y="505" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#1E40AF" letter-spacing="1.2">APPLICATIONS  &amp;  OBSERVABILITY</text>
 
   <!-- Observability sub-box -->
-  <rect x="38" y="513" width="740" height="240" rx="8" fill="white" stroke="#1E40AF" stroke-width="1.5"/>
+  <rect x="38" y="513" width="740" height="310" rx="8" fill="white" stroke="#1E40AF" stroke-width="1.5"/>
   <text x="408" y="534" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#1E40AF">observability namespace</text>
   <line x1="46" y1="540" x2="770" y2="540" stroke="#1E40AF" stroke-width="0.75" opacity="0.35"/>
 
@@ -202,8 +202,8 @@
   <text x="408" y="737" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Loki: Promtail pod logs + Falcosidekick alerts  ·  OTel Collector: OTLP spans from all Istio Envoy sidecars → Tempo</text>
 
   <!-- Demo sub-box -->
-  <rect x="796" y="513" width="366" height="240" rx="8" fill="white" stroke="#7C3AED" stroke-width="1.5"/>
-  <text x="979" y="534" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#7C3AED">demo namespace</text>
+  <rect x="796" y="513" width="366" height="310" rx="8" fill="white" stroke="#7C3AED" stroke-width="1.5"/>
+  <text x="979" y="534" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="12" font-weight="700" fill="#7C3AED">demo  ·  iperf3 namespaces</text>
   <line x1="804" y1="540" x2="1154" y2="540" stroke="#7C3AED" stroke-width="0.75" opacity="0.35"/>
 
   <!-- httpbin chip -->
@@ -218,33 +218,38 @@
   <text x="1064" y="583" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">curl loop · GET + 404 · 5 s</text>
   <text x="1064" y="597" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">drives Istio mesh metrics</text>
 
-  <text x="979" y="625" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#7C3AED">Istio sidecar injected</text>
-  <text x="979" y="641" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">PeerAuthentication: STRICT mTLS (port 80 PERMISSIVE)</text>
-  <text x="979" y="657" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Envoy sidecars on port 15001 / 15006</text>
-  <text x="979" y="673" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">generates istio_requests_total metrics</text>
-  <text x="979" y="689" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Envoy sidecars → OTLP traces → OTel Collector</text>
+  <!-- iperf3 chip (iperf3 namespace) -->
+  <rect x="884" y="618" width="190" height="54" rx="6" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.25"/>
+  <text x="979" y="636" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" font-weight="700" fill="#9A3412">iperf3 server</text>
+  <text x="979" y="651" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">networkstatic/iperf3:multiarch</text>
+  <text x="979" y="665" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">TCPRoute · BackendTrafficPolicy</text>
+
+  <text x="979" y="692" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#7C3AED">demo: Istio sidecar injected</text>
+  <text x="979" y="707" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">PeerAuthentication: STRICT mTLS (port 80 PERMISSIVE)</text>
+  <text x="979" y="722" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">generates istio_requests_total metrics → OTLP traces → OTel</text>
+  <text x="979" y="737" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">iperf3: maxConnections: 10 circuit-breaker · port 32111</text>
 
   <!-- ══════════════════════════════════════════════════════════
        Band 4 · Runtime Security (cross-cutting)
   ══════════════════════════════════════════════════════════ -->
-  <rect x="20" y="780" width="1160" height="128" rx="10" fill="#FEF2F2" stroke="#B91C1C" stroke-width="1.5" stroke-dasharray="8,4"/>
-  <text x="34" y="799" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#B91C1C" letter-spacing="1.2">RUNTIME SECURITY LAYER  ·  cross-cutting across all workloads</text>
+  <rect x="20" y="850" width="1160" height="128" rx="10" fill="#FEF2F2" stroke="#B91C1C" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <text x="34" y="869" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="700" fill="#B91C1C" letter-spacing="1.2">RUNTIME SECURITY LAYER  ·  cross-cutting across all workloads</text>
 
-  <text x="60" y="818" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" fill="#334155">
+  <text x="60" y="888" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" fill="#334155">
     <tspan font-weight="700" fill="#B91C1C">Kyverno</tspan>
     <tspan> — validates pods at admission time (before scheduling) · Audit mode · PSS baseline · resource limits · image tag enforcement</tspan>
   </text>
-  <text x="60" y="836" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" fill="#334155">
+  <text x="60" y="906" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" fill="#334155">
     <tspan font-weight="700" fill="#B91C1C">Tetragon</tspan>
     <tspan> — eBPF kernel-level enforcement · traces process exec / network / file I/O on every node · events exported to Loki</tspan>
   </text>
-  <text x="60" y="854" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" fill="#334155">
+  <text x="60" y="924" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" fill="#334155">
     <tspan font-weight="700" fill="#B91C1C">Falco</tspan>
     <tspan> — behavioral runtime detection · shell spawning · sensitive file reads · credential exposure · alerts → Loki via Falcosidekick</tspan>
   </text>
-  <text x="60" y="872" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" fill="#334155">
+  <text x="60" y="942" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="11" fill="#334155">
     <tspan font-weight="700" fill="#B91C1C">Kubescape</tspan>
     <tspan> — NSA + MITRE continuous compliance scan · configurationScan + continuousScan · posture metrics on :8080 → Prometheus</tspan>
   </text>
-  <text x="600" y="898" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" font-style="italic" fill="#94A3B8">Five-layer defense: prevent (Kyverno) · enforce (Tetragon) · detect &amp; alert (Falco) · audit posture (Kubescape) · scan CVEs (Trivy)</text>
+  <text x="600" y="968" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" font-style="italic" fill="#94A3B8">Five-layer defense: prevent (Kyverno) · enforce (Tetragon) · detect &amp; alert (Falco) · audit posture (Kubescape) · scan CVEs (Trivy)</text>
 </svg>

@@ -544,7 +544,7 @@ remote connection failure, transport failure reason: TLS_error:|268435581:SSL ro
 OPENSSL_internal:CERTIFICATE_VERIFY_FAILED
 ```
 
-**Cause:** Docker Desktop pauses the Linux VM when the Mac sleeps. Istio issues 24-hour workload certificates to each Envoy sidecar and rotates them at the 80% mark (~19 h). If the VM is frozen through that window, the rotation goroutine never fires. Once the certificate expires, Istio does not auto-renew it — the sidecar continues presenting an expired certificate until the pod is restarted.
+**Cause:** Docker Desktop pauses the Linux VM when the Mac sleeps. Istio issues 24-hour workload certificates to each Envoy sidecar and rotates them at the 80% mark (~19 h). If the VM is frozen through that rotation window, the rotation goroutine does not execute. Once the certificate expires, Istio does not auto-renew it — the sidecar continues presenting an expired certificate until the pod is restarted.
 
 **Verify:**
 
@@ -858,7 +858,7 @@ kyverno test apps/base/kyverno/tests/
 
 Expected output: `48 tests passed and 0 tests failed`.
 
-The direct `kyverno test` invocation is useful when iterating on policy changes — it prints a table showing every resource, which rule evaluated it, and whether the result matched the assertion (pass / fail / skip / excluded). The `make` wrapper is convenient for CI and quick smoke-checks.
+The direct `kyverno test` invocation is useful when revising policy — it prints a table showing every resource, which rule evaluated it, and whether the result matched the assertion (pass / fail / skip / excluded). The `make` wrapper is suitable for CI and rapid validation runs.
 
 Test layout:
 - `apps/base/kyverno/tests/kyverno-test.yaml` — 45 tests across the four validation ClusterPolicies
@@ -941,7 +941,7 @@ Requires a running cluster with Falco healthy.
 make test-falco
 ```
 
-This deploys `falcosecurity/event-generator:0.13.0` as a Job that fires the syscall action suite, then checks the Falco pod log on the same node for 4 expected rule matches. Cleans up the `falco-test` namespace on completion.
+This deploys `falcosecurity/event-generator:0.13.0` as a Job that triggers the syscall action suite, then checks the Falco pod log on the same node for 4 expected rule matches. The target removes the `falco-test` namespace on completion.
 
 ### Falco Logs
 
@@ -1336,7 +1336,7 @@ sed -i '' '/SOPS_PGP_FP/d' ~/.zshrc
 ### All Grafana Dashboards Blank After Mac Wakes from Sleep
 
 **Symptom:** Every dashboard panel shows a TLS error mentioning `CERTIFICATE_VERIFY_FAILED`.
-**Cause:** Docker Desktop's Linux VM pauses during Mac sleep, freezing Istio's cert-rotation goroutine. Workload certificates are valid for 24 h; if the rotation window is missed the sidecar presents an expired certificate until the pod restarts.
+**Cause:** Docker Desktop's Linux VM pauses during Mac sleep, which halts Istio's cert-rotation goroutine. Workload certificates are valid for 24 h; if the rotation window passes while the VM is paused, the sidecar presents an expired certificate until the pod restarts.
 **Fix:**
 
 ```bash
@@ -1755,7 +1755,7 @@ kubectl describe pod -n iperf3 <pod-name> | grep -A 5 "Events:"
 
 **Cause:** This is the circuit breaker working as designed. The `BackendTrafficPolicy` in `apps/base/iperf3/traffic-policy.yaml` sets `maxConnections: 10`. When 20 parallel streams are opened, Envoy allows 10 upstream connections and overflows the remaining 10. Terminating the excess connections while data is in flight causes iperf3 to lose its control channel.
 
-**Confirm the circuit breaker fired:**
+**Confirm the circuit breaker activated:**
 
 ```bash
 PROXY_POD=$(kubectl get pods -n envoy-gateway-system \
@@ -1795,7 +1795,7 @@ If the module is absent, the `stream {}` block in the ConfigMap will be silently
 kubectl get configmap -n envoy-ingress nodeport-proxy-conf -o yaml | grep -A 10 "stream"
 ```
 
-Restart the DaemonSet to pick up a ConfigMap change:
+Restart the DaemonSet to apply a ConfigMap change:
 
 ```bash
 kubectl rollout restart daemonset -n envoy-ingress nodeport-proxy

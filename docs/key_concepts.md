@@ -30,7 +30,7 @@ A virtual partition for grouping resources, applying access controls, and scopin
 
 ### Service
 
-A stable network endpoint that routes traffic to a set of Pods. Pods come and go; the Service IP and DNS name remain constant. Three types are used in this cluster:
+A stable network endpoint that routes traffic to a set of Pods. Pods are created and terminated continuously; the Service IP and DNS name remain constant. Three types are used in this cluster:
 
 - **ClusterIP** — reachable only inside the cluster (default)
 - **NodePort** — opens a port on every node, reachable from outside the cluster
@@ -322,7 +322,7 @@ Grafana comes pre-loaded with 16 dashboards covering Cilium, Hubble, Istio, Flux
 
 **Important note:** Symmetric encryption (AES-256, ChaCha20-Poly1305) is already quantum-safe — Grover's algorithm only halves effective key strength, leaving 256-bit keys with approximately 128 bits of security, which is considered adequate. The threat is confined to asymmetric key exchange and digital signatures.
 
-No component in this cluster can be switched to a NIST PQC algorithm today without breaking things. Every relevant tool (Age, Istio, cert-manager, Envoy) lacks stable PQC support. The `Post Quantum Computing` GitHub Actions workflow (`.github/workflows/pqc-watch.yaml`) runs weekly and creates a dashboard issue in this repository when any of the five tracked tools ships PQC support.
+No component in this cluster can be switched to a NIST PQC algorithm today without loss of compatibility. Every relevant tool — Age, Istio, cert-manager, and Envoy — lacks stable PQC support. The `Post Quantum Computing` GitHub Actions workflow (`.github/workflows/pqc-watch.yaml`) runs weekly and creates a dashboard issue in this repository when any of the five tracked tools ships PQC support.
 
 See [docs/post-quantum-readiness.md](post-quantum-readiness.md) for the complete per-component inventory, algorithm mapping, and upgrade roadmap.
 
@@ -336,3 +336,44 @@ The `demo` namespace contains two workloads that exist purely to generate traffi
 - **load-generator** (`curlimages/curl`) — sends requests to httpbin every 5 seconds, producing a continuous stream of HTTP metrics across the mesh.
 
 Without this traffic, the Istio Grafana dashboards (Mesh, Service, Workload) display empty graphs. The load-generator ensures those dashboards always contain meaningful data.
+
+---
+
+## Network Bandwidth Testing — iperf3
+
+**iperf3** is a standard network performance measurement tool. A client connects to an iperf3 server and saturates the connection with TCP or UDP traffic; the tool reports throughput, jitter, and packet loss. This cluster runs an iperf3 server as a Kubernetes `Deployment` in the `iperf3` namespace, reachable through Envoy Gateway.
+
+**Why iperf3 is included:**
+
+The iperf3 server exercises the full TCP ingress path from the macOS host:
+
+```
+Host iperf3 client (localhost:32111)
+  └─► KinD extraPortMapping → nginx nodeport-proxy (port 8888 range)
+        └─► Envoy Gateway proxy (TCPRoute on tcp-iperf3 listener)
+              └─► iperf3 Service (port 9111)
+                    └─► iperf3 Pod
+```
+
+This path tests every layer of the cluster's TCP routing configuration in a single command.
+
+**Traffic shaping — BackendTrafficPolicy:**
+
+A `BackendTrafficPolicy` resource applied to the Envoy Gateway's `iperf3` route enforces a circuit-breaker:
+
+- `maxConnections: 10` — Envoy rejects TCP connections above this limit
+- `maxPendingRequests: 5` — queued connections above this limit are rejected immediately
+- `connectTimeout: 10s` — connections that do not complete the TCP handshake within this window are closed
+
+This allows Makefile test targets (`make test-iperf3-circuit-breaker`, `make test-iperf3-overflow`) to verify that Envoy enforces capacity limits as intended.
+
+**Key resources:**
+
+| Resource | Kind | Purpose |
+|----------|------|---------|
+| `apps/base/iperf3/deployment.yaml` | Deployment + Service | iperf3 server (port 9111) |
+| `apps/base/iperf3/tcproute.yaml` | TCPRoute | Envoy Gateway routing rule |
+| `apps/base/iperf3/policy.yaml` | BackendTrafficPolicy | Circuit-breaker configuration |
+| `apps/base/iperf3/netpol.yaml` | NetworkPolicy | Default-deny with carve-outs for DNS and Envoy ingress |
+
+See [docs/iperf3.md](iperf3.md) for the complete operational guide, troubleshooting steps, and test procedures.

@@ -9,7 +9,7 @@ metadata:
     istio-injection: disabled
 ---
 # envoy-ingress holds only the nginx nodeport-proxy DaemonSet (KinD port-mapping shim).
-# Envoy Gateway auto-provisions the data-plane proxy pod in envoy-gateway-system (1.4.x).
+# Envoy Gateway auto-provisions the data-plane proxy pod in envoy-gateway-system (1.8.x).
 # Injection disabled: Envoy Gateway manages its own Envoy proxies; Istio sidecar
 # injection would conflict with the gateway container lifecycle.
 apiVersion: v1
@@ -46,7 +46,7 @@ spec:
   chart:
     spec:
       chart: gateway-helm
-      version: "1.4.x"
+      version: "1.8.x"
       sourceRef:
         kind: HelmRepository
         name: envoy-gateway

@@ -220,13 +220,13 @@
   <text x="512" y="757" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">0.x · OTLP → Tempo</text>
   <text x="512" y="769" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#94A3B8">dependsOn: prometheus</text>
 
-  <!-- demo workloads -->
+  <!-- demo + iperf3 workloads -->
   <rect x="577" y="675" width="148" height="90" rx="6" fill="white" stroke="#7C3AED" stroke-width="1.5"/>
-  <text x="651" y="693" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#6D28D9">demo workloads</text>
+  <text x="651" y="693" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="10" font-weight="600" fill="#6D28D9">demo · iperf3 workloads</text>
   <text x="651" y="708" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">httpbin + load-generator</text>
-  <text x="651" y="722" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Istio sidecar injected</text>
-  <text x="651" y="736" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">namespace: demo</text>
-  <text x="651" y="750" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">STRICT mTLS (port 80 PERM)</text>
+  <text x="651" y="722" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">Istio sidecar · STRICT mTLS</text>
+  <text x="651" y="736" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">iperf3 server · TCPRoute</text>
+  <text x="651" y="750" text-anchor="middle" font-family="system-ui, -apple-system, Arial, sans-serif" font-size="9" fill="#475569">BackendTrafficPolicy circuit-breaker</text>
 
   <!-- Mesh + Ingress config CRs -->
   <rect x="735" y="675" width="128" height="90" rx="6" fill="white" stroke="#EA580C" stroke-width="1.5"/>

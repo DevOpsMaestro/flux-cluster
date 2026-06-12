@@ -86,7 +86,7 @@ To update a credential:
 sops apps/base/boinc/boinc-projects-secret.yaml
 ```
 
-After saving, commit and push. Flux will reconcile the updated Secret. Restart the DaemonSet to pick up the new credentials immediately:
+After saving, commit and push. Flux will reconcile the updated Secret. Restart the DaemonSet to apply the new credentials immediately:
 
 ```bash
 kubectl rollout restart daemonset/boinc -n boinc

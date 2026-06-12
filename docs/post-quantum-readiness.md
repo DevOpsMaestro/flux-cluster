@@ -5,7 +5,7 @@ one to the relevant NIST post-quantum standard, and gives an honest verdict on w
 be changed today vs. what requires waiting for upstream tool support.
 
 **Bottom line:** No component in this cluster can be switched to a NIST PQC algorithm
-right now without breaking things. Every tool involved — Istio, cert-manager, Age/SOPS,
+today without losing compatibility. Every tool involved — Istio, cert-manager, Age/SOPS,
 and Envoy — does not yet support the new algorithms. The value of this document is a
 clear picture of what to watch and what to change when tool support arrives.
 
