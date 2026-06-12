@@ -71,6 +71,11 @@ spec:
                 # kube-controller-manager) and CNI (cilium, cilium-envoy) require
                 # hostNetwork, hostPath, and elevated capabilities by design.
                 - kube-system
+                # cilium connectivity test creates ephemeral namespaces
+                # (cilium-test-1, cilium-test-2) with privileged test pods that
+                # do not conform to the Baseline profile. These are transient
+                # diagnostic workloads, not production deployments.
+                - cilium-test-*
       validate:
         podSecurity:
           level: baseline
@@ -189,6 +194,10 @@ spec:
                 # data-plane Envoy, shutdown-manager) have explicit limits set via
                 # deployment.envoyGateway.resources and envoyDeployment.patch.
                 - envoy-gateway-system
+                # cilium connectivity test creates ephemeral namespaces
+                # (cilium-test-1, cilium-test-2) with test pods that have no
+                # resource limits. These are transient diagnostic workloads.
+                - cilium-test-*
       validate:
         message: "All containers must declare cpu and memory requests and limits."
         foreach:
@@ -262,6 +271,10 @@ spec:
                 # kube-apiserver etc.) omit securityContext entirely, causing
                 # JMESPath eval errors. These are privileged by design.
                 - kube-system
+                # cilium connectivity test deploys pods without a securityContext,
+                # causing a JMESPath eval error on the allowPrivilegeEscalation
+                # lookup ("Unknown key"). These are ephemeral test workloads.
+                - cilium-test-*
       validate:
         message: "All containers must set securityContext.allowPrivilegeEscalation: false."
         foreach:
