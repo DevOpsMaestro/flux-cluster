@@ -6,3 +6,4 @@ resources:
   - daemonset.yaml
   - boinc-projects-secret.yaml
   - netpol.yaml
+  - global-prefs-override-configmap.yaml

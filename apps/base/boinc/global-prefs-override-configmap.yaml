@@ -1,0 +1,21 @@
+---
+# Overrides the global_prefs.xml delivered by Einstein@Home's scheduler.
+# BOINC merges this file on top of server prefs at startup, so only the
+# keys listed here are overridden; everything else retains its server value.
+#
+# suspend_cpu_usage: 0  disables the "suspend when CPU is busy" policy.
+# Inside a KinD container, BOINC reads /proc/stat from the host machine
+# (the Mac), not the container cgroup, so it sees the Mac's total CPU load
+# and repeatedly suspends itself even though the container is the source
+# of that load. Setting the threshold to 0 (disabled) eliminates the
+# spurious suspend/resume loop without affecting the container CPU limit.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: boinc-global-prefs-override
+  namespace: boinc
+data:
+  global_prefs_override.xml: |
+    <global_preferences>
+      <suspend_cpu_usage>0</suspend_cpu_usage>
+    </global_preferences>
