@@ -9,6 +9,9 @@ FluxCD GitOps cluster for KinD — multi-node, Cilium CNI with kube-proxy replac
 | [Architecture](images/architecture.svg) | Three-layer cluster architecture: GitOps control plane, infrastructure controllers, and applications |
 | [GitOps Flow](images/flow.svg) | End-to-end reconciliation flow from git commit to running pod, with dependency ordering |
 | [Network Topology](images/network-topology.svg) | KinD node layout, Cilium VXLAN pod network, ingress path, and Istio mesh traffic |
+| [Dependency Graph](images/dependencies.svg) | Flux Kustomization and HelmRelease dependency graph — from GitRepository source through infrastructure controllers to apps |
+| [Technology Map](images/technology-map.svg) | Technology landscape across all seven layers: cluster infrastructure, GitOps, networking, security, observability, applications, and storage |
+| [Deployment Process](images/deployment-process.svg) | Ten-phase bootstrap sequence from pre-flight validation to a fully running cluster with all components reconciled |
 
 ## Documentation
 
