@@ -42,7 +42,7 @@ iperf3 server pod  (iperf3 namespace, port 32111)
 
 ### Port 9111 instead of 32111 on the nginx DaemonSet
 
-Cilium replaces kube-proxy using BPF programs installed in the kernel. As a side effect, those programs intercept `bind()` calls on the NodePort range (30000–32767), preventing any userspace process from binding directly to a port in that range. Because the nginx DaemonSet runs with `hostNetwork: true` and must bind a port on the node's network interface, it cannot use any port in the NodePort range.
+Cilium replaces kube-proxy using BPF programs installed in the kernel. Those programs intercept `bind()` calls on the NodePort range (30000–32767), which prevents any userspace process from binding directly to a port in that range. Because the nginx DaemonSet runs with `hostNetwork: true` and must bind a port on the node's network interface, it cannot use any port in the NodePort range.
 
 Port 9111 sits below that range, so nginx binds there without conflict. The KinD cluster's `extraPortMapping` maps `hostPort 32111 → containerPort 9111`, preserving the user-facing port number on the Mac while keeping nginx clear of the NodePort range.
 
@@ -77,7 +77,7 @@ A `BackendTrafficPolicy` in `apps/base/iperf3/traffic-policy.yaml` applies a cir
 | `circuitBreaker.maxPendingRequests` | 5 | Envoy rejects pending connections once 5 are queued |
 | `timeout.tcp.connectTimeout` | 10s | Upstream connection attempt times out after 10 seconds |
 
-When `maxConnections` is exceeded, Envoy increments the `upstream_cx_overflow` counter and immediately resets the excess connections. This lets you observe circuit-breaker behaviour live using the Envoy admin API.
+When `maxConnections` is exceeded, Envoy increments the `upstream_cx_overflow` counter and immediately resets the excess connections. The circuit-breaker state can be observed in real time through the Envoy admin API.
 
 ---
 

@@ -10,7 +10,7 @@ Renovate is a bot that automatically checks if your project's dependencies — t
 
 ### Onboarding (First Run Only)
 
-The first time Renovate visits a repository, it looks for a `renovate.json` config file. If one doesn't exist, it creates a branch called `renovate/configure` and opens an **onboarding PR** that proposes a starter config. Renovate will not open any other PRs until that onboarding PR is merged — it is asking for permission before doing any work.
+The first time Renovate visits a repository, it looks for a `renovate.json` config file. If one does not exist, it creates a branch called `renovate/configure` and opens an **onboarding PR** that proposes a starter config. Renovate will not open any other PRs until that onboarding PR is merged — it requests permission before performing any update work.
 
 ### The Pipeline
 
@@ -29,7 +29,7 @@ Renovate is stateless — it does not keep a database. It re-reads your reposito
 
 | Module | Job | Analogy |
 |---|---|---|
-| **Manager** | Finds dependency files and reads what versions you're on | A reader who scans your code |
+| **Manager** | Finds dependency files and reads the currently pinned versions | A reader who scans the code |
 | **Datasource** | Contacts registries to fetch available versions | A shopper who checks the store shelves |
 | **Versioning** | Decides which versions are valid upgrades | A filter that sorts good options from bad |
 | **Platform** | Talks to GitHub/GitLab to create branches and PRs | The delivery driver who submits the update |
@@ -68,18 +68,18 @@ Automerge is gated on GitHub branch protection: the `validate` workflow (kustomi
 | Package | Reason |
 |---------|--------|
 | `boinc/client` | `arm64v8` is a Docker manifest architecture alias, not a version tag — there is no newer version to detect |
-| `kennethreitz/httpbin` | No versioned tags are published; the manifest pins the image by digest. Digest bumps produce noise with no upgrade signal |
+| `kennethreitz/httpbin` | No versioned tags are published; the manifest pins the image by digest. Digest-only updates produce noise with no meaningful upgrade signal |
 
 ---
 
 ## HelmRelease Range Constraints and Renovate
 
-Most HelmReleases in this repository use semver range constraints such as `1.17.x`. Flux resolves the latest matching chart automatically — no manual action is required for patch bumps within the range. Renovate does not create patch PRs for these because the range already covers them.
+Most HelmReleases in this repository use semver range constraints such as `1.17.x`. Flux resolves the latest matching chart automatically — no manual action is required for patch-level updates within the range. Renovate does not create patch PRs for these because the range already covers them.
 
 Renovate opens a PR only when the constraint range itself must change:
 
-- Minor bump: `1.17.x → 1.18.x` — goes into the weekly `flux-minor-updates` group PR
-- Major bump: `1.x → 2.x` — individual PR, no automerge, human review required
+- Minor update: `1.17.x → 1.18.x` — goes into the weekly `flux-minor-updates` group PR
+- Major update: `1.x → 2.x` — individual PR, no automerge, human review required
 
 ---
 

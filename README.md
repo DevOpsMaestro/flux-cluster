@@ -24,6 +24,7 @@ FluxCD GitOps cluster for KinD — multi-node, Cilium CNI with kube-proxy replac
 | [Kubescape Accepted Risks](docs/kubescape-security.md) | Security findings reviewed and accepted as intentional design decisions |
 | [Istio Basic Reference](docs/ISTIO_basic_notes.md) | Day-to-day Istio administration commands |
 | [Istio Advanced Reference](docs/ISTIO_advanced_notes.md) | mTLS enforcement, authorization policy, tracing configuration |
+| [iperf3 Network Testing](docs/iperf3.md) | TCP bandwidth measurement through Envoy Gateway — network path, traffic shaping, and circuit-breaker testing |
 
 ## Repository Structure
 
@@ -92,10 +93,12 @@ homelab-gitops-k8s-2026/
 │   │   ├── tempo/                 # Grafana Tempo trace backend (single-binary, dependsOn prometheus)
 │   │   ├── opentelemetry/         # OTel Collector — OTLP ingress from Istio sidecars → Tempo export
 │   │   ├── monitoring-rules/      # PrometheusRule CRDs — separate from prometheus/ to avoid CRD ordering deadlock
-│   │   └── demo/                  # Demo workloads for mesh traffic generation
-│   │       ├── namespace.yaml     # demo namespace with istio-injection: enabled
-│   │       ├── httpbin.yaml       # httpbin Deployment + Service
-│   │       └── load-generator.yaml  # curl loop generating GET/404 traffic every 5s
+│   │   ├── demo/                  # Demo workloads for mesh traffic generation
+│   │   │   ├── namespace.yaml     # demo namespace with istio-injection: enabled
+│   │   │   ├── httpbin.yaml       # httpbin Deployment + Service
+│   │   │   └── load-generator.yaml  # curl loop generating GET/404 traffic every 5s
+│   │   ├── boinc/                 # BOINC DaemonSet — voluntary compute with SOPS-encrypted credentials
+│   │   └── iperf3/                # iperf3 server — TCPRoute via Envoy Gateway + BackendTrafficPolicy circuit-breaker
 │   └── overlays/
 │       └── kind/                  # KinD-specific composition; add patches here
 │           ├── prometheus/
@@ -110,7 +113,7 @@ homelab-gitops-k8s-2026/
 │           ├── cert-manager/      # Placeholder — uncomment in kustomization.yaml to enable
 │           ├── openebs/           # Placeholder — uncomment in kustomization.yaml to enable
 │           ├── cilium/            # Placeholder — add CiliumNetworkPolicy resources here (see note below)
-│           └── kustomization.yaml # Active: prometheus, grafana, istio, envoy-gateway, kyverno, loki, promtail, demo, tempo, opentelemetry
+│           └── kustomization.yaml # Active: prometheus, grafana, istio, envoy-gateway, kyverno, loki, promtail, demo, tempo, opentelemetry, boinc, iperf3
 │
 └── scripts/
     ├── setup-fluxcd-gitops-kind-multinode.sh  # Full 9-step cluster bootstrap
@@ -167,6 +170,8 @@ flux-system (GitRepository)
     ├── tempo                         (HelmRelease — dependsOn: kube-prometheus-stack)
     ├── opentelemetry-collector       (HelmRelease — dependsOn: kube-prometheus-stack)
     ├── demo                          (Namespace + Deployments — httpbin + load-generator, istio sidecar injected)
+    ├── boinc                         (DaemonSet — Rosetta@Home + Einstein@Home; credentials from SOPS-encrypted Secret)
+    ├── iperf3                        (Deployment + TCPRoute — TCP bandwidth testing via Envoy Gateway BackendTrafficPolicy)
     ├── istio/peerauthentication      (PeerAuthentication — mesh-wide PERMISSIVE mTLS)
     ├── istio/telemetry               (Telemetry CR — 100% sampling, extensionProvider: otel)
     ├── envoy-gateway/gateway         (EnvoyProxy CR + Gateway CR — gatewayClassName: eg)
@@ -188,8 +193,8 @@ flux-system (GitRepository)
 | istio-base | istio/base | 1.30.1 | istio-system | |
 | istiod | istio/istiod | 1.30.1 | istio-system | |
 | Gateway API CRDs | kubernetes-sigs/gateway-api | v1.2.1 | (cluster-scoped) | |
-| Envoy Gateway | envoy-gateway/gateway | 1.4.6 | envoy-gateway-system | |
-| Envoy Gateway data-plane | gatewayClassName: eg | 1.4.6 | envoy-ingress | |
+| Envoy Gateway | envoy-gateway/gateway | 1.8.1 | envoy-gateway-system | |
+| Envoy Gateway data-plane | gatewayClassName: eg | 1.8.1 | envoy-ingress | |
 | Metrics Server | metrics-server/metrics-server | 3.13.1 | metrics-server | Powers `kubectl top` and HPA; `--kubelet-insecure-tls` required for KinD |
 | kube-prometheus-stack | prometheus-community/kube-prometheus-stack | 86.2.2 | observability | |
 | Grafana | grafana/grafana | 10.5.15 | observability | |
@@ -203,6 +208,7 @@ flux-system (GitRepository)
 | Falco + Falcosidekick | falcosecurity/falco | 9.1.0 | falco | |
 | Trivy Operator | aquasecurity/trivy-operator | 0.33.1 | trivy-system | Image CVE scanning — VulnerabilityReport CRDs + Prometheus metrics; `ignoreUnfixed: true` |
 | demo (httpbin) | kennethreitz/httpbin | @sha256 digest pin | demo | No versioned tags published; pinned by digest |
+| iperf3 server | networkstatic/iperf3 | multiarch | iperf3 | TCP bandwidth measurement; BackendTrafficPolicy enforces maxConnections: 10 circuit-breaker |
 | BOINC | boinc/client | arm64v8 | boinc | Voluntary compute — Rosetta@Home + Einstein@Home; capped at 1 CPU core for thermal management |
 | Renovate | renovatebot/github-action | (GitHub Actions workflow) | — | Automated dependency PRs for Helm charts, images, GitHub Actions, and CI tool pins |
 | Gitleaks | gitleaks/gitleaks | (CI workflow pin) | — | Secret scanning on every PR — detects accidentally committed credentials before merge |
@@ -218,6 +224,7 @@ Images referenced directly in manifests (outside of Helm charts). Helm-managed w
 | `kennethreitz/httpbin` | `@sha256:599f…` | `apps/base/demo/httpbin.yaml` | HTTP echo server — mesh traffic target |
 | `curlimages/curl` | `8.20.0` | `apps/base/demo/load-generator.yaml` | Load generator: curl loop → httpbin every 5 s |
 | `nginx` | `1.31-alpine` | `apps/overlays/kind/istio/nodeport-proxy.yaml` | KinD ingress workaround: proxies host port 8888 → Envoy ClusterIP |
+| `networkstatic/iperf3` | `multiarch` | `apps/base/iperf3/deployment.yaml` | TCP bandwidth measurement server for Envoy Gateway TCPRoute testing |
 | `falcosecurity/event-generator` | `0.13.0` | `tests/falco/event-generator.yaml` | Falco live detection test job |
 
 ## Version Compatibility
@@ -229,7 +236,7 @@ The versions below were validated together. When upgrading a component, verify c
 | Kubernetes (KinD node) | v1.36.1 | `K8S_VER` in `versions.env` |
 | Cilium | 1.19.4 | `cilium.yaml` chart constraint + `versions.env` |
 | Istio | 1.30.1 | `istio.yaml` chart constraint + `versions.env` |
-| Envoy Gateway | 1.4.6 | `envoy-gateway.yaml` + `versions.env` |
+| Envoy Gateway | 1.8.1 | `envoy-gateway.yaml` + `versions.env` |
 | Gateway API CRDs | v1.2.1 | Hardcoded in `setup-fluxcd-gitops-kind-multinode.sh` step 4 |
 | kube-prometheus-stack | 86.2.2 | `prometheus/helmrelease.yaml` |
 | Loki | 7.0.0 | `loki/helmrelease.yaml` |
@@ -242,7 +249,7 @@ The versions below were validated together. When upgrading a component, verify c
 | Tetragon | 1.7.0 | `tetragon.yaml` |
 | Trivy Operator | 0.33.1 | `trivy.yaml` |
 
-All version pins shared between the Makefile and setup script are sourced from `versions.env` at the repository root — bumping them there updates both consumers.
+All version pins shared between the Makefile and setup script are sourced from `versions.env` at the repository root. Updating them there propagates the change to both consumers.
 
 ## Key Design Decisions
 
@@ -272,7 +279,7 @@ All version pins shared between the Makefile and setup script are sourced from `
 
 **No floating `latest` image tags** — Every image is pinned to a specific tag or digest. `latest` defeats drift detection and breaks rollbacks. `kennethreitz/httpbin` publishes no versioned tags, so it is pinned by digest (`@sha256:…`) instead. The `disallow-latest-image-tag` Kyverno policy accepts digest references as immutable pins.
 
-**Five-layer runtime security model** — Kyverno (admission control) validates pods before they start and audits misconfigurations. Tetragon (eBPF enforcement) can kill processes and block network connections at the syscall level. Falco (behavioral detection) continuously audits running containers and fires alerts on anomalous activity — shell spawning, sensitive file reads, credential exposure — routing them to Loki via Falcosidekick. Kubescape (compliance scanning) continuously audits the cluster's actual running state against NSA and MITRE ATT&CK frameworks and surfaces configuration drift. Trivy Operator (image CVE scanning) continuously scans every running container image and produces `VulnerabilityReport` CRDs with Prometheus metrics. The five tools are complementary: Kyverno prevents bad configuration from entering, Tetragon stops active exploitation, Falco logs suspicious activity for forensic review, Kubescape measures posture against industry frameworks, and Trivy surfaces known CVEs in the images actually running in the cluster.
+**Five-layer runtime security model** — Kyverno (admission control) validates pods before they start and audits misconfigurations. Tetragon (eBPF enforcement) can terminate processes and block network connections at the syscall level. Falco (behavioral detection) continuously audits running containers and issues alerts on anomalous activity — shell spawning, sensitive file reads, credential exposure — routing them to Loki via Falcosidekick. Kubescape (compliance scanning) continuously audits the cluster's actual running state against NSA and MITRE ATT&CK frameworks and surfaces configuration drift. Trivy Operator (image CVE scanning) continuously scans every running container image and produces `VulnerabilityReport` CRDs with Prometheus metrics. The five tools are complementary: Kyverno prevents bad configuration from entering, Tetragon stops active exploitation, Falco logs suspicious activity for forensic review, Kubescape measures posture against industry frameworks, and Trivy surfaces known CVEs in the images actually running in the cluster.
 
 **Gitleaks runs on every PR** — The `validate.yaml` CI workflow runs Gitleaks as its first step (before kustomize build or Kyverno tests) to detect accidentally committed credentials, API keys, and private key material. The version pin is tracked by Renovate via a custom regex manager so it stays current automatically.
 
@@ -306,7 +313,7 @@ The full observability stack (Prometheus, Loki, Grafana, Promtail, node-exporter
 | 24 GB | 18 GB |
 | 32 GB+ | 24 GB |
 
-Set in Docker Desktop → Settings → Resources → Memory. Below 10 GB the observability pods will OOMKill during initialization and Flux will loop in retry-remediation.
+Set this in Docker Desktop → Settings → Resources → Memory. Below 10 GB, observability pods will be terminated by the OOM killer during initialization and Flux will enter a continuous retry cycle.
 
 CPU: set to at least 4 cores. The M-series unified memory architecture means Docker Desktop allocates from the shared pool — Apple Silicon handles this transparently.
 
@@ -339,7 +346,7 @@ What it does:
 | Subsequent run after `make pull-images` | ~8–10 min |
 | Subsequent run after `make cache-running` (all images cached) | ~5–7 min |
 
-The dominant cost on the first run is image pulls. Running `make pull-images` once per version bump warms the local Docker cache; subsequent `make bootstrap` invocations skip all registry traffic for the pre-load step.
+The dominant cost on the first run is image pulls. Running `make pull-images` once per version update populates the local Docker cache; subsequent `make bootstrap` invocations skip all registry traffic for the pre-load step.
 
 To update the Flux GitRepository branch patch after creating a new branch:
 
@@ -365,7 +372,7 @@ kubectl get nodes
 # 2. All Flux resources reconciled — every row should show READY: True
 flux get all -A
 
-# 3. No pods stuck — filter out Running and Completed to spot problems
+# 3. No pods stuck — filter out Running and Completed to identify problems
 kubectl get pods -A | grep -v "Running\|Completed"
 
 # 4. Cilium CNI healthy
@@ -541,13 +548,25 @@ kubectl get workloadconfigurationscans -A
 
 ### Falco Live Detection Test (Requires: Running Cluster with Falco)
 
-Deploys the official `falcosecurity/event-generator` as a Kubernetes Job that fires the syscall action suite (reads sensitive files, spawns shells, searches for credentials). Waits for the Job to complete, then queries Falco pod logs on the same node for expected rule matches:
+Deploys the official `falcosecurity/event-generator` as a Kubernetes Job that triggers the syscall action suite (reads sensitive files, spawns shells, searches for credentials). After the Job completes, the target queries Falco pod logs on the same node for expected rule matches:
 
 ```bash
 make test-falco
 ```
 
 Checks for: `Read sensitive file untrusted`, `Run shell untrusted`, `Find AWS Credentials`, `Search Private Keys or Passwords`. Exits non-zero if any rule was not detected. Cleans up the `falco-test` namespace on completion.
+
+### iperf3 Network Tests (Requires: Running Cluster)
+
+These tests measure TCP bandwidth through the full Envoy Gateway ingress path and verify that the BackendTrafficPolicy circuit-breaker operates as configured:
+
+```bash
+make test-iperf3                    # Single-stream baseline bandwidth test
+make test-iperf3-circuit-breaker    # Verifies Envoy rejects connections above maxConnections: 10
+make test-iperf3-overflow           # Saturates the circuit breaker and expects connection refusals
+```
+
+Requires the `iperf3` CLI: `brew install iperf3`. The iperf3 server listens on port 9111 inside the cluster. The KinD `extraPortMapping` and the nginx nodeport-proxy expose it on `localhost:32111` on the host. Pass `-4` to the iperf3 client to force IPv4 and avoid connection failures from IPv6 address resolution.
 
 ## Teardown
 
