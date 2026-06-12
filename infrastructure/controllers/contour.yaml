@@ -1,0 +1,178 @@
+---
+# Contour and its Envoy data plane both run in the contour namespace.
+# Injection disabled: Contour manages its own Envoy proxies via xDS; Istio
+# sidecar injection would conflict with the Envoy container lifecycle.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: contour
+  labels:
+    istio-injection: disabled
+---
+# Contour is a Kubernetes-native control plane for Envoy. It watches the
+# Kubernetes API for Ingress and HTTPProxy resources, translates them into
+# xDS configuration, and streams that configuration to Envoy via gRPC on
+# port 8001. The Envoy DaemonSet is the data plane: it receives xDS from
+# Contour and routes live traffic.
+#
+# This creates a second, independent ingress stack alongside Envoy Gateway:
+#   Envoy Gateway controller → xDS → Envoy Gateway proxy pods  (Gateway API)
+#   Contour controller       → xDS → Contour Envoy DaemonSet   (HTTPProxy CRD)
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: contour
+  namespace: flux-system
+spec:
+  interval: 1h
+  targetNamespace: contour
+  dependsOn:
+    - name: cilium
+      namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: contour
+      version: "1.30.x"
+      sourceRef:
+        kind: HelmRepository
+        name: projectcontour
+        namespace: flux-system
+      interval: 24h
+  values:
+    contour:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+    envoy:
+      service:
+        type: NodePort
+        nodePorts:
+          http: 30082
+          https: 30444
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+---
+# ── contour namespace — controller and Envoy DaemonSet ───────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: contour
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: contour
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+# Contour controller watches HTTPProxy, Ingress, Service, and Endpoint objects
+# cluster-wide via the Kubernetes API server.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-apiserver-egress
+  namespace: contour
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - port: 6443
+---
+# Covers xDS gRPC (Envoy → Contour controller on port 8001) and any other
+# intra-namespace communication between Contour and its Envoy DaemonSet.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-intra-namespace
+  namespace: contour
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {}
+  egress:
+    - to:
+        - podSelector: {}
+---
+# The nginx nodeport-proxy (envoy-ingress) uses hostNetwork: true, so its
+# traffic arrives from the node IP rather than a pod CIDR. Standard
+# NetworkPolicy cannot express "from host entity", so all sources are
+# permitted on Envoy's HTTP listen port (8080). Port 8080 is the pod-level
+# port; the envoy Service maps port 80 → targetPort 8080.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-envoy-http-ingress
+  namespace: contour
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: envoy
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 8080
+---
+# Contour Envoy pods route HTTP traffic to backend services.
+# Port 80 is the pod-level port for the httpbin container in the demo namespace.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-envoy-egress-to-backends
+  namespace: contour
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: envoy
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: demo
+      ports:
+        - port: 80

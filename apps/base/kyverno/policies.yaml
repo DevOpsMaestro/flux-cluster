@@ -64,6 +64,9 @@ spec:
                 # host processes) and hostPath (/var/lib/boinc persistent storage).
                 # Both are intentional design choices for a compute workload.
                 - boinc
+                # Contour Envoy DaemonSet uses elevated networking capabilities
+                # for low-level socket operations in the network data path.
+                - contour
                 # Kubernetes control plane (etcd, kube-apiserver, kube-scheduler,
                 # kube-controller-manager) and CNI (cilium, cilium-envoy) require
                 # hostNetwork, hostPath, and elevated capabilities by design.
@@ -252,6 +255,9 @@ spec:
                 # Real observability workloads (Prometheus, Grafana, Loki) all have
                 # explicit securityContexts set in their charts.
                 - observability
+                # Contour Envoy DaemonSet securityContext varies by chart version;
+                # excluded to prevent enforcement from blocking data-plane pod restarts.
+                - contour
                 # Kubernetes control plane and CNI components (cilium, etcd,
                 # kube-apiserver etc.) omit securityContext entirely, causing
                 # JMESPath eval errors. These are privileged by design.
