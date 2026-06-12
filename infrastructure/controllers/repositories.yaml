@@ -127,4 +127,4 @@ metadata:
   namespace: flux-system
 spec:
   interval: 24h
-  url: https://charts.projectcontour.io
+  url: https://projectcontour.github.io/helm-charts/
