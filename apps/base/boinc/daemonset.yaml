@@ -27,6 +27,8 @@ spec:
                      /var/lib/boinc/account_boinc.bakerlab.org_rosetta.xml
               cp -n /boinc-account-init/account_einstein.phys.uwm.edu.xml \
                      /var/lib/boinc/account_einstein.phys.uwm.edu.xml
+              cp /boinc-prefs-override/global_prefs_override.xml \
+                 /var/lib/boinc/global_prefs_override.xml
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -43,6 +45,9 @@ spec:
               mountPath: /var/lib/boinc
             - name: boinc-projects
               mountPath: /boinc-account-init
+              readOnly: true
+            - name: boinc-prefs-override
+              mountPath: /boinc-prefs-override
               readOnly: true
       containers:
         - name: boinc
@@ -81,3 +86,6 @@ spec:
         - name: boinc-projects
           secret:
             secretName: boinc-projects-secret
+        - name: boinc-prefs-override
+          configMap:
+            name: boinc-global-prefs-override
