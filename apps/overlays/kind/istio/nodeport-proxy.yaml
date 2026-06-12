@@ -53,14 +53,21 @@ data:
     }
     http {
         access_log off;
+        # Defer upstream DNS resolution to request time rather than startup.
+        # Without this, nginx crashes on boot if any proxy_pass hostname is
+        # unresolvable — taking down every route. With a resolver + variable,
+        # nginx starts regardless; unresolvable upstreams return 502 per-request
+        # instead of bringing down the whole proxy.
+        resolver 10.96.0.10 valid=10s ipv6=off;
         # Contour ingress stack — routes traffic to Contour's Envoy data plane.
-        # The envoy Service in the contour namespace exposes port 80 → pod port 8080.
-        # This block must precede the catch-all server_name _ block.
+        # Service name: contour-contour-envoy (Helm release name prefix = contour-contour).
+        # Must precede the catch-all server_name _ block.
         server {
             listen 8888;
             server_name httpbin-contour.local;
             location / {
-                proxy_pass         http://envoy.contour.svc.cluster.local:80;
+                set $contour_upstream http://contour-contour-envoy.contour.svc.cluster.local:80;
+                proxy_pass         $contour_upstream;
                 proxy_http_version 1.1;
                 proxy_set_header   Host              $host;
                 proxy_set_header   X-Real-IP         $remote_addr;
@@ -73,7 +80,8 @@ data:
             listen 8888;
             server_name _;
             location / {
-                proxy_pass         http://envoy-proxy.envoy-gateway-system.svc.cluster.local;
+                set $egw_upstream http://envoy-proxy.envoy-gateway-system.svc.cluster.local;
+                proxy_pass         $egw_upstream;
                 proxy_http_version 1.1;
                 proxy_set_header   Host              $host;
                 proxy_set_header   X-Real-IP         $remote_addr;
