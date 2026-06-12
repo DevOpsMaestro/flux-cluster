@@ -1,0 +1,275 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1296" width="1200" height="1296"
+     font-family="system-ui,-apple-system,Arial,sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#6B7280"/>
+    </marker>
+    <marker id="arr-o" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#C2410C"/>
+    </marker>
+  </defs>
+
+  <!-- Canvas -->
+  <rect width="1200" height="1296" fill="#FAFAFA"/>
+
+  <!-- Title -->
+  <text x="600" y="20" text-anchor="middle" font-size="20" font-weight="700" fill="#0F172A">Kubernetes Deployment Process — homelab-gitops-k8s-2026</text>
+  <text x="600" y="36" text-anchor="middle" font-size="11" fill="#475569">make bootstrap  →  fully running cluster with all components</text>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PHASE 0 · PRE-FLIGHT VALIDATION  (y=42, h=106)
+       ══════════════════════════════════════════════════════════════ -->
+  <rect x="10" y="42" width="1180" height="106" rx="10" fill="#F1F5F9" stroke="#64748B" stroke-width="1.5"/>
+  <text x="28" y="60" font-size="10" font-weight="700" letter-spacing="1.2" fill="#64748B">PHASE 0 · PRE-FLIGHT VALIDATION</text>
+
+  <rect x="20" y="68" width="1160" height="68" rx="8" fill="white" stroke="#64748B" stroke-width="1.5"/>
+  <text x="600" y="86" text-anchor="middle" font-size="12" font-weight="700" fill="#0F172A">Validate Helm Chart Source Connectivity</text>
+  <text x="600" y="101" text-anchor="middle" font-size="9" fill="#475569">13 repositories: Cilium, Cert-Manager, Istio, Envoy GW (OCI), Prometheus, Grafana, Loki, Kubescape, Falco, OpenTelemetry, Metrics Server, Trivy, OpenEBS</text>
+  <text x="600" y="116" text-anchor="middle" font-size="9" fill="#DC2626">Fast-fail: abort before any cluster creation if any source is unreachable</text>
+
+  <!-- connector -->
+  <line x1="600" y1="148" x2="600" y2="154" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PHASE 1 · CLUSTER CREATION  (y=156, h=106)
+       ══════════════════════════════════════════════════════════════ -->
+  <rect x="10" y="156" width="1180" height="106" rx="10" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="28" y="174" font-size="10" font-weight="700" letter-spacing="1.2" fill="#1D4ED8">PHASE 1 · CLUSTER CREATION</text>
+
+  <rect x="20" y="182" width="1160" height="68" rx="8" fill="white" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="600" y="200" text-anchor="middle" font-size="12" font-weight="700" fill="#0F172A">kind create cluster  —  flux-kind  ·  Kubernetes v1.36.1</text>
+  <text x="600" y="215" text-anchor="middle" font-size="9" fill="#475569">1 control-plane + 2 workers  ·  Pod CIDR: 10.244.0.0/16  ·  Service CIDR: 10.96.0.0/12  ·  API server: 127.0.0.1:6443</text>
+  <text x="600" y="230" text-anchor="middle" font-size="9" fill="#475569">disableDefaultCNI=true  ·  kubeProxyMode=none  ·  Port maps: 8080→8888 (HTTP)  ·  8443→30443 (HTTPS)  ·  32111→9111 (TCP)</text>
+
+  <!-- connector -->
+  <line x1="600" y1="262" x2="600" y2="268" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PHASE 2 · CNI BOOTSTRAP — Cilium  (y=270, h=116)
+       ══════════════════════════════════════════════════════════════ -->
+  <rect x="10" y="270" width="1180" height="116" rx="10" fill="#FFF7ED" stroke="#C2410C" stroke-width="2"/>
+  <text x="28" y="288" font-size="10" font-weight="700" letter-spacing="1.2" fill="#C2410C">PHASE 2 · CNI BOOTSTRAP — Cilium  (solves chicken-and-egg: Flux needs a CNI to schedule its own pods)</text>
+
+  <!-- two side-by-side cards -->
+  <rect x="20" y="296" width="570" height="78" rx="8" fill="white" stroke="#C2410C" stroke-width="1.5"/>
+  <text x="305" y="315" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Pre-pull &amp; load Cilium images</text>
+  <text x="305" y="330" text-anchor="middle" font-size="9" fill="#475569">Pull v1.19.4 images from registry (including cilium-envoy, hubble-relay)</text>
+  <text x="305" y="345" text-anchor="middle" font-size="9" fill="#475569">docker save | ctr import → all 3 KinD nodes in parallel</text>
+  <text x="305" y="360" text-anchor="middle" font-size="9" fill="#475569">--platform linux/arm64 (Apple Silicon)</text>
+
+  <rect x="610" y="296" width="570" height="78" rx="8" fill="white" stroke="#C2410C" stroke-width="1.5"/>
+  <text x="895" y="315" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">helm install cilium v1.19.4  (direct — bypasses Flux)</text>
+  <text x="895" y="330" text-anchor="middle" font-size="9" fill="#475569">kubeProxyReplacement=true  ·  routingMode=tunnel  ·  tunnelProtocol=vxlan</text>
+  <text x="895" y="345" text-anchor="middle" font-size="9" fill="#475569">Hubble metrics: DNS, drop, TCP, flow, port-distribution, ICMP, HTTPv2</text>
+  <text x="895" y="360" text-anchor="middle" font-size="9" fill="#475569">Wait: cilium DaemonSet (300s)  ·  cilium-operator (120s)  ·  CoreDNS (120s)</text>
+
+  <!-- connector -->
+  <line x1="600" y1="386" x2="600" y2="392" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PHASE 3 · GATEWAY API CRDs  (y=394, h=106)
+       ══════════════════════════════════════════════════════════════ -->
+  <rect x="10" y="394" width="1180" height="106" rx="10" fill="#ECFEFF" stroke="#0891B2" stroke-width="1.5"/>
+  <text x="28" y="412" font-size="10" font-weight="700" letter-spacing="1.2" fill="#0891B2">PHASE 3 · GATEWAY API CRDs</text>
+
+  <rect x="20" y="420" width="1160" height="68" rx="8" fill="white" stroke="#0891B2" stroke-width="1.5"/>
+  <text x="600" y="438" text-anchor="middle" font-size="12" font-weight="700" fill="#0F172A">kubectl apply — Gateway API standard-install.yaml  v1.2.1</text>
+  <text x="600" y="453" text-anchor="middle" font-size="9" fill="#475569">Installs CRDs: Gateway  ·  HTTPRoute  ·  GatewayClass  ·  TCPRoute  ·  TLSRoute  ·  ReferenceGrant</text>
+  <text x="600" y="468" text-anchor="middle" font-size="9" fill="#475569">kubectl wait --for=condition=Established (60s)  ·  Required before Envoy Gateway HelmRelease can reconcile</text>
+
+  <!-- connector -->
+  <line x1="600" y1="500" x2="600" y2="506" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PHASE 4 · TOOLCHAIN & GITHUB AUTH  (y=508, h=106)
+       ══════════════════════════════════════════════════════════════ -->
+  <rect x="10" y="508" width="1180" height="106" rx="10" fill="#F1F5F9" stroke="#64748B" stroke-width="1.5"/>
+  <text x="28" y="526" font-size="10" font-weight="700" letter-spacing="1.2" fill="#64748B">PHASE 4 · TOOLCHAIN &amp; GITHUB AUTH</text>
+
+  <rect x="20" y="534" width="570" height="68" rx="8" fill="white" stroke="#64748B" stroke-width="1.5"/>
+  <text x="305" y="552" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Install Flux CLI + GitHub CLI</text>
+  <text x="305" y="567" text-anchor="middle" font-size="9" fill="#475569">brew install fluxcd/tap/flux  (Flux v2.8.8)</text>
+  <text x="305" y="582" text-anchor="middle" font-size="9" fill="#475569">brew install gh  ·  Both steps are idempotent</text>
+
+  <rect x="610" y="534" width="570" height="68" rx="8" fill="white" stroke="#64748B" stroke-width="1.5"/>
+  <text x="895" y="552" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">GitHub authentication</text>
+  <text x="895" y="567" text-anchor="middle" font-size="9" fill="#475569">gh auth login  ·  Interactive: browser or token</text>
+  <text x="895" y="582" text-anchor="middle" font-size="9" fill="#475569">Required so flux bootstrap can push manifests to the repo</text>
+
+  <!-- connector -->
+  <line x1="600" y1="614" x2="600" y2="620" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PHASE 5 · FLUX BOOTSTRAP  (y=622, h=116)
+       ══════════════════════════════════════════════════════════════ -->
+  <rect x="10" y="622" width="1180" height="116" rx="10" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="28" y="640" font-size="10" font-weight="700" letter-spacing="1.2" fill="#4F46E5">PHASE 5 · FLUX BOOTSTRAP</text>
+
+  <rect x="20" y="648" width="570" height="78" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="305" y="667" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">flux bootstrap github</text>
+  <text x="305" y="682" text-anchor="middle" font-size="9" fill="#475569">owner: DevOpsMaestro  ·  repo: homelab-gitops-k8s-2026</text>
+  <text x="305" y="697" text-anchor="middle" font-size="9" fill="#475569">path: clusters/kind  ·  Flux v2.8.8 installed to flux-system namespace</text>
+  <text x="305" y="712" text-anchor="middle" font-size="9" fill="#475569">Controllers: source, kustomize, helm, notification</text>
+
+  <rect x="610" y="648" width="570" height="78" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="895" y="667" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Load secrets into flux-system</text>
+  <text x="895" y="682" text-anchor="middle" font-size="9" fill="#475569">sops-age  ←  ~/.config/sops/age/keys.txt  (Age private key for SOPS decryption)</text>
+  <text x="895" y="697" text-anchor="middle" font-size="9" fill="#475569">github-token  ←  GITHUB_TOKEN  (Flux notification controller → commit status)</text>
+  <text x="895" y="712" text-anchor="middle" font-size="9" fill="#475569">Both created with --dry-run=client | kubectl apply  (idempotent)</text>
+
+  <!-- connector -->
+  <line x1="600" y1="738" x2="600" y2="744" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PHASE 6 · INFRASTRUCTURE RECONCILIATION  (y=746, h=212)
+       ══════════════════════════════════════════════════════════════ -->
+  <rect x="10" y="746" width="1180" height="212" rx="10" fill="#F0FDF4" stroke="#15803D" stroke-width="2"/>
+  <text x="28" y="764" font-size="10" font-weight="700" letter-spacing="1.2" fill="#15803D">PHASE 6 · INFRASTRUCTURE RECONCILIATION — Flux Kustomization: infrastructure-controllers  (wait: true)</text>
+
+  <!-- row 1: three cards -->
+  <rect x="20"  y="772" width="374" height="62" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="207" y="790" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">HelmRepositories registered</text>
+  <text x="207" y="805" text-anchor="middle" font-size="9" fill="#475569">13 chart sources added to flux-system</text>
+  <text x="207" y="820" text-anchor="middle" font-size="9" fill="#475569">Cilium · Cert-Manager · Istio · Envoy GW · Prometheus</text>
+
+  <rect x="404" y="772" width="374" height="62" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="591" y="790" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Cilium HelmRelease adopted</text>
+  <text x="591" y="805" text-anchor="middle" font-size="9" fill="#475569">Flux reconciles cilium.yaml — adopts the</text>
+  <text x="591" y="820" text-anchor="middle" font-size="9" fill="#475569">pre-installed release without reinstalling</text>
+
+  <rect x="788" y="772" width="382" height="62" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="979" y="790" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">infrastructure-configs Kustomization</text>
+  <text x="979" y="805" text-anchor="middle" font-size="9" fill="#475569">dependsOn: infrastructure-controllers</text>
+  <text x="979" y="820" text-anchor="middle" font-size="9" fill="#475569">Applies Tetragon TracingPolicies</text>
+
+  <!-- row 2: HelmRelease dependency chain card -->
+  <rect x="20" y="844" width="1160" height="102" rx="8" fill="white" stroke="#15803D" stroke-width="1.5" stroke-dasharray="5,3"/>
+
+  <!-- left group: sequential chains -->
+  <text x="34" y="860" font-size="9" font-weight="700" fill="#15803D">Sequential chains  (dependsOn each other)</text>
+
+  <!-- cert-manager chain -->
+  <rect x="34"  y="866" width="138" height="26" rx="5" fill="#F0FDF4" stroke="#15803D" stroke-width="1"/>
+  <text x="103" y="883" text-anchor="middle" font-size="9" font-weight="700" fill="#15803D">cert-manager-crds</text>
+  <line x1="172" y1="879" x2="182" y2="879" stroke="#15803D" stroke-width="1.5" marker-end="url(#arr)"/>
+  <rect x="184" y="866" width="130" height="26" rx="5" fill="#F0FDF4" stroke="#15803D" stroke-width="1"/>
+  <text x="249" y="883" text-anchor="middle" font-size="9" font-weight="700" fill="#15803D">cert-manager</text>
+
+  <!-- istio chain -->
+  <rect x="34"  y="904" width="138" height="26" rx="5" fill="#F0FDF4" stroke="#15803D" stroke-width="1"/>
+  <text x="103" y="921" text-anchor="middle" font-size="9" font-weight="700" fill="#15803D">istio-base</text>
+  <line x1="172" y1="917" x2="182" y2="917" stroke="#15803D" stroke-width="1.5" marker-end="url(#arr)"/>
+  <rect x="184" y="904" width="130" height="26" rx="5" fill="#F0FDF4" stroke="#15803D" stroke-width="1"/>
+  <text x="249" y="921" text-anchor="middle" font-size="9" font-weight="700" fill="#15803D">istiod</text>
+
+  <!-- separator -->
+  <line x1="334" y1="852" x2="334" y2="938" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- right group: parallel installs -->
+  <text x="348" y="860" font-size="9" font-weight="700" fill="#15803D">Parallel installs  (all dependsOn: Cilium)</text>
+
+  <!-- row A: envoy-gateway, tetragon, kyverno, kubescape -->
+  <!-- 4 boxes in x=348 to x=1172 = 824px. Each=(824-3*10)/4=198.5≈198, gap=10 -->
+  <!-- edges: 348, 556, 764, 972  centers: 447, 655, 863, 1071 -->
+  <rect x="348" y="866" width="198" height="26" rx="5" fill="#F0FDF4" stroke="#15803D" stroke-width="1"/>
+  <text x="447" y="883" text-anchor="middle" font-size="9" font-weight="700" fill="#0F172A">envoy-gateway</text>
+
+  <rect x="556" y="866" width="198" height="26" rx="5" fill="#F0FDF4" stroke="#15803D" stroke-width="1"/>
+  <text x="655" y="883" text-anchor="middle" font-size="9" font-weight="700" fill="#0F172A">tetragon</text>
+
+  <rect x="764" y="866" width="198" height="26" rx="5" fill="#F0FDF4" stroke="#15803D" stroke-width="1"/>
+  <text x="863" y="883" text-anchor="middle" font-size="9" font-weight="700" fill="#0F172A">kyverno</text>
+
+  <rect x="972" y="866" width="198" height="26" rx="5" fill="#F0FDF4" stroke="#15803D" stroke-width="1"/>
+  <text x="1071" y="883" text-anchor="middle" font-size="9" font-weight="700" fill="#0F172A">kubescape</text>
+
+  <!-- row B: falco, metrics-server, trivy-operator, openebs -->
+  <rect x="348" y="904" width="198" height="26" rx="5" fill="#F0FDF4" stroke="#15803D" stroke-width="1"/>
+  <text x="447" y="921" text-anchor="middle" font-size="9" font-weight="700" fill="#0F172A">falco</text>
+
+  <rect x="556" y="904" width="198" height="26" rx="5" fill="#F0FDF4" stroke="#15803D" stroke-width="1"/>
+  <text x="655" y="921" text-anchor="middle" font-size="9" font-weight="700" fill="#0F172A">metrics-server</text>
+
+  <rect x="764" y="904" width="198" height="26" rx="5" fill="#F0FDF4" stroke="#15803D" stroke-width="1"/>
+  <text x="863" y="921" text-anchor="middle" font-size="9" font-weight="700" fill="#0F172A">trivy-operator</text>
+
+  <rect x="972" y="904" width="198" height="26" rx="5" fill="#F0FDF4" stroke="#15803D" stroke-width="1"/>
+  <text x="1071" y="921" text-anchor="middle" font-size="9" font-weight="700" fill="#0F172A">openebs</text>
+
+  <!-- connector -->
+  <line x1="600" y1="958" x2="600" y2="964" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PHASE 7 · APPS RECONCILIATION  (y=966, h=116)
+       ══════════════════════════════════════════════════════════════ -->
+  <rect x="10" y="966" width="1180" height="116" rx="10" fill="#F5F3FF" stroke="#7C3AED" stroke-width="2"/>
+  <text x="28" y="984" font-size="10" font-weight="700" letter-spacing="1.2" fill="#7C3AED">PHASE 7 · APPS RECONCILIATION — Flux Kustomization: apps  (dependsOn: infrastructure-controllers + infrastructure-configs · wait: true)</text>
+
+  <rect x="20"  y="992" width="570" height="78" rx="8" fill="white" stroke="#7C3AED" stroke-width="1.5"/>
+  <text x="305" y="1011" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Observability stack</text>
+  <text x="305" y="1026" text-anchor="middle" font-size="9" fill="#475569">Prometheus  ·  Grafana  ·  Loki  ·  Promtail</text>
+  <text x="305" y="1041" text-anchor="middle" font-size="9" fill="#475569">Tempo (distributed tracing)  ·  OpenTelemetry Collector</text>
+  <text x="305" y="1056" text-anchor="middle" font-size="9" fill="#475569">Flux alert notifications  ·  Grafana datasources auto-configured</text>
+
+  <rect x="610" y="992" width="570" height="78" rx="8" fill="white" stroke="#7C3AED" stroke-width="1.5"/>
+  <text x="895" y="1011" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Workloads &amp; policies</text>
+  <text x="895" y="1026" text-anchor="middle" font-size="9" fill="#475569">Istio overlay + nginx nodeport-proxy DaemonSet</text>
+  <text x="895" y="1041" text-anchor="middle" font-size="9" fill="#475569">Envoy Gateway overlay  (Gateway, TCPRoute, BackendTrafficPolicy)</text>
+  <text x="895" y="1056" text-anchor="middle" font-size="9" fill="#475569">Kyverno ClusterPolicies  ·  demo (httpbin)  ·  BOINC DaemonSet</text>
+
+  <!-- connector -->
+  <line x1="600" y1="1082" x2="600" y2="1088" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PHASE 8 · MONITORING RULES  (y=1090, h=106)
+       ══════════════════════════════════════════════════════════════ -->
+  <rect x="10" y="1090" width="1180" height="106" rx="10" fill="#F0FDFA" stroke="#0D9488" stroke-width="1.5"/>
+  <text x="28" y="1108" font-size="10" font-weight="700" letter-spacing="1.2" fill="#0D9488">PHASE 8 · MONITORING RULES — Flux Kustomization: monitoring-rules  (dependsOn: apps)</text>
+
+  <rect x="20" y="1116" width="1160" height="68" rx="8" fill="white" stroke="#0D9488" stroke-width="1.5"/>
+  <text x="600" y="1134" text-anchor="middle" font-size="12" font-weight="700" fill="#0F172A">Apply PrometheusRules</text>
+  <text x="600" y="1149" text-anchor="middle" font-size="9" fill="#475569">Alert rules + recording rules applied to Prometheus  ·  Separated from the apps layer to avoid a Flux dry-run deadlock:</text>
+  <text x="600" y="1164" text-anchor="middle" font-size="9" fill="#475569">the PrometheusRule CRD is installed by kube-prometheus-stack in Phase 7 — it must exist before Flux validates these resources</text>
+
+  <!-- connector -->
+  <line x1="600" y1="1196" x2="600" y2="1202" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PHASE 9 · CLUSTER READY  (y=1204, h=82)
+       ══════════════════════════════════════════════════════════════ -->
+  <rect x="10" y="1204" width="1180" height="82" rx="10" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+  <text x="28" y="1222" font-size="10" font-weight="700" letter-spacing="1.2" fill="#16A34A">PHASE 9 · CLUSTER READY — make test-cluster</text>
+
+  <rect x="20" y="1230" width="1160" height="44" rx="8" fill="white" stroke="#16A34A" stroke-width="1.5"/>
+  <text x="600" y="1248" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">5-point smoke test passes</text>
+  <text x="600" y="1263" text-anchor="middle" font-size="9" fill="#475569">✓ All Flux HelmReleases Ready=True     ✓ Grafana /api/health OK     ✓ Prometheus targets active     ✓ Loki /ready OK     ✓ Kyverno pods Running</text>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       LEGEND / FOOTER
+       ══════════════════════════════════════════════════════════════ -->
+  <line x1="10" y1="1298" x2="1190" y2="1298" stroke="#E2E8F0" stroke-width="1"/>
+  <!-- swatches -->
+  <rect x="10"   y="1306" width="12" height="12" rx="2" fill="#F1F5F9" stroke="#64748B" stroke-width="1.5"/>
+  <text x="28"   y="1316" font-size="9" fill="#475569">Developer / host action</text>
+
+  <rect x="165"  y="1306" width="12" height="12" rx="2" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="183"  y="1316" font-size="9" fill="#475569">Kubernetes cluster</text>
+
+  <rect x="300"  y="1306" width="12" height="12" rx="2" fill="#FFF7ED" stroke="#C2410C" stroke-width="2"/>
+  <text x="318"  y="1316" font-size="9" fill="#475569">CNI bootstrap (pre-Flux)</text>
+
+  <rect x="450"  y="1306" width="12" height="12" rx="2" fill="#ECFEFF" stroke="#0891B2" stroke-width="1.5"/>
+  <text x="468"  y="1316" font-size="9" fill="#475569">Networking CRDs</text>
+
+  <rect x="570"  y="1306" width="12" height="12" rx="2" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="588"  y="1316" font-size="9" fill="#475569">Flux GitOps</text>
+
+  <rect x="670"  y="1306" width="12" height="12" rx="2" fill="#F0FDF4" stroke="#15803D" stroke-width="2"/>
+  <text x="688"  y="1316" font-size="9" fill="#475569">Infrastructure HelmReleases</text>
+
+  <rect x="840"  y="1306" width="12" height="12" rx="2" fill="#F5F3FF" stroke="#7C3AED" stroke-width="2"/>
+  <text x="858"  y="1316" font-size="9" fill="#475569">Application workloads</text>
+
+  <rect x="985"  y="1306" width="12" height="12" rx="2" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+  <text x="1003" y="1316" font-size="9" fill="#475569">Cluster ready</text>
+</svg>
