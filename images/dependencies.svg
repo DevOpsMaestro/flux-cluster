@@ -1,0 +1,264 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800"
+     font-family="system-ui,-apple-system,Arial,sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#6B7280"/>
+    </marker>
+    <marker id="arr-i" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#4F46E5"/>
+    </marker>
+    <marker id="arr-g" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#15803D"/>
+    </marker>
+  </defs>
+
+  <!-- Canvas -->
+  <rect width="1200" height="800" fill="#FAFAFA"/>
+
+  <!-- ── Title ── -->
+  <text x="600" y="23" text-anchor="middle" font-size="20" font-weight="700" fill="#0F172A">Flux Dependency Graph — homelab-gitops-k8s-2026</text>
+
+  <!-- ══════════════════════════════════════════════════════════
+       ZONE 1 · GitOps Source
+       ══════════════════════════════════════════════════════════ -->
+  <rect x="10" y="30" width="1180" height="134" rx="10" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="28" y="47" font-size="10" font-weight="700" letter-spacing="1.2" fill="#4F46E5">GITOPS SOURCE</text>
+
+  <!-- GitHub -->
+  <rect x="450" y="53" width="300" height="46" rx="8" fill="#1E293B" stroke="#0F172A" stroke-width="1.5"/>
+  <text x="600" y="72" text-anchor="middle" font-size="13" font-weight="700" fill="white">GitHub Remote</text>
+  <text x="600" y="88" text-anchor="middle" font-size="10" fill="#94A3B8">DevOpsMaestro / homelab-gitops-k8s-2026</text>
+
+  <!-- GitHub → GitRepository -->
+  <line x1="600" y1="99" x2="600" y2="112" stroke="#4F46E5" stroke-width="1.5" marker-end="url(#arr-i)"/>
+
+  <!-- Flux GitRepository -->
+  <rect x="450" y="113" width="300" height="44" rx="8" fill="white" stroke="#4F46E5" stroke-width="2"/>
+  <text x="600" y="131" text-anchor="middle" font-size="12" font-weight="700" fill="#4F46E5">Flux GitRepository</text>
+  <text x="600" y="148" text-anchor="middle" font-size="9" fill="#475569">flux-system · watches main · interval: 1 min</text>
+
+  <!-- ══════════════════════════════════════════════════════════
+       ZONE 2 · Flux Kustomizations
+       ══════════════════════════════════════════════════════════ -->
+  <!-- Fork from GitRepository bottom (600,157) to 3 Kustomization boxes -->
+  <line x1="600" y1="157" x2="600" y2="170" stroke="#4F46E5" stroke-width="1.5"/>
+  <line x1="250" y1="170" x2="950" y2="170" stroke="#4F46E5" stroke-width="1.5"/>
+  <line x1="250" y1="170" x2="250" y2="182" stroke="#4F46E5" stroke-width="1.5" marker-end="url(#arr-i)"/>
+  <line x1="600" y1="170" x2="600" y2="182" stroke="#4F46E5" stroke-width="1.5" marker-end="url(#arr-i)"/>
+  <line x1="950" y1="170" x2="950" y2="182" stroke="#4F46E5" stroke-width="1.5" marker-end="url(#arr-i)"/>
+
+  <!-- Kustomization: infrastructure-controllers -->
+  <rect x="100" y="183" width="300" height="52" rx="8" fill="white" stroke="#4F46E5" stroke-width="2"/>
+  <text x="250" y="204" text-anchor="middle" font-size="12" font-weight="700" fill="#0F172A">infrastructure-controllers</text>
+  <text x="250" y="221" text-anchor="middle" font-size="9" fill="#475569">Kustomization · infrastructure/controllers</text>
+
+  <!-- Kustomization: infrastructure-configs -->
+  <rect x="450" y="183" width="300" height="52" rx="8" fill="white" stroke="#4F46E5" stroke-width="2"/>
+  <text x="600" y="204" text-anchor="middle" font-size="12" font-weight="700" fill="#0F172A">infrastructure-configs</text>
+  <text x="600" y="221" text-anchor="middle" font-size="9" fill="#475569">Kustomization · infrastructure/configs</text>
+
+  <!-- Kustomization: apps -->
+  <rect x="800" y="183" width="300" height="52" rx="8" fill="white" stroke="#4F46E5" stroke-width="2"/>
+  <text x="950" y="204" text-anchor="middle" font-size="12" font-weight="700" fill="#0F172A">apps</text>
+  <text x="950" y="221" text-anchor="middle" font-size="9" fill="#475569">Kustomization · apps/overlays/kind</text>
+
+  <!-- dependsOn arrows (dashed) -->
+  <!-- infra-controllers → infra-configs -->
+  <line x1="402" y1="209" x2="448" y2="209" stroke="#6B7280" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr)"/>
+  <!-- infra-configs → apps -->
+  <line x1="752" y1="209" x2="798" y2="209" stroke="#6B7280" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr)"/>
+  <!-- infra-controllers → apps (arc below boxes) -->
+  <path d="M 250 235 Q 600 264 950 235" stroke="#6B7280" stroke-width="1" stroke-dasharray="5,3" fill="none" marker-end="url(#arr)"/>
+
+  <!-- ══════════════════════════════════════════════════════════
+       ZONE 3 · Infrastructure Controllers
+       ══════════════════════════════════════════════════════════ -->
+  <rect x="10" y="274" width="1180" height="234" rx="10" fill="#F0FDF4" stroke="#15803D" stroke-width="1.5"/>
+  <text x="28" y="292" font-size="10" font-weight="700" letter-spacing="1.2" fill="#15803D">INFRASTRUCTURE CONTROLLERS — HelmReleases · namespace: flux-system</text>
+
+  <!-- infra-controllers Kustomization → Cilium routing -->
+  <line x1="250" y1="235" x2="250" y2="275" stroke="#15803D" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="250" y1="275" x2="590" y2="275" stroke="#15803D" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="590" y1="275" x2="590" y2="294" stroke="#15803D" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-g)"/>
+
+  <!-- Cilium (root, orange) -->
+  <rect x="490" y="295" width="220" height="50" rx="8" fill="white" stroke="#C2410C" stroke-width="2.5"/>
+  <text x="600" y="316" text-anchor="middle" font-size="14" font-weight="700" fill="#C2410C">Cilium</text>
+  <text x="600" y="333" text-anchor="middle" font-size="9" fill="#475569">CNI · root dependency · no dependsOn</text>
+
+  <!-- Bus from Cilium to row A -->
+  <line x1="600" y1="345" x2="600" y2="366" stroke="#6B7280" stroke-width="1.5"/>
+  <line x1="83" y1="366" x2="1118" y2="366" stroke="#6B7280" stroke-width="1.5"/>
+
+  <!-- Drops from bus → row A (y=371 top of boxes) -->
+  <line x1="83"   y1="366" x2="83"   y2="378" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="198"  y1="366" x2="198"  y2="378" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="313"  y1="366" x2="313"  y2="378" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="428"  y1="366" x2="428"  y2="378" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="543"  y1="366" x2="543"  y2="378" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="658"  y1="366" x2="658"  y2="378" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="773"  y1="366" x2="773"  y2="378" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="888"  y1="366" x2="888"  y2="378" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="1003" y1="366" x2="1003" y2="378" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="1118" y1="366" x2="1118" y2="378" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Row A: 10 HelmRelease boxes (y=379, h=44, w=100) -->
+  <!-- centers: 83, 198, 313, 428, 543, 658, 773, 888, 1003, 1118 -->
+  <!-- x edges:  33, 148, 263, 378, 493, 608, 723, 838,  953, 1068 -->
+
+  <rect x="33"   y="379" width="100" height="44" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="83"   y="397" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0F172A">cert-manager</text>
+  <text x="83"   y="412" text-anchor="middle" font-size="9"   fill="#475569">crds</text>
+
+  <rect x="148"  y="379" width="100" height="44" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="198"  y="397" text-anchor="middle" font-size="10"  font-weight="700" fill="#0F172A">istio-base</text>
+  <text x="198"  y="412" text-anchor="middle" font-size="9"   fill="#475569">HelmRelease</text>
+
+  <rect x="263"  y="379" width="100" height="44" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="313"  y="397" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0F172A">envoy</text>
+  <text x="313"  y="412" text-anchor="middle" font-size="9"   fill="#475569">gateway</text>
+
+  <rect x="378"  y="379" width="100" height="44" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="428"  y="397" text-anchor="middle" font-size="10"  font-weight="700" fill="#0F172A">tetragon</text>
+  <text x="428"  y="412" text-anchor="middle" font-size="9"   fill="#475569">HelmRelease</text>
+
+  <rect x="493"  y="379" width="100" height="44" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="543"  y="397" text-anchor="middle" font-size="10"  font-weight="700" fill="#0F172A">kyverno</text>
+  <text x="543"  y="412" text-anchor="middle" font-size="9"   fill="#475569">HelmRelease</text>
+
+  <rect x="608"  y="379" width="100" height="44" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="658"  y="397" text-anchor="middle" font-size="10"  font-weight="700" fill="#0F172A">kubescape</text>
+  <text x="658"  y="412" text-anchor="middle" font-size="9"   fill="#475569">HelmRelease</text>
+
+  <rect x="723"  y="379" width="100" height="44" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="773"  y="397" text-anchor="middle" font-size="10"  font-weight="700" fill="#0F172A">falco</text>
+  <text x="773"  y="412" text-anchor="middle" font-size="9"   fill="#475569">HelmRelease</text>
+
+  <rect x="838"  y="379" width="100" height="44" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="888"  y="397" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0F172A">metrics</text>
+  <text x="888"  y="412" text-anchor="middle" font-size="9"   fill="#475569">server</text>
+
+  <rect x="953"  y="379" width="100" height="44" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="1003" y="397" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0F172A">trivy</text>
+  <text x="1003" y="412" text-anchor="middle" font-size="9"   fill="#475569">operator</text>
+
+  <rect x="1068" y="379" width="100" height="44" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="1118" y="397" text-anchor="middle" font-size="10"  font-weight="700" fill="#0F172A">openebs</text>
+  <text x="1118" y="412" text-anchor="middle" font-size="9"   fill="#475569">HelmRelease</text>
+
+  <!-- Chain arrows: cert-manager-crds → cert-manager, istio-base → istiod -->
+  <line x1="83"  y1="423" x2="83"  y2="435" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="198" y1="423" x2="198" y2="435" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Row B: cert-manager and istiod (y=436, h=44) -->
+  <rect x="33"  y="436" width="100" height="44" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="83"  y="454" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0F172A">cert-manager</text>
+  <text x="83"  y="469" text-anchor="middle" font-size="9"   fill="#475569">HelmRelease</text>
+
+  <rect x="148" y="436" width="100" height="44" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="198" y="454" text-anchor="middle" font-size="10"  font-weight="700" fill="#0F172A">istiod</text>
+  <text x="198" y="469" text-anchor="middle" font-size="9"   fill="#475569">HelmRelease</text>
+
+  <!-- ══════════════════════════════════════════════════════════
+       ZONE 4 · Apps Overlay
+       ══════════════════════════════════════════════════════════ -->
+  <rect x="10" y="520" width="1180" height="208" rx="10" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="28" y="538" font-size="10" font-weight="700" letter-spacing="1.2" fill="#4F46E5">APPS OVERLAY — apps/overlays/kind · deployed after infrastructure-controllers + infrastructure-configs</text>
+
+  <!-- apps Kustomization → apps zone (routed down right edge) -->
+  <line x1="950" y1="235" x2="1192" y2="235" stroke="#4F46E5" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="1192" y1="235" x2="1192" y2="526" stroke="#4F46E5" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="1192" y1="526" x2="1160" y2="526" stroke="#4F46E5" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-i)"/>
+
+  <!-- Row 1 apps (y=548, h=36, w=160, gap=18) -->
+  <!-- 6 boxes: left edges 75, 253, 431, 609, 787, 965 -->
+  <!-- centers: 155, 333, 511, 689, 867, 1045 -->
+
+  <rect x="75"  y="548" width="160" height="36" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="155" y="566" text-anchor="middle" font-size="10" font-weight="700" fill="#0F172A">prometheus</text>
+  <text x="155" y="579" text-anchor="middle" font-size="8.5" fill="#475569">metrics</text>
+
+  <rect x="253" y="548" width="160" height="36" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="333" y="566" text-anchor="middle" font-size="10" font-weight="700" fill="#0F172A">grafana</text>
+  <text x="333" y="579" text-anchor="middle" font-size="8.5" fill="#475569">dashboards</text>
+
+  <rect x="431" y="548" width="160" height="36" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="511" y="566" text-anchor="middle" font-size="10" font-weight="700" fill="#0F172A">loki + promtail</text>
+  <text x="511" y="579" text-anchor="middle" font-size="8.5" fill="#475569">log aggregation</text>
+
+  <rect x="609" y="548" width="160" height="36" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="689" y="566" text-anchor="middle" font-size="10" font-weight="700" fill="#0F172A">tempo</text>
+  <text x="689" y="579" text-anchor="middle" font-size="8.5" fill="#475569">distributed tracing</text>
+
+  <rect x="787" y="548" width="160" height="36" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="867" y="566" text-anchor="middle" font-size="10" font-weight="700" fill="#0F172A">opentelemetry</text>
+  <text x="867" y="579" text-anchor="middle" font-size="8.5" fill="#475569">collector</text>
+
+  <rect x="965" y="548" width="160" height="36" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="1045" y="566" text-anchor="middle" font-size="10" font-weight="700" fill="#0F172A">notifications</text>
+  <text x="1045" y="579" text-anchor="middle" font-size="8.5" fill="#475569">Flux alerts</text>
+
+  <!-- Row 2 apps (y=604, h=36) same x positions, 6 boxes -->
+
+  <rect x="75"  y="604" width="160" height="36" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="155" y="622" text-anchor="middle" font-size="10" font-weight="700" fill="#0F172A">istio overlay</text>
+  <text x="155" y="635" text-anchor="middle" font-size="8.5" fill="#475569">nginx nodeport proxy</text>
+
+  <rect x="253" y="604" width="160" height="36" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="333" y="622" text-anchor="middle" font-size="10" font-weight="700" fill="#0F172A">envoy-gateway overlay</text>
+  <text x="333" y="635" text-anchor="middle" font-size="8.5" fill="#475569">proxy service + TCPRoute</text>
+
+  <rect x="431" y="604" width="160" height="36" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="511" y="622" text-anchor="middle" font-size="10" font-weight="700" fill="#0F172A">kyverno overlay</text>
+  <text x="511" y="635" text-anchor="middle" font-size="8.5" fill="#475569">ClusterPolicies</text>
+
+  <rect x="609" y="604" width="160" height="36" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="689" y="622" text-anchor="middle" font-size="10" font-weight="700" fill="#0F172A">demo</text>
+  <text x="689" y="635" text-anchor="middle" font-size="8.5" fill="#475569">httpbin + load-gen</text>
+
+  <rect x="787" y="604" width="160" height="36" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="867" y="622" text-anchor="middle" font-size="10" font-weight="700" fill="#0F172A">boinc</text>
+  <text x="867" y="635" text-anchor="middle" font-size="8.5" fill="#475569">DaemonSet · SOPS creds</text>
+
+  <!-- iperf3: dashed (feature flag, disabled by default) -->
+  <rect x="965" y="604" width="160" height="36" rx="8" fill="#FAFAFA" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="1045" y="622" text-anchor="middle" font-size="10" font-weight="700" fill="#94A3B8">iperf3</text>
+  <text x="1045" y="635" text-anchor="middle" font-size="8.5" fill="#94A3B8">feature flag · off by default</text>
+
+  <!-- ══════════════════════════════════════════════════════════
+       LEGEND
+       ══════════════════════════════════════════════════════════ -->
+  <line x1="10" y1="740" x2="1190" y2="740" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="28" y="756" font-size="10" font-weight="700" letter-spacing="1" fill="#475569">LEGEND</text>
+
+  <!-- Root / CNI -->
+  <rect x="100" y="745" width="18" height="18" rx="3" fill="white" stroke="#C2410C" stroke-width="2.5"/>
+  <text x="124" y="758" font-size="10" fill="#475569">Root / CNI (Cilium)</text>
+
+  <!-- HelmRelease -->
+  <rect x="270" y="745" width="18" height="18" rx="3" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="294" y="758" font-size="10" fill="#475569">HelmRelease</text>
+
+  <!-- Kustomization -->
+  <rect x="420" y="745" width="18" height="18" rx="3" fill="white" stroke="#4F46E5" stroke-width="2"/>
+  <text x="444" y="758" font-size="10" fill="#475569">Flux Kustomization</text>
+
+  <!-- GitHub / external -->
+  <rect x="600" y="745" width="18" height="18" rx="3" fill="#1E293B" stroke="#0F172A" stroke-width="1.5"/>
+  <text x="624" y="758" font-size="10" fill="#475569">External source</text>
+
+  <!-- Feature flag disabled -->
+  <rect x="750" y="745" width="18" height="18" rx="3" fill="#FAFAFA" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="774" y="758" font-size="10" fill="#475569">Feature flag (disabled)</text>
+
+  <!-- dependsOn arrow -->
+  <line x1="950" y1="754" x2="978" y2="754" stroke="#6B7280" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr)"/>
+  <text x="984" y="758" font-size="10" fill="#475569">dependsOn</text>
+
+  <!-- direct dependency arrow -->
+  <line x1="1080" y1="754" x2="1108" y2="754" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="1114" y="758" font-size="10" fill="#475569">deploys / creates</text>
+
+  <!-- Footer note -->
+  <text x="600" y="785" text-anchor="middle" font-size="9" font-style="italic" fill="#94A3B8">cert-manager and istiod have two-phase installs: cert-manager-crds → cert-manager · istio-base → istiod</text>
+</svg>
