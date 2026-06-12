@@ -251,9 +251,74 @@ kubectl get pods -n kube-system -l app.kubernetes.io/part-of=cilium -o wide
 ### Connectivity Test
 
 ```bash
-# Full mesh connectivity test — deploys test pods, runs ~50 checks, cleans up
+# Full mesh connectivity test — deploys test pods, runs ~132 checks, cleans up
 cilium connectivity test
+
+# Demote Hubble flow-validation mismatches to warnings (recommended for KinD)
+# Real connectivity failures (drops, policy violations) still surface as failures.
+cilium connectivity test --flow-validation warning
 ```
+
+### Connectivity Test — Namespace Already Exists
+
+**Symptom:** The test exits after four lines with no failures listed. The log contains:
+
+```
+unable to create service account echo-same-node: serviceaccounts "echo-same-node" already exists
+```
+
+**Cause:** A previous run left the `cilium-test-1` namespace behind (either it was interrupted or the cluster was not fully cleaned between runs).
+
+**Fix:**
+
+```bash
+kubectl delete namespace cilium-test-1 --ignore-not-found=true
+# Then re-run the test.
+```
+
+### Connectivity Test — Known Failures in KinD (Structural)
+
+The following tests consistently fail in this cluster configuration regardless of Cilium settings. They are not connectivity failures — the actual traffic succeeds. The failures are in Hubble's flow-observation layer only.
+
+**`no-policies/pod-to-service`, `allow-all-except-world/pod-to-service`, `pod-to-itself-via-service`**
+
+Failure pattern: `Flow validation failed ... (first: -1, last: -1, matched: 0)`.
+
+Root cause: Cilium's eBPF kube-proxy replacement performs Service→Pod DNAT inside the `to-network` TC BPF hook. All Hubble observation points are downstream of that hook. Hubble records flows with the backend pod IP as destination; the connectivity test queries for the pre-DNAT Service ClusterIP. No configuration setting changes where in the kernel datapath the DNAT occurs.
+
+**Workaround** — demote to warnings rather than failures:
+
+```bash
+cilium connectivity test --flow-validation warning
+```
+
+**`check-log-errors`**
+
+**Cause:** After any Helm upgrade that changes `hubble.metrics.enabled` in the HelmRelease, the `cilium-config` ConfigMap is updated immediately, but the running cilium-agent pods loaded the previous value at their last startup. Cilium's config-drift-checker detects the mismatch and logs a warning, which `check-log-errors` flags.
+
+**Fix:** Restart the DaemonSet so all agents load the current ConfigMap:
+
+```bash
+kubectl rollout restart daemonset/cilium -n kube-system
+kubectl rollout status daemonset/cilium -n kube-system
+```
+
+Verify the running agents now carry the correct value:
+
+```bash
+kubectl get configmap cilium-config -n kube-system \
+  -o jsonpath='{.data.hubble-metrics}' && echo
+# Expected output contains: httpV2:exemplars=true;labelsContext=...
+```
+
+### Connectivity Test — Monitor Aggregation and the Ring Buffer
+
+**Do not set `bpf.monitorAggregation: none`** in the Cilium HelmRelease for connectivity testing. The reasoning is counterintuitive:
+
+- At the default `medium` aggregation level, each TCP connection generates two events (SYN and FIN). With the 4 096-entry Hubble ring buffer, events from earlier test actions remain in the buffer long enough for the test framework to query them.
+- At `none`, every TCP packet generates an event. The ring buffer fills between action execution and the test framework's Hubble query, evicting earlier events before they can be observed. This causes tests that previously passed to fail with `(first: -1, last: -1, matched: 0)` — the same pattern as the pod-to-service failures, but now for simple pod-to-pod flows as well.
+
+In a test run where `monitorAggregation: none` was set, the failure count rose from 5 (structural KinD limits) to 25. Leaving the aggregation at the chart default (`medium`) is the correct choice for this cluster.
 
 ### kube-proxy Replacement
 
