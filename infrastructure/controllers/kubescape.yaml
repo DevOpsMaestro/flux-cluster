@@ -154,26 +154,29 @@ spec:
       ports:
         - port: 8080
 ---
-# The kube-apiserver reaches the storage aggregated APIService from the node's
-# host network IP. Standard NetworkPolicy cannot select host-network peers by
-# namespace or label, so ipBlock covers the full KinD node subnet (172.18.0.0/16).
-# Without this, default-deny blocks the aggregated API health check and the
-# v1beta1.spdx.softwarecomposition.kubescape.io APIService stays Available: False.
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
+# The kube-apiserver reaches the storage aggregated APIService from the
+# control-plane host network. Because the storage pod runs on a different node,
+# this is cross-node host traffic. Standard Kubernetes NetworkPolicy ipBlock
+# rules are not enforced by Cilium for host-to-pod cross-node traffic.
+# A CiliumNetworkPolicy with fromEntities is required:
+#   - kube-apiserver: the Kubernetes API server specifically (Cilium 1.12+)
+#   - remote-node: all host-network processes on other cluster nodes
+# Port 8443 is the container port; the Service maps 443 → 8443.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
 metadata:
   name: allow-apiserver-storage-ingress
   namespace: kubescape
 spec:
-  podSelector:
+  endpointSelector:
     matchLabels:
       app.kubernetes.io/component: storage
       app.kubernetes.io/name: kubescape-operator
-  policyTypes:
-    - Ingress
   ingress:
-    - from:
-        - ipBlock:
-            cidr: 172.18.0.0/16
-      ports:
-        - port: 443
+    - fromEntities:
+        - kube-apiserver
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "8443"
+              protocol: TCP

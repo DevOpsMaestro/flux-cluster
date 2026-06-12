@@ -96,6 +96,15 @@ spec:
     # Safe for initial rollout on a single-node KinD setup. Change to Fail only
     # after Kyverno is HA (replicas: 3) and proven stable across a full restart.
     webhooksFailurePolicy: Ignore
+
+    # Enable PolicyException CRD support. Required for the Falco event-generator
+    # test Job, which must run as root (allowPrivilegeEscalation: true) to trigger
+    # Falco syscall rules, while the disallow-privilege-escalation ClusterPolicy
+    # is in Enforce mode. The exception is scoped to the falco-test namespace only.
+    features:
+      policyExceptions:
+        enabled: true
+        namespace: falco-test
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
