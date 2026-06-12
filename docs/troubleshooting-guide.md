@@ -1,7 +1,7 @@
 # Troubleshooting Guide
 
 Cluster: `flux-kind` · KinD 1.36.1 · 1 control-plane + 2 workers
-Stack: Flux CD · Cilium 1.19 · Hubble · cert-manager 1.20 · OpenEBS 4.x · Istio 1.30 (mesh only) · Gateway API v1.2.1 · Envoy Gateway 1.4 · Metrics Server 3.x · Tetragon 1.7 · Kyverno 3 · Kubescape 1.40 · Falco 9 · Trivy Operator 0.x · kube-prometheus-stack 86 · Grafana 10 (app 12) · Grafana Tempo 1 · OpenTelemetry Collector 0 · BOINC · SOPS + Age · iperf3
+Stack: Flux CD · Cilium 1.19 · Hubble · cert-manager 1.20 · OpenEBS 4.x · Istio 1.30 (mesh only) · Gateway API v1.2.1 · Envoy Gateway 1.8 · Contour 1.33 · Metrics Server 3.x · Tetragon 1.7 · Kyverno 3 · Kubescape 1.40 · Falco 9 · Trivy Operator 0.x · kube-prometheus-stack 86 · Grafana 10 (app 12) · Grafana Tempo 1 · OpenTelemetry Collector 0 · BOINC · SOPS + Age · iperf3
 
 ---
 
@@ -34,6 +34,7 @@ Stack: Flux CD · Cilium 1.19 · Hubble · cert-manager 1.20 · OpenEBS 4.x · I
 24. [Metrics Server](#24-metrics-server)
 25. [Trivy Operator](#25-trivy-operator)
 26. [iperf3](#26-iperf3)
+27. [Contour](#27-contour)
 
 ---
 
@@ -1450,6 +1451,79 @@ kubectl logs -n falco -l app.kubernetes.io/name=falco --since=10m \
 
 **Root cause if BTF is unavailable:** `modern_ebpf` requires kernel BTF support. KinD nodes on Linux expose the host kernel BTF at `/sys/kernel/btf/vmlinux`. If the host kernel predates 5.8 or was built without `CONFIG_DEBUG_INFO_BTF`, Falco will fail to load. Upgrade the host kernel or switch to a KinD node image with a newer kernel.
 
+### nginx nodeport-proxy Crashes on Startup with "host not found in upstream"
+
+**Symptom:** The `nodeport-proxy` DaemonSet enters `CrashLoopBackOff`. Pod logs show:
+
+```
+nginx: [emerg] host not found in upstream "some-service.namespace.svc.cluster.local"
+```
+
+**Cause:** nginx resolves all `proxy_pass` hostnames at startup, before any requests arrive. If any upstream Service does not exist yet — or if its DNS name is wrong — nginx exits immediately, taking down every configured route.
+
+**Fix:** Two changes are required together:
+1. Add a `resolver` directive pointing to kube-dns so nginx can look up Service hostnames.
+2. Use a `$variable` for each `proxy_pass` target instead of a literal hostname. This defers DNS resolution to request time rather than process startup. An unresolvable upstream then returns `502` per-request instead of crashing the proxy.
+
+```nginx
+http {
+    resolver 10.96.0.10 valid=10s ipv6=off;
+
+    server {
+        listen 8888;
+        server_name example.local;
+        location / {
+            set $upstream http://my-service.my-namespace.svc.cluster.local;
+            proxy_pass $upstream;
+        }
+    }
+}
+```
+
+**Diagnosis steps:**
+
+```bash
+# Check crash reason
+kubectl logs -n envoy-ingress -l app=nodeport-proxy --previous | head -10
+
+# Verify the upstream Service actually exists
+kubectl get svc -n <namespace> <service-name>
+
+# Check the full nginx config currently in use
+kubectl get configmap -n envoy-ingress nodeport-proxy-conf -o yaml
+```
+
+---
+
+### nginx Routes All Requests to the Wrong Backend (Missing `default_server`)
+
+**Symptom:** After adding a hostname-specific `server {}` block to the nginx ConfigMap, requests to *other* hostnames (e.g., `grafana.local`) are handled by the new block instead of the intended catch-all block.
+
+**Cause:** `server_name _;` is not a true wildcard. The underscore is simply an invalid DNS name that matches nothing by normal server-name lookup. When nginx receives a request whose `Host` header does not match any `server_name`, it routes to the **first** defined `server {}` block — not the `server_name _` block. If the hostname-specific block was defined first, it becomes the de-facto default.
+
+**Fix:** Add `default_server` to the `listen` directive of the intended catch-all block:
+
+```nginx
+server {
+    listen 8888 default_server;
+    server_name _;
+    # ...
+}
+```
+
+This explicitly designates one block as the fallback for all unmatched host headers, regardless of block ordering.
+
+**Diagnosis:**
+
+```bash
+# Check nginx error log for which server block is handling a request
+kubectl logs -n envoy-ingress -l app=nodeport-proxy | grep "server:"
+
+# A fast way to confirm: send a request with a host nginx should NOT recognize
+# and see which upstream receives it
+curl -s -o /dev/null -w "%{http_code}\n" -H "Host: unknown.local" http://localhost:8080/
+```
+
 ---
 
 ## 22. BOINC
@@ -1560,6 +1634,36 @@ Add a `packageRules` entry to `renovate.json`:
 ```
 
 Alternatively, use the Dependency Dashboard issue — Renovate provides checkboxes to suppress specific updates directly from the issue.
+
+### Renovate Proposed a KinD Node Version That Does Not Exist
+
+**Symptom:** Renovate opens a PR bumping `K8S_VER` in `versions.env` to a new Kubernetes version (e.g., `v1.36.2`), but the cluster rebuild fails because KinD cannot pull the node image:
+
+```
+ERROR: failed to pull image "kindest/node:v1.36.2": ...
+docker: Error response from daemon: manifest unknown
+```
+
+**Cause:** The Kubernetes project publishes a GitHub release and tags the `kubernetes/kubernetes` repository as soon as a version is cut. KinD then builds and publishes the corresponding `kindest/node` Docker image — but there is a delay of hours to days between the GitHub tag and the Docker image being available. If the Renovate `customManager` for `K8S_VER` uses `datasourceTemplate: github-releases` with `kubernetes/kubernetes`, Renovate proposes the version the moment GitHub is tagged, before the Docker image exists.
+
+**Fix:** Change the datasource in `renovate.json` to `docker` with `depNameTemplate: kindest/node`. Renovate then queries Docker Hub directly and only proposes versions for which a `kindest/node` image actually exists:
+
+```json
+{
+  "matchStrings": ["K8S_VER=v?(?<currentValue>[^\\n]+)"],
+  "depNameTemplate": "kindest/node",
+  "datasourceTemplate": "docker"
+}
+```
+
+**Recovery:** If the broken PR was already merged, revert the commit:
+
+```bash
+git log --oneline -5
+git revert <merge-commit-sha>
+git push origin main
+flux reconcile source git flux-system -n flux-system
+```
 
 ---
 
@@ -1819,4 +1923,198 @@ After the cluster is up, verify the mapping exists:
 ```bash
 docker port flux-kind-control-plane 9111
 # Expected: 0.0.0.0:32111
+```
+
+---
+
+## 27. Contour
+
+Contour is a second, independent ingress stack that runs alongside Envoy Gateway. It acts as a Kubernetes-native control plane: it watches `HTTPProxy` CRs and standard `Ingress` resources, translates them into Envoy xDS configuration, and streams that configuration via gRPC to its own Envoy DaemonSet. The Contour Envoy DaemonSet is the data plane; it receives xDS from Contour and routes live traffic to backend services.
+
+This creates two independent ingress stacks in the same cluster, both using Envoy as the data plane but programmed by separate controllers using different APIs:
+
+| Stack | Control plane | API | Data plane |
+|---|---|---|---|
+| Envoy Gateway | Envoy Gateway controller | Gateway API (`HTTPRoute`, `TCPRoute`) | Auto-provisioned Envoy pods in `envoy-gateway-system` |
+| Contour | Contour controller | `HTTPProxy` CRD (`projectcontour.io/v1`) | Envoy DaemonSet in `contour` |
+
+Traffic from `localhost:8080` reaches both stacks through the nginx `nodeport-proxy` in `envoy-ingress`, which routes by hostname:
+- `httpbin-contour.local` → `contour-contour-envoy.contour.svc.cluster.local:80`
+- All other hostnames → `envoy-proxy.envoy-gateway-system.svc.cluster.local`
+
+### Status
+
+```bash
+# Flux HelmRelease
+flux get helmrelease contour -n flux-system
+# Expected: READY True, chart 0.x (app version v1.33.x)
+
+# Controller and Envoy DaemonSet pods
+kubectl get pods -n contour
+# Expected: contour-contour-* Running (controller), contour-contour-envoy-* Running (data plane, one per node)
+
+# HTTPProxy CR in the demo namespace
+kubectl get httpproxy -n demo
+# Expected: FQDN httpbin-contour.local, STATUS valid
+
+# Detailed HTTPProxy conditions
+kubectl describe httpproxy httpbin -n demo
+```
+
+### End-to-End Connectivity Test
+
+```bash
+# Route through Contour stack
+curl -s -o /dev/null -w "%{http_code}\n" -H "Host: httpbin-contour.local" http://localhost:8080/get
+# Expected: 200
+
+# Confirm Envoy Gateway routes are unaffected
+curl -s -o /dev/null -w "%{http_code}\n" -H "Host: grafana.local" http://localhost:8080/
+# Expected: 302
+
+curl -s -o /dev/null -w "%{http_code}\n" -H "Host: prometheus.local" http://localhost:8080/
+# Expected: 200
+```
+
+Add `127.0.0.1 httpbin-contour.local` to `/etc/hosts` to use the hostname directly without a `-H` flag.
+
+### Contour Logs
+
+```bash
+# Controller logs — xDS pushes, HTTPProxy reconciliation
+kubectl logs -n contour -l app.kubernetes.io/name=contour,app.kubernetes.io/component=contour | tail -50
+
+# Envoy data-plane logs — access logs and errors
+kubectl logs -n contour -l app.kubernetes.io/component=envoy | tail -50
+```
+
+### Adding a New Service via HTTPProxy
+
+Create an `HTTPProxy` CR in the service's namespace:
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: my-app
+  namespace: my-namespace
+spec:
+  virtualhost:
+    fqdn: my-app-contour.local
+  routes:
+    - conditions:
+        - prefix: /
+      services:
+        - name: my-service
+          port: 80
+```
+
+Then add `127.0.0.1 my-app-contour.local` to `/etc/hosts`.
+
+If the new hostname should route through Contour (not Envoy Gateway), add a corresponding `server {}` block to the nginx ConfigMap in `apps/overlays/kind/istio/nodeport-proxy.yaml` before the `listen 8888 default_server` catch-all block. See the `httpbin-contour.local` block as an example.
+
+### Issue — HelmRelease Fails with "no artifact available for HelmRepository source 'projectcontour'"
+
+**Cause:** The `HelmRepository` URL is wrong. The correct URL for the projectcontour Helm chart repository is:
+
+```
+https://projectcontour.github.io/helm-charts/
+```
+
+Common incorrect values that produce this error:
+- `https://charts.projectcontour.io` — this domain does not exist
+- `https://projectcontour.io/helm-charts` — this is not a valid Helm repository endpoint
+
+**Fix:** Verify the `HelmRepository` resource in `infrastructure/controllers/repositories.yaml`:
+
+```bash
+kubectl get helmrepository projectcontour -n flux-system -o yaml | grep url
+# Expected: https://projectcontour.github.io/helm-charts/
+
+# Check the repository status
+flux get source helm projectcontour -n flux-system
+```
+
+### Issue — Contour Chart Version Scheme
+
+The Contour Helm chart in `projectcontour/helm-charts` uses an independent version number that does not match the Contour application version. The mapping is:
+
+| Chart version | Contour app version |
+|---|---|
+| 0.6.x | v1.33.x |
+
+Use `version: "0.x"` in the HelmRelease to track the current chart minor series. Do not use the application version string (e.g., `"1.33.x"`) as the chart version — no such chart version exists and the HelmRelease will fail.
+
+### Issue — NetworkPolicy Blocks All Traffic to/from Contour Envoy Pods
+
+**Symptom:** `httpbin-contour.local` returns `502` or `504`. Requests reach nginx but are dropped before reaching the Contour Envoy pod.
+
+**Cause:** The Bitnami-maintained Contour chart labels its Envoy DaemonSet pods with:
+
+```
+app.kubernetes.io/name: contour       (the Helm chart name)
+app.kubernetes.io/component: envoy    (the role within the chart)
+```
+
+A NetworkPolicy that selects on `app.kubernetes.io/name: envoy` matches **zero pods** because no pod carries that label. The correct selector is `app.kubernetes.io/component: envoy`.
+
+**Diagnosis:**
+
+```bash
+# Confirm which labels the Contour Envoy pods actually carry
+kubectl get pods -n contour -l app.kubernetes.io/component=envoy --show-labels
+
+# Check current NetworkPolicy selectors
+kubectl get networkpolicy -n contour allow-envoy-http-ingress -o yaml | grep -A 5 podSelector
+kubectl get networkpolicy -n contour allow-envoy-egress-to-backends -o yaml | grep -A 5 podSelector
+```
+
+**Fix:** Both `allow-envoy-http-ingress` and `allow-envoy-egress-to-backends` in `infrastructure/controllers/contour.yaml` must use:
+
+```yaml
+podSelector:
+  matchLabels:
+    app.kubernetes.io/component: envoy
+```
+
+### Issue — All Routes Return 504 After Contour Server Block Added to nginx
+
+**Symptom:** After adding a `server_name httpbin-contour.local` block to the nginx ConfigMap, requests to `grafana.local` and `prometheus.local` also return `504`. Nginx logs show the `httpbin-contour.local` server block handling requests for those hostnames.
+
+**Cause:** The Contour server block was defined first in the `http {}` context, and the catch-all block used `listen 8888;` without `default_server`. Because `server_name _;` is not a true wildcard, nginx routes all unmatched host headers to the first defined block. See [§21 — nginx Routes All Requests to the Wrong Backend](#nginx-routes-all-requests-to-the-wrong-backend-missing-default_server) for a full explanation.
+
+**Fix:** Ensure the Envoy Gateway catch-all block uses `listen 8888 default_server;`:
+
+```nginx
+server {
+    listen 8888 default_server;
+    server_name _;
+    location / {
+        set $egw_upstream http://envoy-proxy.envoy-gateway-system.svc.cluster.local;
+        proxy_pass $egw_upstream;
+        # ...
+    }
+}
+```
+
+After updating the ConfigMap, restart the DaemonSet:
+
+```bash
+kubectl rollout restart daemonset -n envoy-ingress nodeport-proxy
+kubectl rollout status daemonset -n envoy-ingress nodeport-proxy
+```
+
+### Issue — Contour Envoy Service Name
+
+The Contour chart creates Kubernetes Services using the Helm release name as a prefix. With the release named `contour` installed in the `contour` namespace, the resulting Envoy Service name is:
+
+```
+contour-contour-envoy.contour.svc.cluster.local
+```
+
+The pattern is `<release-name>-<chart-name>-envoy`. If the nginx ConfigMap uses the wrong service name (e.g., `envoy.contour.svc.cluster.local`), nginx will crash on startup with a "host not found in upstream" error.
+
+```bash
+# Confirm the actual Service name
+kubectl get svc -n contour
 ```
