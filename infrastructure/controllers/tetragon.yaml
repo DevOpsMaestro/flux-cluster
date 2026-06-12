@@ -42,6 +42,8 @@ spec:
       interval: 24h
   values:
     tetragon:
+      # Suppress info-level agent logs. Valid: trace, debug, info, warn, error, fatal, panic.
+      logLevel: warn
       prometheus:
         enabled: true
         # ServiceMonitor CRD (monitoring.coreos.com/v1) lives in the apps layer

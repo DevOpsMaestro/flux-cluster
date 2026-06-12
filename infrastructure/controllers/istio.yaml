@@ -74,6 +74,8 @@ spec:
       # 100% sampling — every request generates a trace. Appropriate for a
       # learning cluster; lower to 1–10% in production to avoid trace volume costs.
       traceSampling: 100.0
+      # Suppress info-level istiod logs. Valid: none, error, warn, info, debug.
+      logLevel: warning
     # KinD has no Metrics Server so the HPA can never collect CPU data.
     # Disable it to suppress FailedGetResourceMetric warnings.
     autoscaleEnabled: false

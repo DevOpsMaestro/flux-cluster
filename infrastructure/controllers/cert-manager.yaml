@@ -105,6 +105,10 @@ spec:
         namespace: flux-system
       interval: 24h
   values:
+    # Suppress info-level controller logs. cert-manager uses klog (integer verbosity):
+    # 0 = error/warning, 1 = info, 2+ = debug. Default is 2.
+    global:
+      logLevel: 1
     resources:
       requests:
         cpu: 10m

@@ -34,6 +34,9 @@ spec:
     podLabels:
       sidecar.istio.io/inject: "false"
 
+    # Suppress info-level Promtail logs. Valid: trace, debug, info, warn, error.
+    logLevel: warn
+
     config:
       clients:
         - url: http://observability-loki.observability.svc.cluster.local:3100/loki/api/v1/push

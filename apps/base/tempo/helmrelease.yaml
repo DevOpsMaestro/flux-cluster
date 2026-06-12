@@ -60,6 +60,8 @@ spec:
     tempo:
       # Disable anonymous usage reporting.
       reportingEnabled: false
+      server:
+        log_level: warn
 
       # Receiver configuration — accept OTLP gRPC and HTTP from the OTel Collector.
       receivers:

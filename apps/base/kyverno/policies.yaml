@@ -198,6 +198,23 @@ spec:
                 # (cilium-test-1, cilium-test-2) with test pods that have no
                 # resource limits. These are transient diagnostic workloads.
                 - cilium-test-*
+                # Kubernetes control plane components (etcd, kube-apiserver,
+                # kube-scheduler, kube-controller-manager, cilium, CoreDNS) do not
+                # expose resource limit knobs to end users. Background scan violations
+                # for these are informational noise with no actionable remediation.
+                - kube-system
+                # Istio control plane (istiod, istio-proxy) resource limits are
+                # managed by the Istio chart and not independently configurable.
+                - istio-system
+                # Kyverno controllers themselves: exclusion prevents the background
+                # scanner from reporting violations on the admission controller pods.
+                - kyverno
+                # KinD built-in local-path provisioner pods have no resource limits
+                # and are not configurable via Helm values.
+                - local-path-storage
+                # cert-manager startupapicheck and cainjector jobs do not expose
+                # per-container resource limit knobs in the chart.
+                - cert-manager
       validate:
         message: "All containers must declare cpu and memory requests and limits."
         foreach:

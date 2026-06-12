@@ -107,6 +107,7 @@ spec:
       relay:
         enabled: true
         replicas: 1
+        logLevel: "warning"
       ui:
         # Disabled by default to save ~200 Mi RAM on KinD.
         # Re-enable: kubectl patch helmrelease cilium -n flux-system --type=merge \
@@ -148,3 +149,8 @@ spec:
     # ports (15001/15006) to pass through without being re-NATed by Cilium.
     socketLB:
       hostNamespaceOnly: true
+
+    # ── Logging ───────────────────────────────────────────────────────────────
+    # Suppress info-level agent logs. Valid levels: debug, info, warning, error.
+    logging:
+      level: "warning"

@@ -36,6 +36,8 @@ spec:
         replication_factor: 1
       storage:
         type: filesystem
+      server:
+        log_level: warn
       schemaConfig:
         configs:
           - from: "2024-04-01"
