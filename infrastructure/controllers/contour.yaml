@@ -156,7 +156,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: envoy
+      app.kubernetes.io/component: envoy
   policyTypes:
     - Ingress
   ingress:
@@ -173,7 +173,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: envoy
+      app.kubernetes.io/component: envoy
   policyTypes:
     - Egress
   egress:

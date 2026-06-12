@@ -76,8 +76,12 @@ data:
             }
         }
         # Envoy Gateway ingress stack — catch-all for all other hostnames.
+        # default_server is required: server_name _ is an invalid DNS name that
+        # matches nothing. Without default_server, nginx falls back to the FIRST
+        # defined server block for unmatched hosts — which would be the Contour
+        # block, breaking Grafana and Prometheus routes.
         server {
-            listen 8888;
+            listen 8888 default_server;
             server_name _;
             location / {
                 set $egw_upstream http://envoy-proxy.envoy-gateway-system.svc.cluster.local;
