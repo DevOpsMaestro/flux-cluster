@@ -142,7 +142,7 @@ spec:
     - Ingress
   ingress:
     - ports:
-        - port: 4443
+        - port: 10250
 ---
 # Metrics Server scrapes kubelet /stats/summary on port 10250 to collect
 # node and pod resource usage. Kubelets run on node IPs (not in any namespace),
