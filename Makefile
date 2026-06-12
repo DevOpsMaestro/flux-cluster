@@ -371,3 +371,19 @@ test-iperf3-overflow: ## Show live Envoy circuit-breaker stats for the iperf3 cl
 	  | grep -E 'upstream_cx_overflow|upstream_cx_total|upstream_cx_active|upstream_cx_destroy'; \
 	kill $$PF_PID 2>/dev/null; wait $$PF_PID 2>/dev/null
 	@printf '\n'
+
+# ── iperf3 feature flag ───────────────────────────────────────────────────────
+
+iperf3-enable: ## Enable iperf3 — uncomments its entry in apps/overlays/kind/kustomization.yaml
+	@sed -i '' 's|^  # - ../../base/iperf3.*|  - ../../base/iperf3|' \
+	  apps/overlays/kind/kustomization.yaml
+	@grep -q '^  - ../../base/iperf3$$' apps/overlays/kind/kustomization.yaml \
+	  && printf '\n✓ iperf3 enabled in apps/overlays/kind/kustomization.yaml\n  Commit and push to deploy via Flux.\n\n' \
+	  || { printf '\n✗ Pattern not matched — inspect apps/overlays/kind/kustomization.yaml\n\n'; exit 1; }
+
+iperf3-disable: ## Disable iperf3 — comments out its entry in apps/overlays/kind/kustomization.yaml
+	@sed -i '' 's|^  - ../../base/iperf3$$|  # - ../../base/iperf3        # iperf3 feature flag — run: make iperf3-enable to restore|' \
+	  apps/overlays/kind/kustomization.yaml
+	@grep -q '^  # - ../../base/iperf3' apps/overlays/kind/kustomization.yaml \
+	  && printf '\n✓ iperf3 disabled in apps/overlays/kind/kustomization.yaml\n  Commit and push to remove via Flux (prune: true will delete the namespace).\n\n' \
+	  || { printf '\n✗ Pattern not matched — inspect apps/overlays/kind/kustomization.yaml\n\n'; exit 1; }

@@ -13,8 +13,8 @@ resources:
   - ../../base/tempo
   - ../../base/opentelemetry
   - ../../base/boinc
-  - ../../base/iperf3
   # Uncomment to enable:
+  # - ../../base/iperf3        # iperf3 feature flag — run: make iperf3-enable to restore
   # - cert-manager/
   # - openebs/
   # - cilium/   # placeholder for CiliumNetworkPolicy resources; the CNI
