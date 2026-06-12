@@ -41,7 +41,7 @@ spec:
   chart:
     spec:
       chart: contour
-      version: "1.30.x"
+      version: "0.x"
       sourceRef:
         kind: HelmRepository
         name: projectcontour
@@ -56,6 +56,11 @@ spec:
         limits:
           cpu: 500m
           memory: 256Mi
+      # Disable the chart's built-in NetworkPolicies; this project manages
+      # its own NetworkPolicies in contour.yaml using the same pattern as
+      # envoy-gateway.yaml (default-deny + explicit allow rules).
+      networkPolicy:
+        enabled: false
     envoy:
       service:
         type: NodePort
@@ -69,6 +74,8 @@ spec:
         limits:
           cpu: 500m
           memory: 256Mi
+      networkPolicy:
+        enabled: false
 ---
 # ── contour namespace — controller and Envoy DaemonSet ───────────────────────
 apiVersion: networking.k8s.io/v1
