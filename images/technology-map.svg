@@ -1,0 +1,244 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 770" width="1200" height="770"
+     font-family="system-ui,-apple-system,Arial,sans-serif">
+
+  <!-- Canvas -->
+  <rect width="1200" height="770" fill="#FAFAFA"/>
+
+  <!-- ── Title ── -->
+  <text x="600" y="22" text-anchor="middle" font-size="20" font-weight="700" fill="#0F172A">Technology Map — homelab-gitops-k8s-2026</text>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ROW 1  ·  CLUSTER INFRASTRUCTURE (blue, left)
+               ·  GITOPS &amp; CI/CD (indigo, right)
+       y=30–175
+       ══════════════════════════════════════════════════════════════ -->
+
+  <!-- Cluster Infrastructure panel -->
+  <rect x="10" y="30" width="580" height="145" rx="10" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="28" y="48" font-size="10" font-weight="700" letter-spacing="1.2" fill="#1D4ED8">CLUSTER INFRASTRUCTURE</text>
+
+  <!-- row 1: Kubernetes (edge=132 ctr=212), KinD (edge=308 ctr=388) -->
+  <rect x="132" y="56" width="160" height="46" rx="8" fill="white" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="212" y="74"  text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Kubernetes</text>
+  <text x="212" y="89"  text-anchor="middle" font-size="9"  fill="#475569">v1.36.1</text>
+
+  <rect x="308" y="56" width="160" height="46" rx="8" fill="white" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="388" y="74"  text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">KinD</text>
+  <text x="388" y="89"  text-anchor="middle" font-size="9"  fill="#475569">Kubernetes in Docker</text>
+
+  <!-- row 2: containerd, Docker Desktop -->
+  <rect x="132" y="116" width="160" height="46" rx="8" fill="white" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="212" y="134" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">containerd</text>
+  <text x="212" y="149" text-anchor="middle" font-size="9"  fill="#475569">container runtime</text>
+
+  <rect x="308" y="116" width="160" height="46" rx="8" fill="white" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="388" y="134" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Docker Desktop</text>
+  <text x="388" y="149" text-anchor="middle" font-size="9"  fill="#475569">macOS container host</text>
+
+  <!-- GitOps &amp; CI/CD panel -->
+  <rect x="596" y="30" width="594" height="145" rx="10" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="614" y="48" font-size="10" font-weight="700" letter-spacing="1.2" fill="#4F46E5">GITOPS &amp; CI/CD</text>
+
+  <!-- row 1: FluxCD (ctr=717), GitHub Actions (ctr=893), Renovate (ctr=1069) -->
+  <rect x="637" y="56" width="160" height="46" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="717" y="74"  text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">FluxCD</text>
+  <text x="717" y="89"  text-anchor="middle" font-size="9"  fill="#475569">v2.8.8 · GitOps operator</text>
+
+  <rect x="813" y="56" width="160" height="46" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="893" y="74"  text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">GitHub Actions</text>
+  <text x="893" y="89"  text-anchor="middle" font-size="9"  fill="#475569">CI/CD workflows</text>
+
+  <rect x="989" y="56" width="160" height="46" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="1069" y="74"  text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Renovate</text>
+  <text x="1069" y="89"  text-anchor="middle" font-size="9"  fill="#475569">v46 · dependency updates</text>
+
+  <!-- row 2: Kustomize, Helm, Gitleaks -->
+  <rect x="637" y="116" width="160" height="46" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="717" y="134" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Kustomize</text>
+  <text x="717" y="149" text-anchor="middle" font-size="9"  fill="#475569">manifest overlays</text>
+
+  <rect x="813" y="116" width="160" height="46" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="893" y="134" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Helm</text>
+  <text x="893" y="149" text-anchor="middle" font-size="9"  fill="#475569">chart packaging</text>
+
+  <rect x="989" y="116" width="160" height="46" rx="8" fill="white" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="1069" y="134" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Gitleaks</text>
+  <text x="1069" y="149" text-anchor="middle" font-size="9"  fill="#475569">v8.30 · secret scanning</text>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ROW 2  ·  NETWORKING &amp; SERVICE MESH (cyan)
+       y=183–279
+       ══════════════════════════════════════════════════════════════ -->
+  <rect x="10" y="183" width="1180" height="96" rx="10" fill="#ECFEFF" stroke="#0891B2" stroke-width="1.5"/>
+  <text x="28" y="201" font-size="10" font-weight="700" letter-spacing="1.2" fill="#0891B2">NETWORKING &amp; SERVICE MESH</text>
+
+  <!-- 5 cards: edges 168,344,520,696,872  centers 248,424,600,776,952 -->
+  <rect x="168" y="209" width="160" height="46" rx="8" fill="white" stroke="#0891B2" stroke-width="1.5"/>
+  <text x="248" y="227" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Cilium</text>
+  <text x="248" y="242" text-anchor="middle" font-size="9"  fill="#475569">v1.19.4 · CNI + eBPF</text>
+
+  <rect x="344" y="209" width="160" height="46" rx="8" fill="white" stroke="#0891B2" stroke-width="1.5"/>
+  <text x="424" y="227" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Hubble</text>
+  <text x="424" y="242" text-anchor="middle" font-size="9"  fill="#475569">network observability</text>
+
+  <rect x="520" y="209" width="160" height="46" rx="8" fill="white" stroke="#0891B2" stroke-width="1.5"/>
+  <text x="600" y="227" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Istio</text>
+  <text x="600" y="242" text-anchor="middle" font-size="9"  fill="#475569">v1.30.1 · service mesh</text>
+
+  <rect x="696" y="209" width="160" height="46" rx="8" fill="white" stroke="#0891B2" stroke-width="1.5"/>
+  <text x="776" y="227" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Envoy Gateway</text>
+  <text x="776" y="242" text-anchor="middle" font-size="9"  fill="#475569">v1.8.1 · API gateway</text>
+
+  <rect x="872" y="209" width="160" height="46" rx="8" fill="white" stroke="#0891B2" stroke-width="1.5"/>
+  <text x="952" y="227" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">nginx</text>
+  <text x="952" y="242" text-anchor="middle" font-size="9"  fill="#475569">KinD nodeport proxy</text>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ROW 3  ·  SECURITY (rose)
+       y=287–435
+       ══════════════════════════════════════════════════════════════ -->
+  <rect x="10" y="287" width="1180" height="148" rx="10" fill="#FFF1F2" stroke="#BE123C" stroke-width="1.5"/>
+  <text x="28" y="305" font-size="10" font-weight="700" letter-spacing="1.2" fill="#BE123C">SECURITY</text>
+
+  <!-- row 1 (4 cards): edges 256,432,608,784  centers 336,512,688,864 -->
+  <rect x="256" y="313" width="160" height="46" rx="8" fill="white" stroke="#BE123C" stroke-width="1.5"/>
+  <text x="336" y="331" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Kyverno</text>
+  <text x="336" y="346" text-anchor="middle" font-size="9"  fill="#475569">v3.x · admission policies</text>
+
+  <rect x="432" y="313" width="160" height="46" rx="8" fill="white" stroke="#BE123C" stroke-width="1.5"/>
+  <text x="512" y="331" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Falco</text>
+  <text x="512" y="346" text-anchor="middle" font-size="9"  fill="#475569">v9.x · runtime detection</text>
+
+  <rect x="608" y="313" width="160" height="46" rx="8" fill="white" stroke="#BE123C" stroke-width="1.5"/>
+  <text x="688" y="331" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Tetragon</text>
+  <text x="688" y="346" text-anchor="middle" font-size="9"  fill="#475569">v1.7.0 · eBPF enforcement</text>
+
+  <rect x="784" y="313" width="160" height="46" rx="8" fill="white" stroke="#BE123C" stroke-width="1.5"/>
+  <text x="864" y="331" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Kubescape</text>
+  <text x="864" y="346" text-anchor="middle" font-size="9"  fill="#475569">v1.40.2 · posture scan</text>
+
+  <!-- row 2 (3 cards): edges 354,530,706  centers 434,610,786 -->
+  <rect x="354" y="375" width="160" height="46" rx="8" fill="white" stroke="#BE123C" stroke-width="1.5"/>
+  <text x="434" y="393" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Trivy Operator</text>
+  <text x="434" y="408" text-anchor="middle" font-size="9"  fill="#475569">v0.x · CVE scanning</text>
+
+  <rect x="530" y="375" width="160" height="46" rx="8" fill="white" stroke="#BE123C" stroke-width="1.5"/>
+  <text x="610" y="393" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">SOPS</text>
+  <text x="610" y="408" text-anchor="middle" font-size="9"  fill="#475569">secret encryption at rest</text>
+
+  <rect x="706" y="375" width="160" height="46" rx="8" fill="white" stroke="#BE123C" stroke-width="1.5"/>
+  <text x="786" y="393" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Age</text>
+  <text x="786" y="408" text-anchor="middle" font-size="9"  fill="#475569">post-quantum key backend</text>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ROW 4  ·  OBSERVABILITY (green)
+       y=443–591
+       ══════════════════════════════════════════════════════════════ -->
+  <rect x="10" y="443" width="1180" height="148" rx="10" fill="#F0FDF4" stroke="#15803D" stroke-width="1.5"/>
+  <text x="28" y="461" font-size="10" font-weight="700" letter-spacing="1.2" fill="#15803D">OBSERVABILITY</text>
+
+  <!-- row 1 (4 cards): same x as security row 1 -->
+  <rect x="256" y="469" width="160" height="46" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="336" y="487" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Prometheus</text>
+  <text x="336" y="502" text-anchor="middle" font-size="9"  fill="#475569">metrics collection</text>
+
+  <rect x="432" y="469" width="160" height="46" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="512" y="487" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Grafana</text>
+  <text x="512" y="502" text-anchor="middle" font-size="9"  fill="#475569">dashboards + alerting</text>
+
+  <rect x="608" y="469" width="160" height="46" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="688" y="487" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Loki</text>
+  <text x="688" y="502" text-anchor="middle" font-size="9"  fill="#475569">log aggregation</text>
+
+  <rect x="784" y="469" width="160" height="46" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="864" y="487" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Promtail</text>
+  <text x="864" y="502" text-anchor="middle" font-size="9"  fill="#475569">log forwarding agent</text>
+
+  <!-- row 2 (3 cards): same x as security row 2 -->
+  <rect x="354" y="531" width="160" height="46" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="434" y="549" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Tempo</text>
+  <text x="434" y="564" text-anchor="middle" font-size="9"  fill="#475569">distributed tracing</text>
+
+  <rect x="530" y="531" width="160" height="46" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="610" y="549" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">OpenTelemetry</text>
+  <text x="610" y="564" text-anchor="middle" font-size="9"  fill="#475569">OTLP collector</text>
+
+  <rect x="706" y="531" width="160" height="46" rx="8" fill="white" stroke="#15803D" stroke-width="1.5"/>
+  <text x="786" y="549" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Metrics Server</text>
+  <text x="786" y="564" text-anchor="middle" font-size="9"  fill="#475569">v3.x · resource API</text>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       ROW 5  ·  APPLICATIONS (violet, left)
+               ·  STORAGE &amp; CERTIFICATES (amber, right)
+       y=599–695
+       ══════════════════════════════════════════════════════════════ -->
+
+  <!-- Applications panel -->
+  <rect x="10" y="599" width="806" height="96" rx="10" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1.5"/>
+  <text x="28" y="617" font-size="10" font-weight="700" letter-spacing="1.2" fill="#7C3AED">APPLICATIONS</text>
+
+  <!-- 4 cards: edges 69,245,421,597  centers 149,325,501,677 -->
+  <rect x="69"  y="625" width="160" height="46" rx="8" fill="white" stroke="#7C3AED" stroke-width="1.5"/>
+  <text x="149" y="643" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">BOINC</text>
+  <text x="149" y="658" text-anchor="middle" font-size="9"  fill="#475569">Einstein + Rosetta@Home</text>
+
+  <!-- iperf3 — feature flag, dashed -->
+  <rect x="245" y="625" width="160" height="46" rx="8" fill="#FAFAFA" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="325" y="643" text-anchor="middle" font-size="11" font-weight="700" fill="#94A3B8">iperf3</text>
+  <text x="325" y="658" text-anchor="middle" font-size="9"  fill="#94A3B8">feature flag · off by default</text>
+
+  <rect x="421" y="625" width="160" height="46" rx="8" fill="white" stroke="#7C3AED" stroke-width="1.5"/>
+  <text x="501" y="643" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">httpbin</text>
+  <text x="501" y="658" text-anchor="middle" font-size="9"  fill="#475569">demo HTTP workload</text>
+
+  <rect x="597" y="625" width="160" height="46" rx="8" fill="white" stroke="#7C3AED" stroke-width="1.5"/>
+  <text x="677" y="643" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">load-generator</text>
+  <text x="677" y="658" text-anchor="middle" font-size="9"  fill="#475569">curl-based traffic driver</text>
+
+  <!-- Storage &amp; Certificates panel -->
+  <rect x="822" y="599" width="368" height="96" rx="10" fill="#FFFBEB" stroke="#B45309" stroke-width="1.5"/>
+  <text x="840" y="617" font-size="10" font-weight="700" letter-spacing="1.2" fill="#B45309">STORAGE &amp; CERTIFICATES</text>
+
+  <!-- 2 cards: edges 839,1015  centers 919,1095 -->
+  <rect x="839"  y="625" width="160" height="46" rx="8" fill="white" stroke="#B45309" stroke-width="1.5"/>
+  <text x="919"  y="643" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">OpenEBS</text>
+  <text x="919"  y="658" text-anchor="middle" font-size="9"  fill="#475569">v4.x · local storage</text>
+
+  <rect x="1015" y="625" width="160" height="46" rx="8" fill="white" stroke="#B45309" stroke-width="1.5"/>
+  <text x="1095" y="643" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">cert-manager</text>
+  <text x="1095" y="658" text-anchor="middle" font-size="9"  fill="#475569">v1.20.x · X.509</text>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       LEGEND
+       ══════════════════════════════════════════════════════════════ -->
+  <line x1="10" y1="707" x2="1190" y2="707" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- colour swatches -->
+  <rect x="10"   y="717" width="14" height="14" rx="3" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="30"   y="728" font-size="10" fill="#475569">Cluster Infra</text>
+
+  <rect x="130"  y="717" width="14" height="14" rx="3" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="150"  y="728" font-size="10" fill="#475569">GitOps &amp; CI/CD</text>
+
+  <rect x="268"  y="717" width="14" height="14" rx="3" fill="#ECFEFF" stroke="#0891B2" stroke-width="1.5"/>
+  <text x="288"  y="728" font-size="10" fill="#475569">Networking</text>
+
+  <rect x="380"  y="717" width="14" height="14" rx="3" fill="#FFF1F2" stroke="#BE123C" stroke-width="1.5"/>
+  <text x="400"  y="728" font-size="10" fill="#475569">Security</text>
+
+  <rect x="468"  y="717" width="14" height="14" rx="3" fill="#F0FDF4" stroke="#15803D" stroke-width="1.5"/>
+  <text x="488"  y="728" font-size="10" fill="#475569">Observability</text>
+
+  <rect x="590"  y="717" width="14" height="14" rx="3" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1.5"/>
+  <text x="610"  y="728" font-size="10" fill="#475569">Applications</text>
+
+  <rect x="704"  y="717" width="14" height="14" rx="3" fill="#FFFBEB" stroke="#B45309" stroke-width="1.5"/>
+  <text x="724"  y="728" font-size="10" fill="#475569">Storage &amp; Certs</text>
+
+  <!-- feature-flag swatch -->
+  <rect x="840"  y="717" width="14" height="14" rx="3" fill="#FAFAFA" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="860"  y="728" font-size="10" fill="#475569">Feature flag (disabled by default)</text>
+
+  <!-- footer note -->
+  <text x="600" y="754" text-anchor="middle" font-size="9" font-style="italic" fill="#94A3B8">Versions reflect versions.env and HelmRelease chart constraints as of 2026-06-12. cert-manager and openebs are deployed but inactive (commented out in the kind overlay by default).</text>
+</svg>
