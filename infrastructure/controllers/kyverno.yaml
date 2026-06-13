@@ -45,7 +45,7 @@ spec:
     admissionController:
       replicas: 1
       extraArgs:
-        - --v=1
+        v: "1"
       resources:
         requests:
           cpu: 100m
@@ -56,7 +56,7 @@ spec:
     backgroundController:
       replicas: 1
       extraArgs:
-        - --v=1
+        v: "1"
       resources:
         requests:
           cpu: 100m
@@ -67,7 +67,7 @@ spec:
     cleanupController:
       replicas: 1
       extraArgs:
-        - --v=1
+        v: "1"
       resources:
         requests:
           cpu: 100m
@@ -78,7 +78,7 @@ spec:
     reportsController:
       replicas: 1
       extraArgs:
-        - --v=1
+        v: "1"
       resources:
         requests:
           cpu: 100m

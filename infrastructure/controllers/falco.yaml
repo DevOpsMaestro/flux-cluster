@@ -142,7 +142,8 @@ spec:
         # cilium-mount and cilium-sysctlfix from writable overlay layers at every pod
         # restart. These are expected privileged init-container operations, not attacks.
         - rule: Drop and execute new binary in container
-          append: true
+          override:
+            exceptions: append
           exceptions:
             - name: cilium_init_containers
               fields: [container.name]
