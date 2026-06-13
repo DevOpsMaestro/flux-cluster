@@ -39,8 +39,13 @@ spec:
   values:
     # Single replica per component — KinD resource optimisation.
     # Scale to 3 for HA in production.
+    #
+    # Log verbosity: Kyverno uses klog integers (--v flag). 1 shows warnings and
+    # errors; 2 is the default (info); 3+ adds debug output.
     admissionController:
       replicas: 1
+      extraArgs:
+        - --v=1
       resources:
         requests:
           cpu: 100m
@@ -50,6 +55,8 @@ spec:
           memory: 512Mi
     backgroundController:
       replicas: 1
+      extraArgs:
+        - --v=1
       resources:
         requests:
           cpu: 100m
@@ -59,6 +66,8 @@ spec:
           memory: 256Mi
     cleanupController:
       replicas: 1
+      extraArgs:
+        - --v=1
       resources:
         requests:
           cpu: 100m
@@ -68,6 +77,8 @@ spec:
           memory: 256Mi
     reportsController:
       replicas: 1
+      extraArgs:
+        - --v=1
       resources:
         requests:
           cpu: 100m

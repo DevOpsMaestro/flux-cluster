@@ -53,6 +53,8 @@ spec:
     args:
       - --kubelet-insecure-tls
       - --kubelet-preferred-address-types=InternalIP
+      # klog verbosity: 0 = errors only, 1 = warnings+errors (default is 1 for metrics-server).
+      - --v=1
 
     # Exposes /metrics on port 8080; scraped by Prometheus via additionalScrapeConfigs.
     metrics:

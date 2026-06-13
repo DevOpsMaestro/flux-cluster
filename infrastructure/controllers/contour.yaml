@@ -49,6 +49,8 @@ spec:
       interval: 24h
   values:
     contour:
+      # Suppress info-level controller logs. Valid: trace, debug, info, warn, error.
+      logLevel: warn
       resources:
         requests:
           cpu: 100m

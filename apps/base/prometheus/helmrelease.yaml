@@ -38,6 +38,7 @@ spec:
     alertmanager:
       enabled: true
       alertmanagerSpec:
+        logLevel: warn
         resources:
           requests:
             cpu: 50m
@@ -129,6 +130,7 @@ spec:
     # sidecar it injects into every managed StatefulSet needs resource values too
     # (configReloaderCpu/Memory set both requests and limits for that container).
     prometheusOperator:
+      logLevel: warn
       resources:
         requests:
           cpu: 100m
@@ -146,6 +148,7 @@ spec:
             memory: 50Mi
 
     kube-state-metrics:
+      logLevel: warn
       resources:
         requests:
           cpu: 50m
@@ -168,6 +171,7 @@ spec:
           memory: 64Mi
     prometheus:
       prometheusSpec:
+        logLevel: warn
         # NOTE: no volumeClaimTemplate — storage is ephemeral (emptyDir).
         # Metrics are lost on pod restart. Acceptable for a KinD dev cluster;
         # add a volumeClaimTemplate here for any persistent deployment.

@@ -129,6 +129,27 @@ spec:
         limits:
           cpu: 200m
           memory: 128Mi
+
+    # ── Operational log level ─────────────────────────────────────────────────────
+    # Suppresses Falco's own info/notice startup messages. Does NOT affect security
+    # alert output (minimum_priority controls which rule priorities are forwarded).
+    log_level: warning
+
+    # ── Custom rule overrides ─────────────────────────────────────────────────────
+    customRules:
+      cilium-exceptions.yaml: |-
+        # Cilium's mount-cgroup and apply-sysctl-overwrites init containers execute
+        # cilium-mount and cilium-sysctlfix from writable overlay layers at every pod
+        # restart. These are expected privileged init-container operations, not attacks.
+        - rule: Drop and execute new binary in container
+          append: true
+          exceptions:
+            - name: cilium_init_containers
+              fields: [container.name]
+              comps: [in]
+              values:
+                - [mount-cgroup]
+                - [apply-sysctl-overwrites]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
