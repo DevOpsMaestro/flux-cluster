@@ -83,3 +83,13 @@ spec:
       # Retention: keep traces for 24 hours. Adjust upward once you understand
       # the storage growth rate for your trace volume.
       retention: 24h
+
+      # Switch the ingester ring from memberlist to inmemory. In a single-replica
+      # deployment the memberlist ring loses its member after Mac sleep, leaving
+      # the distributor with 0 live ingesters and dropping all incoming traces.
+      ingester:
+        lifecycler:
+          ring:
+            kvstore:
+              store: inmemory
+            replication_factor: 1

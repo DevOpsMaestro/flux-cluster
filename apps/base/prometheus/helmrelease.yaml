@@ -176,6 +176,12 @@ spec:
         # Metrics are lost on pod restart. Acceptable for a KinD dev cluster;
         # add a volumeClaimTemplate here for any persistent deployment.
         retention: 7d
+        # Accept cadvisor samples whose timestamps fall behind the TSDB head
+        # window after Mac sleep. The kubelet reports pre-sleep cgroup
+        # counters on wake, flooding Prometheus with "too old" samples.
+        # A 10-minute window covers any realistic sleep/wake gap.
+        tsdb:
+          outOfOrderTimeWindow: 10m0s
         resources:
           requests:
             cpu: 100m

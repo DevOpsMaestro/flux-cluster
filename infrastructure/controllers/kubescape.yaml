@@ -58,6 +58,44 @@ spec:
       kubescapeOffline: enable
     configurations:
       prometheusAnnotations: disable
+  # The chart mounts an emptyDir at /home/nonroot/.kubescape/config.json via
+  # subPath: config.json. Kubernetes pre-creates the subPath as a directory
+  # inside the emptyDir, so the process sees a directory instead of a file and
+  # every scan fails. Replace the volume with a ConfigMap that has a
+  # config.json key so the mount produces a regular file.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: kubescape
+            patch: |
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: kubescape
+              spec:
+                template:
+                  spec:
+                    volumes:
+                      - name: kubescape-volume
+                        $patch: replace
+                        configMap:
+                          name: kubescape-config
+                          items:
+                            - key: config.json
+                              path: config.json
+---
+# Provides the config.json file that the kubescape scanner reads at startup.
+# The chart generates an emptyDir for this volume; see the postRenderers patch
+# above for why a ConfigMap is used instead.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubescape-config
+  namespace: kubescape
+data:
+  config.json: "{}"
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
